@@ -78,6 +78,12 @@ function carteArriveesFirebase(toujours) {
   return '<div style="margin-bottom:26px"><h2 style="margin-top:22px">Fiches d\'arrivée écrites par l\'agent ' + badge("b-emerald", "● Firebase, en direct") + "</h2>" + cartes + "</div>";
 }
 
+// Vrai si l'agent a écrit la fiche « id » dans Firebase.
+function aciaFicheAgent(id) {
+  const fb = window.ACIA_FB.arrivees;
+  return fb.statut === "ok" && fb.docs.some(function (d) { return d.id === id; });
+}
+
 // Écran de Camille : les fiches écrites par l'agent s'ajoutent en tête.
 const viewArriveesMaquette = viewArrivees;
 viewArrivees = function () { return carteArriveesFirebase(false) + viewArriveesMaquette(); };

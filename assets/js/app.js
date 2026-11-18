@@ -580,10 +580,14 @@ function ficheTable() {
 function viewArrivees() {
   const L = state.lucas;
   const done = state.agentStep >= AGENT_STEPS.length;
-  const lucasCard = L.recu
+  let lucasCard = L.recu
     ? '<div class="card" style="border-color:#4b2882"><div class="irrtitle">Lucas Fabre</div><div class="irrdetail" style="margin-top:2px">Consultant data · BU Data · lundi prochain</div><div class="irrtags">' +
       (done ? badge(L.complete ? "b-emerald" : "b-amber", L.complete ? "Annonce complète" : "3 informations manquantes") + badge("b-rose", "Délai poste dépassé") : badge("b-slate", "Préparation en cours…")) + "</div></div>"
     : '<div class="card"><div class="irrdetail" style="margin:0">Aucune nouvelle annonce.</div><button class="btn" onclick="recevoirMail21()">Mail 21 reçu : préparer l\'arrivée</button><p class="note">En démo, le mail part en direct d\'un téléphone ; ce bouton le simule.</p></div>';
+  // Fiche écrite par le vrai agent (Firebase) : on masque la carte scriptée pour éviter le doublon.
+  if (typeof aciaFicheAgent === "function" && aciaFicheAgent("lucas-fabre")) {
+    lucasCard = '<div class="card"><div class="irrdetail" style="margin:0">Annonce de Lucas Fabre traitée par l\'agent : voir la fiche ci-dessus.</div></div>';
+  }
   const passees = ARRIVEES_PASSEES.map(function (a) {
     return '<div class="card"><div class="irrtitle">' + esc(a.nom) + '</div><div class="irrdetail" style="margin-top:2px">' + esc(a.poste) + " · arrivé(e) " + a.date + "</div>" +
       '<div class="irrdetail">' + esc(a.etat) + "</div></div>";
