@@ -1,6 +1,6 @@
 # Branchement Firebase (à faire)
 
-Rien n'est branché aujourd'hui. Le site a été découpé pour que le branchement ne touche que trois fichiers.
+État au 18/11/2026 : projet `iae-scalian-gp1` créé (Firestore, europe-west9), collection `irritants` lue en direct dans l'onglet « Données Firebase ». Restent : l'authentification (étape 2) et l'enregistrement de l'état de la démo (étape 3).
 
 ## 1. Créer le projet Firebase
 1. https://console.firebase.google.com > Ajouter un projet.

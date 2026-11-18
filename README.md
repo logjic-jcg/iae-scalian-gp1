@@ -17,7 +17,9 @@ Site publié : https://logjic-jcg.github.io/iae-scalian-gp1/
 | `assets/js/app.js` | Données fictives et écrans de l'application |
 | `assets/js/auth.js` | Connexion de démonstration, à remplacer par Firebase Authentication |
 | `assets/js/etat.js` | Mémoire de la démo le temps de l'onglet, à remplacer par Firestore |
-| `assets/js/firebase-config.js` | Configuration Firebase (vide pour l'instant) |
+| `assets/js/firebase-config.js` | Configuration Firebase du projet `iae-scalian-gp1` |
+| `assets/js/firebase-donnees.js` | Lecture de la collection Firestore `irritants` (repli sur la maquette si Firebase ne répond pas) |
+| `assets/js/vue-firebase.js` | Onglet « Données Firebase » (profils HRBP et Direction) |
 | `assets/img/` | Logos et visuels |
 | `livrables/` | Livrables 01 à 04, jeu de données, schémas |
 

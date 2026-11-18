@@ -480,9 +480,9 @@ const ROLES = [
   { id: "manager", nom: "Isabelle", role: "Manager BU Data", persona: "Manager",
     tabs: [["mesarrivees", "Mes arrivées"], ["equipe", "Irritants qui touchent mon équipe"]] },
   { id: "hrbp",    nom: "Julien", role: "HRBP", persona: "HRBP",
-    tabs: [["registre", "Registre RH"], ["orienter", "Valider et orienter"], ["spec", "Spécifications"], ["suivre", "Suivi des réponses"]] },
+    tabs: [["registre", "Registre RH"], ["orienter", "Valider et orienter"], ["spec", "Spécifications"], ["suivre", "Suivi des réponses"], ["firebase", "Données Firebase"]] },
   { id: "dir",     nom: "Direction", role: "Direction d'agence", persona: "Dirigeants",
-    tabs: [["tableau", "Tableau de bord"]] },
+    tabs: [["tableau", "Tableau de bord"], ["firebase", "Données Firebase"]] },
   { id: "futur",   nom: "Lucas", role: "Futur employé", persona: "Futur employé",
     tabs: [["futur", "Ce qu'il reçoit"]] },
 ];
@@ -713,7 +713,7 @@ function viewFutur() {
 function render() {
   renderTabs();
   renderWho();
-  const views = { arrivees: viewArrivees, registre: viewObserver, orienter: viewOrienter, spec: viewSpec, suivre: viewSuivre, mesarrivees: viewMesArrivees, equipe: viewEquipe, tableau: viewTableau, futur: viewFutur };
+  const views = { arrivees: viewArrivees, registre: viewObserver, orienter: viewOrienter, spec: viewSpec, suivre: viewSuivre, mesarrivees: viewMesArrivees, equipe: viewEquipe, tableau: viewTableau, futur: viewFutur, firebase: viewFirebase };
   document.getElementById("main").innerHTML = views[state.tab]();
   state.justAdded = false; state.fresh = null;
 }
