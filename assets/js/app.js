@@ -476,7 +476,7 @@ function viewSuivre() {
 
 const ROLES = [
   { id: "collab",  nom: "Camille", role: "Administration du personnel", persona: "Collaborateur",
-    tabs: [["arrivees", "Arrivées à préparer"], ["registre", "Ce que l'assistant repère dans mon activité"]] },
+    tabs: [["arrivees", "Arrivées à préparer"], ["registre", "Ce que l'assistant repère dans mon activité"], ["firebase", "Données Firebase"]] },
   { id: "manager", nom: "Isabelle", role: "Manager BU Data", persona: "Manager",
     tabs: [["mesarrivees", "Mes arrivées"], ["equipe", "Irritants qui touchent mon équipe"]] },
   { id: "hrbp",    nom: "Julien", role: "HRBP", persona: "HRBP",

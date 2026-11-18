@@ -1,48 +1,49 @@
 // ---------------------------------------------------------------------------
 // Lecture EN TEMPS RÉEL des données Firestore (module ES, SDK Firebase via CDN)
 // ---------------------------------------------------------------------------
-// Écoute la collection « irritants » : toute modification faite dans la base
-// (console Firebase, Make, Claude…) s'affiche sur le site sans recharger.
-// Résultat rangé dans window.ACIA_FB :
-//   { statut: "chargement" | "ok" | "repli", irritants: [...], modifies: [ids], erreur, lu }
-// En cas d'échec (pas de config, réseau, règles), statut = "repli" :
-// l'écran affiche alors les données de la maquette, jamais une page vide.
+// Écoute deux collections ; toute modification faite dans la base (console
+// Firebase, scénario Make piloté par Claude…) s'affiche sans recharger :
+//   - irritants : onglet « Données Firebase »
+//   - arrivees  : fiches d'arrivée écrites par l'agent (via Make)
+// Résultat rangé dans window.ACIA_FB[collection] :
+//   { statut: "chargement" | "ok" | "repli", docs: [...], modifies: [ids], erreur, lu }
+// En cas d'échec, statut = "repli" : l'écran garde les données de la maquette.
 // ---------------------------------------------------------------------------
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const DELAI_MAX_MS = 8000;
 
-function publier(etat) {
-  window.ACIA_FB = etat;
-  if (typeof window.aciaFbMisAJour === "function") window.aciaFbMisAJour();
+function publier(nom, etat) {
+  window.ACIA_FB[nom] = etat;
+  if (typeof window.aciaFbMisAJour === "function") window.aciaFbMisAJour(nom);
+}
+function repli(nom, e) {
+  publier(nom, { statut: "repli", docs: [], modifies: [], erreur: (e && e.message) || String(e) });
 }
 
-function ecouter() {
-  const config = window.ACIA_FIREBASE_CONFIG;
-  if (!config) { publier({ statut: "repli", irritants: [], modifies: [], erreur: "Configuration Firebase absente (firebase-config.js)." }); return; }
+function ecouter(db, nom, q) {
   let premiere = true;
-  const garde = setTimeout(function () {
-    if (premiere) publier({ statut: "repli", irritants: [], modifies: [], erreur: "Pas de réponse de Firebase en " + DELAI_MAX_MS / 1000 + " s." });
-  }, DELAI_MAX_MS);
-  try {
-    const db = getFirestore(initializeApp(config));
-    onSnapshot(query(collection(db, "irritants"), orderBy("ordre")), function (snap) {
-      clearTimeout(garde);
-      // Documents ajoutés ou modifiés depuis la dernière lecture (rien à la première).
-      const modifies = premiere ? [] : snap.docChanges().filter(function (c) { return c.type !== "removed"; }).map(function (c) { return c.doc.id; });
-      premiere = false;
-      const irritants = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
-      publier({ statut: "ok", irritants: irritants, modifies: modifies, erreur: "", lu: new Date() });
-    }, function (e) {
-      clearTimeout(garde);
-      publier({ statut: "repli", irritants: [], modifies: [], erreur: (e && e.message) || String(e) });
-    });
-  } catch (e) {
+  const garde = setTimeout(function () { if (premiere) repli(nom, "Pas de réponse de Firebase en " + DELAI_MAX_MS / 1000 + " s."); }, DELAI_MAX_MS);
+  onSnapshot(q, function (snap) {
     clearTimeout(garde);
-    publier({ statut: "repli", irritants: [], modifies: [], erreur: (e && e.message) || String(e) });
-  }
+    // Documents ajoutés ou modifiés depuis la dernière lecture (rien à la première).
+    const modifies = premiere ? [] : snap.docChanges().filter(function (c) { return c.type !== "removed"; }).map(function (c) { return c.doc.id; });
+    premiere = false;
+    const docs = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+    publier(nom, { statut: "ok", docs: docs, modifies: modifies, erreur: "", lu: new Date() });
+  }, function (e) { clearTimeout(garde); repli(nom, e); });
 }
 
 window.ACIA_FB_ACTIF = true;   // le module s'est chargé (sinon vue-firebase.js bascule en repli)
-ecouter();
+const config = window.ACIA_FIREBASE_CONFIG;
+if (!config) {
+  repli("irritants", "Configuration Firebase absente (firebase-config.js).");
+  repli("arrivees", "Configuration Firebase absente (firebase-config.js).");
+} else {
+  try {
+    const db = getFirestore(initializeApp(config));
+    ecouter(db, "irritants", query(collection(db, "irritants"), orderBy("ordre")));
+    ecouter(db, "arrivees", query(collection(db, "arrivees")));
+  } catch (e) { repli("irritants", e); repli("arrivees", e); }
+}
