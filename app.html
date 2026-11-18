@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>ACIA : assistant d'amélioration continue</title>
+<link rel="icon" href="assets/img/logo-scalian.png" />
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<header class="app">
+  <div class="headrow">
+    <div class="logo img"><img src="assets/img/logo-scalian-blanc.png" alt="Scalian" /></div>
+    <div class="brand"><b>ACIA</b><span>AI Continuous Improvement Assistant</span></div>
+    <div class="bento-wrap">
+        <button class="hicon" id="bento-btn" aria-label="Livrables du projet" aria-haspopup="true" aria-expanded="false" onclick="toggleBento(event)" title="Livrables du projet">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><g fill="currentColor"><circle cx="5" cy="5" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/></g></svg>
+        </button>
+        <div class="bento" id="bento" role="menu" hidden>
+          <div class="bento-h">Livrables du projet <small>hors produit</small></div>
+          <div class="bento-grid">
+            <a role="menuitem" href="livrables/livrables-01-04-rh-v6.docx" target="_blank"><span class="bt">01–04</span>Livrables 01 à 04<small>Word</small></a>
+            <a role="menuitem" href="livrables/jeu-de-donnees-rh-v5.docx" target="_blank"><span class="bt">DATA</span>Jeu de données<small>Word</small></a>
+            <a role="menuitem" href="livrables/schemas/schema-1-interactions-demo.png" target="_blank"><span class="bt">S1</span>Interactions de la démo<small>Schéma</small></a>
+            <a role="menuitem" href="livrables/schemas/schema-2-architecture.png" target="_blank"><span class="bt">S2</span>Architecture<small>Schéma</small></a>
+            <a role="menuitem" href="livrables/schemas/schema-3-personas.png" target="_blank"><span class="bt">S3</span>Personas<small>Schéma</small></a>
+            <a role="menuitem" href="livrables/schemas/schema-4-personnes-et-personas.png" target="_blank"><span class="bt">S4</span>Personnes et personas<small>Schéma</small></a>
+          </div>
+          <div class="bento-f">Documents fictifs, publiés avec la maquette.</div>
+        </div>
+      </div>
+      <div class="who" id="who"><b id="who-nom"></b><span id="who-fn"></span></div>
+      <div class="user-wrap">
+        <button class="avatar" id="user-btn" aria-label="Compte" aria-haspopup="true" aria-expanded="false" onclick="toggleUser(event)" title="Compte"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="8.5" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20.5c1.2-4 4.1-6 7.5-6s6.3 2 7.5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        <div class="usermenu" id="usermenu" role="menu" hidden>
+          <div class="um-id"><b id="um-nom"></b><span id="um-fn"></span></div>
+          <button class="um-out" role="menuitem" onclick="seDeconnecter()">Se déconnecter</button>
+        </div>
+      </div>
+  </div>
+  <nav class="tabs" id="tabs"></nav>
+</header>
+<main id="main"></main>
+<script src="assets/js/firebase-config.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/etat.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  // Démarrage : profil choisi sur la page de connexion, sinon retour à la connexion.
+  function seDeconnecter() { closeBento(); closeUser(); ACIA_AUTH.signOut(); }
+  const profil = ACIA_AUTH.requireRole();
+  if (profil) {
+    const avant = ACIA_ETAT.charger(state);   // reprend la démo là où elle en était
+    // Animation coupée par un changement de profil : on la considère terminée.
+    if (avant && avant.agentRunning) state.agentStep = AGENT_STEPS.length;
+    if (avant && avant.generating) { state.genStep = GEN_STEPS.length; state.specReady = true; }
+    const renderInitial = render;
+    render = function () { renderInitial(); ACIA_ETAT.sauver(state); };
+    setRole(profil);
+  }
+</script>
+</body>
+</html>

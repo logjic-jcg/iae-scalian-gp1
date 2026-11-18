@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>ACIA : connexion</title>
+<link rel="icon" href="assets/img/logo-scalian.png" />
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<div id="login">
+  <section class="lg-visual">
+    <img class="lw" src="assets/img/logo-scalian-blanc.png" alt="Scalian" />
+    <div class="lg-pitch">
+      <h1>ACIA, l'assistant d'amélioration continue</h1>
+      <p>Il repère les irritants dans les tâches du quotidien et propose la réponse la plus simple. Un humain valide toujours.</p>
+    </div>
+    <img class="tag" src="assets/img/signature-humans-technology.png" alt="Humans &amp; Technology" />
+  </section>
+  <section class="lg-form">
+    <div class="lg-box">
+      <img class="lc" src="assets/img/logo-scalian.png" alt="Scalian" />
+      <h2>Connexion</h2>
+      <p class="sub">Choisissez votre profil pour accéder à ACIA.</p>
+      <label for="lg-role">Votre profil</label>
+      <select id="lg-role" onchange="document.getElementById('lg-go').disabled = !this.value">
+        <option value="">Sélectionnez un profil</option>
+        <option value="collab">Collaborateur · Camille, administration du personnel</option>
+        <option value="manager">Manager · Isabelle, BU Data</option>
+        <option value="hrbp">HRBP · Julien</option>
+        <option value="dir">Dirigeant · direction d'agence</option>
+      </select>
+      <button id="lg-go" class="lg-btn" disabled onclick="ACIA_AUTH.signIn(document.getElementById('lg-role').value)">Se connecter</button>
+      <p class="lg-note">Démonstration : aucun identifiant ni mot de passe, données fictives. Le futur employé n'a pas d'accès : il reçoit seulement les mails de la RH.</p>
+      <div class="lg-edit"><img src="assets/img/logo-iae-neocognition.jpg" alt="IAE Paris Sorbonne × neocognition.ai" /></div>
+    </div>
+  </section>
+</div>
+<script src="assets/js/firebase-config.js"></script>
+<script src="assets/js/auth.js"></script>
+<script>
+  // Déjà connecté dans cet onglet : aller directement à l'application.
+  if (ACIA_AUTH.currentRole()) location.replace("app.html");
+</script>
+</body>
+</html>
