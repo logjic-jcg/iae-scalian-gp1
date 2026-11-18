@@ -9,7 +9,7 @@ function aciaFbMisAJour() { if (state.tab === "firebase") render(); }
 // Si le SDK Firebase ne se charge pas du tout (CDN bloqué, hors ligne),
 // le module ne s'exécute jamais : on bascule nous-mêmes sur le repli.
 setTimeout(function () {
-  if (window.ACIA_FB.statut === "chargement" && !window.ACIA_FB_RECHARGER) {
+  if (window.ACIA_FB.statut === "chargement" && !window.ACIA_FB_ACTIF) {
     window.ACIA_FB = { statut: "repli", irritants: [], erreur: "Le SDK Firebase n'a pas pu être chargé (réseau ou bloqueur)." };
     aciaFbMisAJour();
   }
@@ -20,8 +20,8 @@ function viewFirebase() {
   let lignes, source;
   if (fb.statut === "ok") {
     lignes = fb.irritants;
-    source = badge("b-emerald", "Source : Firebase, en direct") +
-      ' <span class="note">Lu à ' + esc(fb.lu.toLocaleTimeString("fr-FR")) + " · " + lignes.length + " document(s)</span>";
+    source = badge("b-emerald", "● Source : Firebase, en direct") +
+      ' <span class="note">Dernière mise à jour à ' + esc(fb.lu.toLocaleTimeString("fr-FR")) + " · " + lignes.length + " document(s)</span>";
   } else if (fb.statut === "chargement") {
     lignes = [];
     source = badge("b-sky", "Lecture de Firebase en cours…");
@@ -33,7 +33,8 @@ function viewFirebase() {
   }
   const corps = lignes.length
     ? lignes.map(function (r) {
-        return "<tr><td>" + esc(r.ordre != null ? r.ordre : "") + "</td><td><b>" + esc(r.titre || "") + "</b><br><small>" + esc(r.id) + "</small></td><td>" +
+        const neuf = (fb.modifies || []).indexOf(r.id) >= 0;
+        return "<tr" + (neuf ? ' class="fb-neuf"' : "") + "><td>" + esc(r.ordre != null ? r.ordre : "") + "</td><td><b>" + esc(r.titre || "") + "</b><br><small>" + esc(r.id) + "</small></td><td>" +
           esc(r.note != null ? r.note : "") + "</td><td>" + esc(r.traitement || "") + "</td><td>" + esc(r.reponse || "") + "</td></tr>";
       }).join("")
     : '<tr><td colspan="5">' + (fb.statut === "chargement" ? "…" : "La collection est vide.") + "</td></tr>";
@@ -41,6 +42,5 @@ function viewFirebase() {
     '<div class="card"><div>' + source + "</div>" +
     '<div class="tw" style="margin-top:12px"><table><thead><tr><th>Ordre</th><th>Irritant</th><th>Note</th><th>Traitement</th><th>Réponse</th></tr></thead><tbody>' +
     corps + "</tbody></table></div>" +
-    '<button class="btn" style="margin-top:12px" onclick="window.ACIA_FB_RECHARGER ? ACIA_FB_RECHARGER() : location.reload()">Relire la base</button>' +
-    '<p class="note">Collection Firestore « irritants », en lecture seule depuis le site. Pour modifier une valeur : console Firebase, puis « Relire la base ».</p></div>';
+    '<p class="note">Collection Firestore « irritants », en lecture seule depuis le site et mise à jour en temps réel : une modification dans la base apparaît ici sans recharger la page (ligne surlignée).</p></div>';
 }

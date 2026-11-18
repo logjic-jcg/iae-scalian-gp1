@@ -291,3 +291,7 @@ label.fl input, label.fl select { display: block; width: 100%; margin-top: 4px; 
   .who span { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bento { position: fixed; left: 12px; right: 12px; top: 64px; width: auto; }
 }
+
+/* Données Firebase : ligne qui vient de changer dans la base */
+@keyframes fb-flash { from { background: #fde68a; } to { background: transparent; } }
+tr.fb-neuf td { animation: fb-flash 3s ease-out; }
