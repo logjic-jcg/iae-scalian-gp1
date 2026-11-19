@@ -7,21 +7,22 @@
 window.ACIA_FB = {
   irritants: { statut: "chargement", docs: [], modifies: [], erreur: "" },
   arrivees:  { statut: "chargement", docs: [], modifies: [], erreur: "" },
+  classement_mails: { statut: "chargement", docs: [], modifies: [], erreur: "" },
 };
 
 // Appelée par firebase-donnees.js à chaque changement dans la base.
 function aciaFbMisAJour(nom) {
-  if (state.tab === "firebase" || (nom === "arrivees" && state.tab === "arrivees")) render();
+  if (state.tab === "firebase" || (nom === "arrivees" && state.tab === "arrivees") || (nom === "classement_mails" && state.tab === "tendances")) render();
 }
 
 // Si le SDK Firebase ne se charge pas du tout (CDN bloqué, hors ligne),
 // le module ne s'exécute jamais : on bascule nous-mêmes sur le repli.
 setTimeout(function () {
   if (window.ACIA_FB_ACTIF) return;
-  ["irritants", "arrivees"].forEach(function (n) {
+  ["irritants", "arrivees", "classement_mails"].forEach(function (n) {
     window.ACIA_FB[n] = { statut: "repli", docs: [], modifies: [], erreur: "Le SDK Firebase n'a pas pu être chargé (réseau ou bloqueur)." };
   });
-  aciaFbMisAJour("irritants"); aciaFbMisAJour("arrivees");
+  aciaFbMisAJour("irritants"); aciaFbMisAJour("arrivees"); aciaFbMisAJour("classement_mails");
 }, 10000);
 
 function viewFirebase() {

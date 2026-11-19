@@ -5,11 +5,15 @@
 // Firebase, scénario Make piloté par Claude…) s'affiche sans recharger :
 //   - irritants : onglet « Données Firebase »
 //   - arrivees  : fiches d'arrivée écrites par l'agent (via Make)
+//   - classement_mails : classement horaire de la boîte RH (Make + Claude), onglet HRBP « Tendances »
 // Résultat rangé dans window.ACIA_FB[collection] :
 //   { statut: "chargement" | "ok" | "repli", docs: [...], modifies: [ids], erreur, lu }
 // En cas d'échec, statut = "repli" : l'écran garde les données de la maquette.
+// Les règles Firestore réservent la lecture aux comptes connectés : on attend
+// donc l'utilisateur Firebase avant d'écouter. Sans compte : retour à la
+// connexion (sauf « mode maquette », choisi quand Firebase est injoignable).
 // ---------------------------------------------------------------------------
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { app, utilisateurInitial, deconnecter } from "./firebase-session.js";
 import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const DELAI_MAX_MS = 8000;
@@ -36,14 +40,24 @@ function ecouter(db, nom, q) {
 }
 
 window.ACIA_FB_ACTIF = true;   // le module s'est chargé (sinon vue-firebase.js bascule en repli)
-const config = window.ACIA_FIREBASE_CONFIG;
-if (!config) {
-  repli("irritants", "Configuration Firebase absente (firebase-config.js).");
-  repli("arrivees", "Configuration Firebase absente (firebase-config.js).");
+// Déconnexion complète, appelée par le menu du compte (app.html).
+window.aciaFbDeconnexion = deconnecter;
+
+function replis(msg) { repli("irritants", msg); repli("arrivees", msg); repli("classement_mails", msg); }
+
+if (!app) {
+  replis("Configuration Firebase absente (firebase-config.js).");
 } else {
-  try {
-    const db = getFirestore(initializeApp(config));
-    ecouter(db, "irritants", query(collection(db, "irritants"), orderBy("ordre")));
-    ecouter(db, "arrivees", query(collection(db, "arrivees")));
-  } catch (e) { repli("irritants", e); repli("arrivees", e); }
+  const user = await utilisateurInitial();
+  if (!user) {
+    if (ACIA_AUTH.modeMaquette()) replis("Mode maquette : aucun compte connecté, les données Firebase ne sont pas lues.");
+    else ACIA_AUTH.signOut();     // session absente ou expirée : retour à la connexion
+  } else {
+    try {
+      const db = getFirestore(app);
+      ecouter(db, "irritants", query(collection(db, "irritants"), orderBy("ordre")));
+      ecouter(db, "arrivees", query(collection(db, "arrivees")));
+      ecouter(db, "classement_mails", query(collection(db, "classement_mails")));
+    } catch (e) { replis(e); }
+  }
 }
