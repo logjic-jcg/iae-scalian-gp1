@@ -5,13 +5,14 @@
 // Firebase, scénario Make piloté par Claude…) s'affiche sans recharger :
 //   - irritants : onglet « Données Firebase »
 //   - arrivees  : fiches d'arrivée écrites par l'agent (via Make)
+//   - decisions_hrbp : décisions du HRBP (lecture + écriture, onglets de pilotage)
 //   - classement_mails : classement horaire de la boîte RH (Make + Claude), onglet HRBP « Tendances »
 // Résultat rangé dans window.ACIA_FB[collection] :
 //   { statut: "chargement" | "ok" | "repli", docs: [...], modifies: [ids], erreur, lu }
 // En cas d'échec, statut = "repli" : l'écran garde les données de la maquette.
 // ---------------------------------------------------------------------------
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const DELAI_MAX_MS = 8000;
 
@@ -42,11 +43,19 @@ if (!config) {
   repli("irritants", "Configuration Firebase absente (firebase-config.js).");
   repli("arrivees", "Configuration Firebase absente (firebase-config.js).");
   repli("classement_mails", "Configuration Firebase absente (firebase-config.js).");
+  repli("decisions_hrbp", "Configuration Firebase absente (firebase-config.js).");
 } else {
   try {
     const db = getFirestore(initializeApp(config));
     ecouter(db, "irritants", query(collection(db, "irritants"), orderBy("ordre")));
     ecouter(db, "arrivees", query(collection(db, "arrivees")));
     ecouter(db, "classement_mails", query(collection(db, "classement_mails")));
-  } catch (e) { repli("irritants", e); repli("arrivees", e); repli("classement_mails", e); }
+    ecouter(db, "decisions_hrbp", query(collection(db, "decisions_hrbp")));
+    // Écriture d'une décision du HRBP (version C : sans compte, encadrée par les règles Firestore).
+    window.aciaEcrireDecision = function (code, d) {
+      return setDoc(doc(db, "decisions_hrbp", code), {
+        statut: d.statut, reponse: d.reponse, commentaire: d.commentaire, semaine_effet: d.semaine_effet, maj: serverTimestamp()
+      });
+    };
+  } catch (e) { repli("irritants", e); repli("arrivees", e); repli("classement_mails", e); repli("decisions_hrbp", e); }
 }
