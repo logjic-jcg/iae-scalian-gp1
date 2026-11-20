@@ -13,7 +13,7 @@
 //   - pas de suppression : on désactive (l'historique des tendances est gardé) ;
 //   - « Autre » ne peut être ni supprimé ni désactivé ;
 //   - la source (mails ou comptes rendus) ne se change pas.
-// Version C (provisoire) : écriture sans compte, encadrée par les règles.
+// v15 : écriture réservée au HRBP connecté (table « utilisateurs »), encadrée par les règles.
 // ---------------------------------------------------------------------------
 
 const TYPE_LIMITES = { titre: 80, definition: 400, exemple: 300, processus: 60 };
@@ -170,7 +170,7 @@ function viewTypesIrritants() {
     (d && d.source === "COMPTES_RENDUS" ? "Ce type est détecté dans les comptes rendus Notion par un autre scénario : sa définition sert de référence, elle n'est pas donnée à l'IA du classement des mails." :
       "Un mail que l'IA ne sait pas ranger va dans « Autre ».") + "</p></div>";
 
-  return titre + entete + '<p class="note" style="margin:0 0 12px">Version provisoire : enregistrement sans compte, limité par les règles de la base (champs, longueurs, code figé, aucune suppression). Passage en connexion prévu avant le jury.</p>' + chips + '<div class="row c-1-2"><div>' + picks + "</div><div>" + right + "</div></div>" +
+  return titre + entete + '<p class="note" style="margin:0 0 12px">Enregistrement réservé au profil HRBP connecté. Les règles de la base vérifient aussi les champs, les longueurs, le code figé et l\'absence de suppression.</p>' + chips + '<div class="row c-1-2"><div>' + picks + "</div><div>" + right + "</div></div>" +
     '<p class="note">Un type décrit une étape du processus, jamais une personne ni une équipe.</p>';
 }
 // Sélection sans redessiner (appelée pendant le rendu).

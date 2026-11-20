@@ -14,7 +14,10 @@
 //   { statut: "chargement" | "ok" | "repli", docs: [...], modifies: [ids], erreur, lu }
 // En cas d'échec, statut = "repli" : l'écran garde les données de la maquette.
 // ---------------------------------------------------------------------------
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+// v15 : les règles Firestore réservent la lecture aux utilisateurs connectés
+// présents dans la table « utilisateurs » : on attend donc la session Firebase
+// avant d'écouter. Sans session : retour à la connexion (sauf mode maquette).
+import { app, utilisateurInitial, deconnecter } from "./firebase-session.js";
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const DELAI_MAX_MS = 8000;
@@ -41,18 +44,20 @@ function ecouter(db, nom, q) {
 }
 
 window.ACIA_FB_ACTIF = true;   // le module s'est chargé (sinon vue-firebase.js bascule en repli)
-const config = window.ACIA_FIREBASE_CONFIG;
-if (!config) {
-  repli("irritants", "Configuration Firebase absente (firebase-config.js).");
-  repli("arrivees", "Configuration Firebase absente (firebase-config.js).");
-  repli("classement_mails", "Configuration Firebase absente (firebase-config.js).");
-  repli("decisions_hrbp", "Configuration Firebase absente (firebase-config.js).");
-  repli("comptes_rendus", "Configuration Firebase absente (firebase-config.js).");
-  repli("types_irritants", "Configuration Firebase absente (firebase-config.js).");
-  repli("parametres", "Configuration Firebase absente (firebase-config.js).");
+const COLLECTIONS = ["irritants", "arrivees", "classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres"];
+function replis(msg) { COLLECTIONS.forEach(function (c) { repli(c, msg); }); }
+// Déconnexion complète, appelée par le menu du compte (app.html).
+window.aciaFbDeconnexion = deconnecter;
+
+const user = app ? await utilisateurInitial() : null;
+if (!app) {
+  replis("Configuration Firebase absente (firebase-config.js).");
+} else if (!user) {
+  if (ACIA_AUTH.modeMaquette()) replis("Mode maquette : aucun compte connecté, les données Firebase ne sont pas lues.");
+  else ACIA_AUTH.signOut();     // session absente ou expirée : retour à la connexion
 } else {
   try {
-    const db = getFirestore(initializeApp(config));
+    const db = getFirestore(app);
     ecouter(db, "irritants", query(collection(db, "irritants"), orderBy("ordre")));
     ecouter(db, "arrivees", query(collection(db, "arrivees")));
     ecouter(db, "classement_mails", query(collection(db, "classement_mails")));
@@ -60,7 +65,7 @@ if (!config) {
     ecouter(db, "comptes_rendus", query(collection(db, "comptes_rendus")));
     ecouter(db, "types_irritants", query(collection(db, "types_irritants"), orderBy("ordre")));
     ecouter(db, "parametres", query(collection(db, "parametres")));
-    // v13 : création ou modification d'un type d'irritant (version C : sans compte,
+    // v13 : création ou modification d'un type d'irritant (v15 : réservé au HRBP connecté,
     // encadrée par les règles Firestore : champs, longueurs, code figé, pas de suppression).
     window.aciaEcrireType = function (code, t) {
       return setDoc(doc(db, "types_irritants", code), {
@@ -68,11 +73,11 @@ if (!config) {
         actif: t.actif, ordre: t.ordre, source: t.source, protege: t.protege, maj: serverTimestamp()
       });
     };
-    // Écriture d'une décision du HRBP (version C : sans compte, encadrée par les règles Firestore).
+    // Écriture d'une décision du HRBP (v15 : réservée au HRBP connecté, encadrée par les règles Firestore).
     window.aciaEcrireDecision = function (code, d) {
       return setDoc(doc(db, "decisions_hrbp", code), {
         statut: d.statut, reponse: d.reponse, commentaire: d.commentaire, semaine_effet: d.semaine_effet, maj: serverTimestamp()
       });
     };
-  } catch (e) { repli("irritants", e); repli("arrivees", e); repli("classement_mails", e); repli("decisions_hrbp", e); repli("comptes_rendus", e); repli("types_irritants", e); repli("parametres", e); }
+  } catch (e) { replis(e); }
 }

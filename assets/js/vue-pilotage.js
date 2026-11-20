@@ -6,7 +6,7 @@
 //        comptes_rendus   (v12 : actions des comptes rendus Notion, 8e irritant)
 //        decisions_hrbp   (écrit par cet écran, un document par irritant)
 // Écrit: decisions_hrbp/{CODE} = { statut, reponse, commentaire, semaine_effet, maj }
-// Version C (provisoire) : écriture sans compte, encadrée par les règles
+// v15 : écriture réservée au HRBP connecté (table « utilisateurs »), encadrée par les règles
 // Firestore (collection, champs et valeurs autorisés). À passer en connexion
 // (v7) avant le jury. Aucun chiffre n'est affiché sans la base.
 // ---------------------------------------------------------------------------
@@ -139,7 +139,7 @@ function bandeauVersionC() {
   const etat = !fb || fb.statut === "chargement" ? badge("b-sky", "Décisions : lecture…")
     : fb.statut === "ok" ? badge("b-emerald", "● Décisions : Firebase, en direct")
     : badge("b-rose", "Décisions indisponibles : " + fb.erreur);
-  return '<p class="note" style="margin:0 0 12px">' + etat + " Version provisoire : enregistrement sans compte, limité par les règles de la base. Passage en connexion prévu avant le jury.</p>";
+  return '<p class="note" style="margin:0 0 12px">' + etat + " Enregistrement réservé au profil HRBP connecté, vérifié par les règles de la base.</p>";
 }
 
 // ------------------------------ VALIDER ET ORIENTER ------------------------

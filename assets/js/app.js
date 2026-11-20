@@ -521,7 +521,9 @@ const IDENT = {
   futur:   ["Lucas Fabre", "Futur employé, consultant data"],
 };
 function renderWho() {
-  const w = IDENT[state.role] || ["", ""];
+  // v15 : nom et profil de l'utilisateur connecté (table « utilisateurs »), sinon libellés de la maquette.
+  const id = window.ACIA_AUTH && ACIA_AUTH.identite ? ACIA_AUTH.identite() : null;
+  const w = id && id.utilisateur ? [id.utilisateur, id.profil] : (IDENT[state.role] || ["", ""]);
   document.getElementById("who-nom").textContent = w[0];
   document.getElementById("who-fn").textContent = w[1];
   document.getElementById("um-nom").textContent = w[0];
@@ -553,6 +555,9 @@ function renderTabs() {
     hrbp: ["#d1fae5", "#047857", "● En direct : uniquement les données lues dans la boîte RH partagée et dans les comptes rendus Notion (Make + Claude → Firebase). Aucune donnée de maquette."],
     hrbp_demo: ["#fef3c7", "#b45309", "Maquette : écrans scénarisés avec les données fictives du jeu de démo. Rien ne vient des sources réelles."],
   };
+  // v15 : ModeDemo = Oui dans la table « utilisateurs » -> bandeau « maquette » sur les écrans sans bandeau propre.
+  const idt = window.ACIA_AUTH && ACIA_AUTH.identite ? ACIA_AUTH.identite() : null;
+  if (idt && idt.modeDemo && !bandeaux[state.role]) bandeaux[state.role] = ["#fef3c7", "#b45309", "Mode démo : écrans scénarisés avec les données fictives du jeu de démo."];
   const bd = bandeaux[state.role];
   document.getElementById("tabs").innerHTML = '<div class="tabrow">' + tabs + "</div>" +
     (bd ? '<div style="background:' + bd[0] + ';color:' + bd[1] + ';font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;margin:8px 0 4px">' + esc(bd[2]) + "</div>" : "");

@@ -22,18 +22,21 @@
     <div class="lg-box">
       <img class="lc" src="assets/img/logo-scalian.png" alt="Scalian" />
       <h2>Connexion</h2>
-      <p class="sub">Choisissez votre profil pour accéder à ACIA.</p>
-      <label for="lg-role">Votre profil</label>
-      <select id="lg-role" onchange="document.getElementById('lg-go').disabled = !this.value">
-        <option value="">Sélectionnez un profil</option>
-        <option value="collab">Collaborateur · Camille, administration du personnel</option>
-        <option value="manager">Manager · Isabelle, BU Data</option>
-        <option value="hrbp">HRBP · Julien, données en direct (boîte RH et comptes rendus)</option>
-        <option value="hrbp_demo">HRBP de démo · maquette, données fictives scénarisées</option>
-        <option value="dir">Dirigeant · direction d'agence</option>
-      </select>
-      <button id="lg-go" class="lg-btn" disabled onclick="ACIA_AUTH.signIn(document.getElementById('lg-role').value)">Se connecter</button>
-      <p class="lg-note">Démonstration : aucun identifiant ni mot de passe, données fictives. Le futur employé n'a pas d'accès : il reçoit seulement les mails de la RH.</p>
+      <p class="sub">Accès réservé à l'équipe projet et au jury.</p>
+      <form id="lg-form" autocomplete="on">
+        <label for="lg-id">Identifiant</label>
+        <input id="lg-id" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="40" pattern="[A-Za-z0-9]+" required />
+        <label for="lg-mdp">Mot de passe</label>
+        <input id="lg-mdp" type="password" autocomplete="current-password" required />
+        <button id="lg-go" type="submit" class="lg-btn" disabled>Se connecter</button>
+      </form>
+      <p id="lg-err" class="lg-err" role="alert"></p>
+      <p id="lg-attente" class="lg-note">Vérification de la session…</p>
+      <div id="lg-secours" class="lg-secours" hidden>
+        <p>Firebase est injoignable (réseau ou bloqueur). Vous pouvez continuer sur les écrans de démonstration du HRBP, <strong>sans les données de la base</strong>.</p>
+        <button type="button" class="lg-btn lg-btn2" onclick="ACIA_AUTH.ouvrirMaquette()">Continuer en mode maquette</button>
+      </div>
+      <p class="lg-note">Données fictives. Le futur employé n'a pas d'accès : il reçoit seulement les mails de la RH.</p>
       <div class="lg-edit"><img src="assets/img/logo-iae-neocognition.jpg" alt="IAE Paris Sorbonne × neocognition.ai" /></div>
     </div>
   </section>
@@ -41,8 +44,13 @@
 <script src="assets/js/firebase-config.js"></script>
 <script src="assets/js/auth.js"></script>
 <script>
-  // Déjà connecté dans cet onglet : aller directement à l'application.
-  if (ACIA_AUTH.currentRole()) location.replace("app.html");
+  // Si le SDK Firebase ne se charge pas (CDN bloqué, hors ligne), proposer le mode maquette.
+  setTimeout(function () {
+    if (window.ACIA_CONNEXION_ACTIVE) return;
+    document.getElementById("lg-attente").hidden = true;
+    document.getElementById("lg-secours").hidden = false;
+  }, 10000);
 </script>
+<script type="module" src="assets/js/connexion.js"></script>
 </body>
 </html>

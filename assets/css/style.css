@@ -239,11 +239,19 @@ label.fl input, label.fl select { display: block; width: 100%; margin-top: 4px; 
 .lg-box h2 { border: 0; padding: 0; margin: 34px 0 6px; font-size: 26px; text-transform: none; color: var(--deep); }
 .lg-box .sub { color: var(--muted); font-size: 14px; }
 .lg-box label { display: block; margin-top: 26px; font-size: 13px; font-weight: 700; color: var(--deep); }
-.lg-box select { display: block; width: 100%; margin-top: 8px; font: inherit; font-size: 15px; padding: 12px 14px; border: 1.5px solid var(--lav2); border-radius: 6px; background: #fff; color: var(--ink); }
-.lg-box select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.lg-box select, .lg-box input { display: block; width: 100%; margin-top: 8px; font: inherit; font-size: 15px; padding: 12px 14px; border: 1.5px solid var(--lav2); border-radius: 6px; background: #fff; color: var(--ink); }
+.lg-box select:focus, .lg-box input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .lg-btn { width: 100%; margin-top: 18px; border: 0; border-radius: 6px; padding: 13px 16px; font: inherit; font-size: 15px; font-weight: 700; color: #fff; cursor: pointer; background: linear-gradient(90deg, var(--accent), var(--magenta)); }
 .lg-btn:disabled { opacity: .45; cursor: default; }
 .lg-note { margin-top: 14px; font-size: 12px; color: var(--muted); }
+.lg-box label { margin-top: 18px; }
+.lg-box input { box-sizing: border-box; }
+.lg-compte { margin-top: 22px; font-size: 14px; color: var(--ink); }
+.lg-compte a { color: var(--accent); }
+.lg-err { margin-top: 12px; min-height: 1em; font-size: 13px; font-weight: 700; color: #b42318; }
+.lg-secours { margin-top: 10px; padding: 12px 14px; border: 1.5px solid var(--lav2); border-radius: 6px; font-size: 13px; }
+.lg-secours p { margin: 0; }
+.lg-btn2 { margin-top: 10px; background: var(--deep); }
 .lg-edit { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); }
 .lg-edit span { display: block; font-size: 11px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
 .lg-edit img { width: 280px; max-width: 100%; }
