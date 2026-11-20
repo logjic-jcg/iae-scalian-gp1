@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 window.ACIA_AUTH = (function () {
   const KEY = "acia.role";
-  const ROLES = ["collab", "manager", "hrbp", "dir"];
+  const ROLES = ["collab", "manager", "hrbp", "hrbp_demo", "dir"];
 
   function store(role) { try { sessionStorage.setItem(KEY, role); } catch (e) { /* stockage bloqué : repli sur l'URL */ } }
   function stored() { try { return sessionStorage.getItem(KEY); } catch (e) { return null; } }

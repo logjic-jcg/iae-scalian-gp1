@@ -479,8 +479,13 @@ const ROLES = [
     tabs: [["arrivees", "Arrivées à préparer"], ["registre", "Ce que l'assistant repère dans mon activité"], ["firebase", "Données Firebase"]] },
   { id: "manager", nom: "Isabelle", role: "Manager BU Data", persona: "Manager",
     tabs: [["mesarrivees", "Mes arrivées"], ["equipe", "Irritants qui touchent mon équipe"]] },
+  // v11 : deux HRBP pour ne pas mélanger les données.
+  // Julien = uniquement ce qui vient des sources réelles (boîte RH partagée, comptes rendus Notion) via Firebase.
   { id: "hrbp",    nom: "Julien", role: "HRBP", persona: "HRBP",
-    tabs: [["registre", "Registre RH"], ["tendances", "Tendances de la boîte"], ["b_orienter", "Valider et orienter"], ["b_spec", "Spécifications"], ["b_suivre", "Suivi des réponses"], ["firebase", "Données Firebase"]] },
+    tabs: [["tendances", "Tendances de la boîte"], ["b_orienter", "Valider et orienter"], ["b_spec", "Spécifications"], ["b_suivre", "Suivi des réponses"]] },
+  // HRBP de démo = uniquement les écrans scénarisés de la maquette (données fictives écrites dans le code).
+  { id: "hrbp_demo", nom: "HRBP de démo", role: "HRBP", persona: "HRBP",
+    tabs: [["registre", "Registre RH"], ["orienter", "Valider et orienter"], ["spec", "Spécifications"], ["suivre", "Suivi des réponses"], ["firebase", "Données Firebase"]] },
   { id: "dir",     nom: "Direction", role: "Direction d'agence", persona: "Dirigeants",
     tabs: [["tableau", "Tableau de bord"], ["firebase", "Données Firebase"]] },
   { id: "futur",   nom: "Lucas", role: "Futur employé", persona: "Futur employé",
@@ -510,7 +515,8 @@ function role() { return ROLES.find(function (r) { return r.id === state.role; }
 const IDENT = {
   collab:  ["Camille Rousseau", "Chargée d'administration du personnel"],
   manager: ["Isabelle Moreau", "Manager BU Data"],
-  hrbp:    ["Julien Mercier", "HRBP de l'agence"],
+  hrbp:    ["Julien Mercier", "HRBP · données en direct"],
+  hrbp_demo: ["HRBP de démo", "Maquette · données fictives"],
   dir:     ["Direction", "Direction d'agence"],
   futur:   ["Lucas Fabre", "Futur employé, consultant data"],
 };
@@ -543,7 +549,13 @@ function renderTabs() {
   const tabs = role().tabs.map(function (t) {
     return '<button class="tab' + (state.tab === t[0] ? " active" : "") + '" onclick="setTab(\'' + t[0] + '\')">' + esc(t[1]) + "</button>";
   }).join("");
-  document.getElementById("tabs").innerHTML = '<div class="tabrow">' + tabs + "</div>";
+  const bandeaux = {
+    hrbp: ["#d1fae5", "#047857", "● En direct : uniquement les données lues dans la boîte RH partagée et dans les comptes rendus Notion (Make + Claude → Firebase). Aucune donnée de maquette."],
+    hrbp_demo: ["#fef3c7", "#b45309", "Maquette : écrans scénarisés avec les données fictives du jeu de démo. Rien ne vient des sources réelles."],
+  };
+  const bd = bandeaux[state.role];
+  document.getElementById("tabs").innerHTML = '<div class="tabrow">' + tabs + "</div>" +
+    (bd ? '<div style="background:' + bd[0] + ';color:' + bd[1] + ';font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;margin:8px 0 4px">' + esc(bd[2]) + "</div>" : "");
 }
 
 // ----------------------------- ARRIVÉES (Camille) ---------------------------
