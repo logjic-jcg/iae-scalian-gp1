@@ -64,6 +64,7 @@ function viewTendances() {
   const fb = window.ACIA_FB.classement_mails;
   const entete = "<h2>Fil d'observation : boîte RH et comptes rendus</h2>" +
     '<p class="note" style="margin:-4px 0 8px">Sources : boîte RH partagée (mails) · comptes rendus de réunion (Notion). Les deux sont lues automatiquement par Make + Claude ; rien n\'est saisi à la main.</p>' +
+    blocRelance() +
     '<p style="margin:0 0 12px;font-size:13px">Aller à : <a href="#" onclick="allerSection(\'sec-mails\');return false">Boîte RH partagée</a> · <a href="#" onclick="allerSection(\'sec-reunions\');return false">Comptes rendus de réunion ↓</a></p>' +
     '<h3 id="sec-mails" style="margin-top:4px">Boîte RH partagée</h3>';
   if (!fb || fb.statut !== "ok") {
@@ -141,4 +142,44 @@ function allerSection(id) {
   const el = document.getElementById(id); if (!el) return;
   const h = document.querySelector("header.app"), haut = h && getComputedStyle(h).position !== "static" ? h.offsetHeight : 0;
   window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - haut - 12, behavior: "smooth" });
+}
+
+// ---------------------------------------------------------------------------
+// v13 : bouton « Actualiser maintenant ». Affiché seulement si le paramètre
+// parametres/ihm.refresh_ihm vaut 1 (modifiable uniquement via Claude + Make).
+// Le bouton appelle un webhook Make qui revérifie lui-même le paramètre,
+// refuse s'il y a eu une relance dans les 10 dernières minutes, puis lance la
+// lecture de la boîte RH et celle des comptes rendus. Les résultats arrivent
+// d'eux-mêmes (écoute en direct de la base).
+// ---------------------------------------------------------------------------
+const ACIA_URL_RELANCE = "https://hook.eu1.make.com/qbsiods6ns41u0seto2yyafrx5sijo18";
+const RELANCE_DELAI_MIN = 10;
+state.msgRelance = state.msgRelance || "";
+function parametresIhm() {
+  const fb = window.ACIA_FB.parametres;
+  if (!fb || fb.statut !== "ok") return null;
+  return fb.docs.find(function (d) { return d.id === "ihm"; }) || null;
+}
+function blocRelance() {
+  const p = parametresIhm();
+  if (!p || Number(p.refresh_ihm) !== 1) return "";
+  const der = p.derniere_relance && p.derniere_relance.toDate ? p.derniere_relance.toDate() : null;
+  const prochaine = der ? new Date(der.getTime() + RELANCE_DELAI_MIN * 60000) : null;
+  const attente = prochaine && prochaine > new Date();
+  const heure = function (d) { return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }); };
+  if (attente && !window.__aciaRelanceTimer) {
+    window.__aciaRelanceTimer = setTimeout(function () { window.__aciaRelanceTimer = null; if (state.tab === "tendances") render(); }, prochaine - new Date() + 1000);
+  }
+  return '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 10px">' +
+    '<button class="btn slim" style="padding:7px 12px;font-size:13px"' + (attente ? " disabled" : "") + ' onclick="relancerTraitement()">⟳ Actualiser maintenant</button>' +
+    '<span class="note" style="margin:0">' + esc(state.msgRelance ||
+      (attente ? "Dernière relance à " + heure(der) + " : prochaine possible à " + heure(prochaine) + "." :
+       der ? "Dernière relance à la demande : " + der.toLocaleString("fr-FR") + "." : "Relance la lecture de la boîte RH et des comptes rendus.")) + "</span></div>";
+}
+function relancerTraitement() {
+  state.msgRelance = "Relance envoyée : les résultats apparaîtront ici d'eux-mêmes d'ici une à deux minutes.";
+  render();
+  fetch(ACIA_URL_RELANCE, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: "source=site" })
+    .catch(function () { state.msgRelance = "Relance impossible : Make n'a pas répondu."; render(); });
+  setTimeout(function () { state.msgRelance = ""; if (state.tab === "tendances") render(); }, 60000);
 }
