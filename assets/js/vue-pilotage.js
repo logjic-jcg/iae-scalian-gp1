@@ -56,13 +56,24 @@ const PILOTAGE = {
     indicateur: "Actions reportées ou sans responsable par semaine (comptes rendus)" },
   DOC_DISPERSEE: { reco: "SIMPLIFIER",
     action: "Page de référence unique, une seule version par document, un responsable nommé.", indicateur: "Signaux « documentation dispersée » par semaine" },
+  AUTRE: { reco: "SIMPLIFIER",
+    action: "Relire les mails classés « Autre » : si un même motif revient, créer un nouveau type dans l'onglet « Types des irritants ».", indicateur: "Mails classés « Autre » par semaine" },
 };
+// v13 : un type créé par le HRBP n'a pas encore de fiche : contenu générique, à compléter.
+function confDe(code) {
+  return PILOTAGE[code] || { reco: "SIMPLIFIER", action: "À définir par le HRBP (type créé dans l'onglet « Types des irritants »).",
+    indicateur: "Signaux « " + libelleType(code) + " » par semaine" };
+}
 
-// Les 7 irritants des mails + l'irritant des comptes rendus.
+// Les types des mails (table « types_irritants ») + l'irritant des comptes rendus.
 const CODE_CR = "ACTIONS_NON_FERMEES";
-const TYPES_PILOTAGE = TYPES_MAIL.concat([{ code: CODE_CR, label: "Actions de réunion jamais fermées", reponse: "Simplifier : modèle de compte rendu avec tableau d'actions" }]);
+function typesPilotage() {
+  const t = typesTable(), cr = t && t.find(function (d) { return d.id === CODE_CR; });
+  return typesMail().concat([{ code: CODE_CR, label: cr && cr.titre ? cr.titre : "Actions de réunion jamais fermées", actif: !cr || cr.actif !== false }]);
+}
 function sourceDe(code) { return code === CODE_CR ? "dans les comptes rendus de réunion" : "dans la boîte partagée"; }
-function libelleType(code) { const t = TYPES_PILOTAGE.find(function (x) { return x.code === code; }); return t ? t.label : code; }
+function libelleType(code) { const t = typesPilotage().find(function (x) { return x.code === code; }); return t ? t.label : code; }
+function actifType(code) { const t = typesPilotage().find(function (x) { return x.code === code; }); return !t || t.actif; }
 function libStatut(id) { const s = STATUTS_HRBP.find(function (x) { return x.id === id; }); return s || { label: "Sans décision", cls: "b-sky" }; }
 function libReponse(id) { const r = REPONSES_HRBP.find(function (x) { return x.id === id; }); return r ? r.label : "—"; }
 
@@ -71,7 +82,7 @@ function aciaSignaux() {
   const fb = window.ACIA_FB.classement_mails;
   const res = { ok: fb && fb.statut === "ok", erreur: fb ? fb.erreur : "", parCode: {}, semMax: 0 };
   if (!res.ok) return res;
-  TYPES_PILOTAGE.forEach(function (t) { res.parCode[t.code] = { total: 0, parSem: {}, reels: [], semMax: 0 }; });
+  typesPilotage().forEach(function (t) { res.parCode[t.code] = { total: 0, parSem: {}, reels: [], semMax: 0 }; });
   fb.docs.forEach(function (d) {
     if (d.type === "ECARTE") return;
     const m = /^J(\d+)$/.exec(String(d.jour_fictif || "").trim());
@@ -86,7 +97,7 @@ function aciaSignaux() {
       if (s) p.parSem[s] = (p.parSem[s] || 0) + 1; else if (recu) p.reels.push(recu);
     });
   });
-  TYPES_MAIL.forEach(function (t) { res.parCode[t.code].semMax = res.semMax; });
+  typesMail().forEach(function (t) { res.parCode[t.code].semMax = res.semMax; });
   signauxComptesRendus(res.parCode[CODE_CR]);
   return res;
 }
@@ -156,18 +167,18 @@ function enregistrerDecision(code) {
 function viewPilotOrienter() {
   const sig = aciaSignaux();
   if (!sig.ok) return messageSansBase("Valider et orienter", sig);
-  const codes = TYPES_PILOTAGE.map(function (t) { return t.code; }).sort(function (a, b) { return sig.parCode[b].total - sig.parCode[a].total; });
+  const codes = typesPilotage().filter(function (t) { return t.actif || sig.parCode[t.code].total || decisionDe(t.code); }).map(function (t) { return t.code; }).sort(function (a, b) { return sig.parCode[b].total - sig.parCode[a].total; });
   if (codes.indexOf(state.selPilot) < 0) state.selPilot = codes[0];
 
   const picks = codes.map(function (c) {
     const p = sig.parCode[c], d = decisionDe(c), st = libStatut(d && d.statut);
     return '<button class="pick' + (state.selPilot === c ? " selected" : "") + '" onclick="selPilot(\'' + c + '\')">' +
-      '<div style="font-weight:700;font-size:14px">' + esc(libelleType(c)) + "</div>" +
+      '<div style="font-weight:700;font-size:14px">' + esc(libelleType(c)) + (actifType(c) ? "" : " (désactivé)") + "</div>" +
       '<div class="psub">' + p.total + " signal(s) · " + esc(st.label) + (d ? " · " + esc(libReponse(d.reponse)) : "") +
       (aExaminer(p) ? " · à examiner" : "") + "</div></button>";
   }).join("");
 
-  const c = state.selPilot, p = sig.parCode[c], d = decisionDe(c), conf = PILOTAGE[c];
+  const c = state.selPilot, p = sig.parCode[c], d = decisionDe(c), conf = confDe(c);
   const semaines = Object.keys(p.parSem).map(Number).sort(function (a, b) { return a - b; });
   const detailSem = semaines.length ? semaines.map(function (s) { return "S" + s + " : " + p.parSem[s]; }).join(" · ") : "aucun signal daté";
   const reco = conf.reco;
@@ -201,12 +212,12 @@ function viewPilotOrienter() {
 function viewPilotSpec() {
   const sig = aciaSignaux();
   if (!sig.ok) return messageSansBase("Spécifications", sig);
-  const valides = TYPES_PILOTAGE.map(function (t) { return t.code; }).filter(function (c) { const d = decisionDe(c); return d && d.statut === "VALIDE"; });
+  const valides = typesPilotage().map(function (t) { return t.code; }).filter(function (c) { const d = decisionDe(c); return d && d.statut === "VALIDE"; });
   if (!valides.length) {
     return "<h2>Spécifications</h2>" + bandeauVersionC() + '<div class="card"><p style="font-size:14px;margin:0">Aucun irritant validé pour l\'instant.</p><p class="note">Une fiche n\'est produite qu\'après une décision « validé » du HRBP, dans l\'onglet « Valider et orienter ».</p></div>';
   }
   const fiches = valides.map(function (c) {
-    const d = decisionDe(c), p = sig.parCode[c], conf = PILOTAGE[c];
+    const d = decisionDe(c), p = sig.parCode[c], conf = confDe(c);
     const semaines = Object.keys(p.parSem).map(Number).sort(function (a, b) { return a - b; });
     if (d.reponse === "SIMPLIFIER") {
       return '<div class="card" style="margin-top:12px"><div class="spechead">Réponse sans IA : pas de spécification d\'outil</div><div class="spech3">' + esc(libelleType(c)) + "</div>" +
@@ -239,7 +250,7 @@ function viewPilotSpec() {
 function viewPilotSuivre() {
   const sig = aciaSignaux();
   if (!sig.ok) return messageSansBase("Suivi des réponses", sig);
-  const suivis = TYPES_PILOTAGE.map(function (t) { return t.code; }).filter(function (c) { const d = decisionDe(c); return d && d.statut !== "ECARTE"; });
+  const suivis = typesPilotage().map(function (t) { return t.code; }).filter(function (c) { const d = decisionDe(c); return d && d.statut !== "ECARTE"; });
   if (!suivis.length) {
     return "<h2>Suivi des réponses</h2>" + bandeauVersionC() + '<div class="card"><p style="font-size:14px;margin:0">Aucune décision à suivre pour l\'instant.</p><p class="note">Le suivi compare les signaux avant et après la semaine d\'effet de chaque décision.</p></div>';
   }

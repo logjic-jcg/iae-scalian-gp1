@@ -9,15 +9,46 @@
 // L'écran n'affiche que des agrégats (aucune liste de mails, aucun nom).
 // Si la base est indisponible, aucun chiffre n'est inventé : message seulement.
 // ---------------------------------------------------------------------------
-const TYPES_MAIL = [
-  { code: "ANNONCE_INCOMPLETE",   label: "Annonce d'arrivée incomplète",   reponse: "Assister : agent d'intégration (démo)" },
-  { code: "DEMANDE_TARDIVE",      label: "Demande au support trop tardive", reponse: "Assister : agent d'intégration (délais calculés)" },
-  { code: "HORS_BOUCLE",          label: "Service tenu hors de la boucle",  reponse: "Simplifier : liste de diffusion, sans IA" },
-  { code: "PREMIER_JOUR_DEGRADE", label: "Premier jour dégradé",            reponse: "Conséquence : se traite en amont (annonce, délais)" },
-  { code: "QUESTION_RECURRENTE",  label: "Question récurrente d'arrivant",  reponse: "Simplifier : FAQ jointe au mail de bienvenue" },
-  { code: "PIECES_RENVOYEES",     label: "Pièces renvoyées",                reponse: "Automatiser : accusé de réception, sans IA" },
-  { code: "DOC_DISPERSEE",        label: "Documentation dispersée",         reponse: "Simplifier : page de référence unique" },
+// v13 : la liste des types vient de la table Firestore « types_irritants »,
+// administrée par le HRBP (onglet « Types des irritants ») et lue par Make à
+// chaque passage. Le code est figé, seul le titre peut changer : les tendances
+// restent comparables. Si la table est indisponible, repli sur la liste d'origine.
+const TYPES_MAIL_DEFAUT = [
+  { code: "ANNONCE_INCOMPLETE",   label: "Annonce d'arrivée incomplète" },
+  { code: "DEMANDE_TARDIVE",      label: "Demande au support trop tardive" },
+  { code: "HORS_BOUCLE",          label: "Service tenu hors de la boucle" },
+  { code: "PREMIER_JOUR_DEGRADE", label: "Premier jour dégradé" },
+  { code: "QUESTION_RECURRENTE",  label: "Question récurrente d'arrivant" },
+  { code: "PIECES_RENVOYEES",     label: "Pièces renvoyées" },
+  { code: "DOC_DISPERSEE",        label: "Documentation dispersée" },
+  { code: "AUTRE",                label: "Autre" },
 ];
+// Réponse la plus simple qui suffit (grille du livrable 01) ; un type créé par le HRBP n'en a pas encore.
+const REPONSE_TYPE = {
+  ANNONCE_INCOMPLETE: "Assister : agent d'intégration (démo)",
+  DEMANDE_TARDIVE: "Assister : agent d'intégration (délais calculés)",
+  HORS_BOUCLE: "Simplifier : liste de diffusion, sans IA",
+  PREMIER_JOUR_DEGRADE: "Conséquence : se traite en amont (annonce, délais)",
+  QUESTION_RECURRENTE: "Simplifier : FAQ jointe au mail de bienvenue",
+  PIECES_RENVOYEES: "Automatiser : accusé de réception, sans IA",
+  DOC_DISPERSEE: "Simplifier : page de référence unique",
+  ACTIONS_NON_FERMEES: "Simplifier : modèle de compte rendu avec tableau d'actions",
+  AUTRE: "Relire : si un motif revient, créer un nouveau type",
+};
+function tableTypesOk() { const fb = window.ACIA_FB.types_irritants; return !!(fb && fb.statut === "ok" && fb.docs.length); }
+// Tous les types de la table (actifs et désactivés), triés par ordre.
+function typesTable() {
+  if (!tableTypesOk()) return null;
+  return window.ACIA_FB.types_irritants.docs.slice().sort(function (a, b) { return (Number(a.ordre) || 0) - (Number(b.ordre) || 0); });
+}
+// Types de la source « mails » : { code, label, reponse, actif }.
+function typesMail() {
+  const t = typesTable();
+  const liste = t ? t.filter(function (d) { return d.source !== "COMPTES_RENDUS"; }).map(function (d) { return { code: d.id, label: d.titre || d.id, actif: d.actif !== false }; })
+                  : TYPES_MAIL_DEFAUT.map(function (d) { return { code: d.code, label: d.label, actif: true }; });
+  liste.forEach(function (d) { d.reponse = REPONSE_TYPE[d.code] || "À définir par le HRBP"; });
+  return liste;
+}
 const CODES_HORS_IRRITANT = ["AUCUN", "ECARTE"];
 
 function semaineDe(doc) {
@@ -47,6 +78,7 @@ function viewTendances() {
   let derniere = null;
   docs.forEach(function (d) { const t = d.maj && d.maj.toDate ? d.maj.toDate() : null; if (t && (!derniere || t > derniere)) derniere = t; });
 
+  const types = typesMail();
   // Comptage des signaux (irritant principal + secondaire) par type et par semaine.
   const semaines = {}, total = {}, parSem = {}, inconnus = {};
   analyses.forEach(function (d) {
@@ -55,7 +87,7 @@ function viewTendances() {
       c = String(c || "").trim();
       if (!c || CODES_HORS_IRRITANT.indexOf(c) >= 0) return;
       if (i === 1 && c === d.type) return;            // même code deux fois : compté une fois
-      if (!TYPES_MAIL.some(function (t) { return t.code === c; })) { inconnus[c] = (inconnus[c] || 0) + 1; return; }
+      if (!types.some(function (t) { return t.code === c; })) { inconnus[c] = (inconnus[c] || 0) + 1; return; }
       total[c] = (total[c] || 0) + 1;
       parSem[c + "|" + s.cle] = (parSem[c + "|" + s.cle] || 0) + 1;
     });
@@ -63,7 +95,8 @@ function viewTendances() {
   const cols = Object.keys(semaines).map(function (k) { return semaines[k]; }).sort(function (a, b) { return a.ordre - b.ordre; });
   const max = Math.max(1, Math.max.apply(null, Object.keys(parSem).map(function (k) { return parSem[k]; }).concat([0])));
   const maxTot = Math.max(1, Math.max.apply(null, Object.keys(total).map(function (k) { return total[k]; }).concat([0])));
-  const lignes = TYPES_MAIL.slice().sort(function (a, b) { return (total[b.code] || 0) - (total[a.code] || 0); });
+  // Un type désactivé reste affiché tant qu'il a des signaux (historique conservé).
+  const lignes = types.filter(function (t) { return t.actif || total[t.code]; }).sort(function (a, b) { return (total[b.code] || 0) - (total[a.code] || 0); });
 
   const tiles = [
     ["Mails analysés", String(analyses.length), "Depuis la mise en service du classement"],
@@ -77,12 +110,12 @@ function viewTendances() {
 
   const bars = lignes.map(function (t) {
     const v = total[t.code] || 0;
-    return '<div class="bar"><span class="lbl">' + esc(t.label) + '</span><span class="track"><span class="fill" style="display:block;width:' + Math.round(v / maxTot * 100) + '%"></span></span><span class="val">' + v + "</span></div>";
+    return '<div class="bar"><span class="lbl">' + esc(t.label) + (t.actif ? "" : " (désactivé)") + '</span><span class="track"><span class="fill" style="display:block;width:' + Math.round(v / maxTot * 100) + '%"></span></span><span class="val">' + v + "</span></div>";
   }).join("");
 
   const tete = "<tr><th>Irritant</th>" + cols.map(function (c) { return "<th>" + esc(c.label) + "</th>"; }).join("") + "<th>Réponse la plus simple qui suffit</th></tr>";
   const corps = lignes.map(function (t) {
-    return "<tr><td><b>" + esc(t.label) + "</b></td>" + cols.map(function (c) {
+    return "<tr><td><b>" + esc(t.label) + "</b>" + (t.actif ? "" : " <small>(désactivé)</small>") + "</td>" + cols.map(function (c) {
       const v = parSem[t.code + "|" + c.cle] || 0;
       const a = v ? (0.12 + 0.6 * v / max).toFixed(2) : 0;
       return '<td style="text-align:center;font-weight:700;background:rgba(228,0,91,' + a + ')">' + (v || "") + "</td>";

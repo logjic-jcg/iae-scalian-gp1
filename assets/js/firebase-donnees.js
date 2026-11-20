@@ -8,6 +8,7 @@
 //   - decisions_hrbp : décisions du HRBP (lecture + écriture, onglets de pilotage)
 //   - classement_mails : classement horaire de la boîte RH (Make + Claude), onglet HRBP « Tendances »
 //   - comptes_rendus : actions des comptes rendus Notion (Make + Claude), même onglet (v10)
+//   - types_irritants : types d'irritants administrés par le HRBP, lus aussi par Make (v13)
 // Résultat rangé dans window.ACIA_FB[collection] :
 //   { statut: "chargement" | "ok" | "repli", docs: [...], modifies: [ids], erreur, lu }
 // En cas d'échec, statut = "repli" : l'écran garde les données de la maquette.
@@ -46,6 +47,7 @@ if (!config) {
   repli("classement_mails", "Configuration Firebase absente (firebase-config.js).");
   repli("decisions_hrbp", "Configuration Firebase absente (firebase-config.js).");
   repli("comptes_rendus", "Configuration Firebase absente (firebase-config.js).");
+  repli("types_irritants", "Configuration Firebase absente (firebase-config.js).");
 } else {
   try {
     const db = getFirestore(initializeApp(config));
@@ -54,11 +56,20 @@ if (!config) {
     ecouter(db, "classement_mails", query(collection(db, "classement_mails")));
     ecouter(db, "decisions_hrbp", query(collection(db, "decisions_hrbp")));
     ecouter(db, "comptes_rendus", query(collection(db, "comptes_rendus")));
+    ecouter(db, "types_irritants", query(collection(db, "types_irritants"), orderBy("ordre")));
+    // v13 : création ou modification d'un type d'irritant (version C : sans compte,
+    // encadrée par les règles Firestore : champs, longueurs, code figé, pas de suppression).
+    window.aciaEcrireType = function (code, t) {
+      return setDoc(doc(db, "types_irritants", code), {
+        code: code, titre: t.titre, definition: t.definition, exemple: t.exemple,
+        actif: t.actif, ordre: t.ordre, source: t.source, protege: t.protege, maj: serverTimestamp()
+      });
+    };
     // Écriture d'une décision du HRBP (version C : sans compte, encadrée par les règles Firestore).
     window.aciaEcrireDecision = function (code, d) {
       return setDoc(doc(db, "decisions_hrbp", code), {
         statut: d.statut, reponse: d.reponse, commentaire: d.commentaire, semaine_effet: d.semaine_effet, maj: serverTimestamp()
       });
     };
-  } catch (e) { repli("irritants", e); repli("arrivees", e); repli("classement_mails", e); repli("decisions_hrbp", e); repli("comptes_rendus", e); }
+  } catch (e) { repli("irritants", e); repli("arrivees", e); repli("classement_mails", e); repli("decisions_hrbp", e); repli("comptes_rendus", e); repli("types_irritants", e); }
 }
