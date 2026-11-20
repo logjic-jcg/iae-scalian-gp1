@@ -15,7 +15,7 @@ window.ACIA_FB = {
 // Appelée par firebase-donnees.js à chaque changement dans la base.
 function aciaFbMisAJour(nom) {
   if (state.tab === "firebase" || (nom === "arrivees" && state.tab === "arrivees") || ((nom === "classement_mails" || nom === "comptes_rendus") && state.tab === "tendances") ||
-      ((nom === "classement_mails" || nom === "decisions_hrbp") && ["b_orienter", "b_spec", "b_suivre"].indexOf(state.tab) >= 0)) render();
+      ((nom === "classement_mails" || nom === "decisions_hrbp" || nom === "comptes_rendus") && ["b_orienter", "b_spec", "b_suivre"].indexOf(state.tab) >= 0)) render();
 }
 
 // Si le SDK Firebase ne se charge pas du tout (CDN bloqué, hors ligne),

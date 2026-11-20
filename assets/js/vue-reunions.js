@@ -36,7 +36,7 @@ function lireAnalyseCR(texte) {
 
 function carteReunions() {
   const fb = window.ACIA_FB.comptes_rendus;
-  const titre = '<h2 style="margin-top:26px">Actions de réunion qui traînent</h2>';
+  const titre = '<h3 style="margin-top:26px">Comptes rendus de réunion : actions qui traînent</h3>';
   if (!fb || fb.statut !== "ok") {
     const msg = !fb || fb.statut === "chargement" ? "Lecture de Firebase en cours…" : "Données indisponibles : " + fb.erreur;
     return titre + '<div class="card"><p class="note" style="margin:0">' + esc(msg) + "</p>" +
@@ -109,7 +109,7 @@ function carteReunions() {
 
   const abs = Object.keys(absents).sort(function (a, b) { return absents[b] - absents[a]; });
   const blocAbs = abs.length
-    ? '<p style="margin:10px 0 0">' + abs.map(function (s) { return badge("b-violet", s + " : absent ou excusé dans " + absents[s] + " compte(s) rendu(s) sur " + analyses.length); }).join(" ") + "</p>"
+    ? '<p style="margin:10px 0 0">' + abs.map(function (s) { return '<span class="badge b-violet" style="white-space:normal;display:inline-block;max-width:100%">' + esc(s + " : absent ou excusé dans " + absents[s] + " compte(s) rendu(s) sur " + analyses.length) + "</span>"; }).join(" ") + "</p>"
     : '<p class="note">Aucun service signalé absent.</p>';
 
   return titre +

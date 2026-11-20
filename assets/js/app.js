@@ -482,7 +482,7 @@ const ROLES = [
   // v11 : deux HRBP pour ne pas mélanger les données.
   // Julien = uniquement ce qui vient des sources réelles (boîte RH partagée, comptes rendus Notion) via Firebase.
   { id: "hrbp",    nom: "Julien", role: "HRBP", persona: "HRBP",
-    tabs: [["tendances", "Tendances de la boîte"], ["b_orienter", "Valider et orienter"], ["b_spec", "Spécifications"], ["b_suivre", "Suivi des réponses"]] },
+    tabs: [["tendances", "Tendances des irritants"], ["b_orienter", "Valider et orienter"], ["b_spec", "Spécifications"], ["b_suivre", "Suivi des réponses"]] },
   // HRBP de démo = uniquement les écrans scénarisés de la maquette (données fictives écrites dans le code).
   { id: "hrbp_demo", nom: "HRBP de démo", role: "HRBP", persona: "HRBP",
     tabs: [["registre", "Registre RH"], ["orienter", "Valider et orienter"], ["spec", "Spécifications"], ["suivre", "Suivi des réponses"], ["firebase", "Données Firebase"]] },

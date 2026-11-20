@@ -31,7 +31,9 @@ function semaineDe(doc) {
 
 function viewTendances() {
   const fb = window.ACIA_FB.classement_mails;
-  const entete = "<h2>Tendances de la boîte RH partagée</h2>";
+  const entete = "<h2>Tendances des irritants</h2>" +
+    '<p class="note" style="margin:-4px 0 12px">Sources : boîte RH partagée (mails) · comptes rendus de réunion (Notion). Les deux sont lues automatiquement par Make + Claude ; rien n\'est saisi à la main.</p>' +
+    '<h3 style="margin-top:4px">Boîte RH partagée</h3>';
   if (!fb || fb.statut !== "ok") {
     const msg = !fb || fb.statut === "chargement" ? "Lecture de Firebase en cours…" : "Données indisponibles : " + fb.erreur;
     return entete + '<div class="card"><p class="note" style="margin:0">' + esc(msg) + "</p>" +

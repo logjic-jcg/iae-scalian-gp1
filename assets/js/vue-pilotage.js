@@ -3,6 +3,7 @@
 // Suivi des réponses
 // ---------------------------------------------------------------------------
 // Lit  : classement_mails (écrit toutes les heures par Make + Claude)
+//        comptes_rendus   (v12 : actions des comptes rendus Notion, 8e irritant)
 //        decisions_hrbp   (écrit par cet écran, un document par irritant)
 // Écrit: decisions_hrbp/{CODE} = { statut, reponse, commentaire, semaine_effet, maj }
 // Version C (provisoire) : écriture sans compte, encadrée par les règles
@@ -46,11 +47,22 @@ const PILOTAGE = {
     sorties: "Réponse automatique d'accusé de réception.",
     workflow: ["Mail avec pièces jointes reçu", "Réponse automatique standard", "Aucune IA : règle de messagerie"],
     indicateur: "Pièces renvoyées par semaine" },
+  ACTIONS_NON_FERMEES: { reco: "SIMPLIFIER",
+    action: "Modèle de compte rendu avec un tableau d'actions (responsable, échéance, statut), repris en tête du compte rendu suivant, diffusé le jour même.",
+    besoin: "Chaque action de réunion a un responsable et une échéance, et son statut est repris à la réunion suivante.",
+    entrees: "Notes de réunion tapées (jamais d'enregistrement) ; tableau d'actions du compte rendu précédent.",
+    sorties: "Brouillon de compte rendu avec le tableau d'actions pré-rempli ; liste des actions sans responsable.",
+    workflow: ["L'animateur tape ses notes", "L'assistant reprend les actions ouvertes du compte rendu précédent", "Il signale les actions sans responsable ni échéance", "L'animateur relit et diffuse le jour même"],
+    indicateur: "Actions reportées ou sans responsable par semaine (comptes rendus)" },
   DOC_DISPERSEE: { reco: "SIMPLIFIER",
     action: "Page de référence unique, une seule version par document, un responsable nommé.", indicateur: "Signaux « documentation dispersée » par semaine" },
 };
 
-function libelleType(code) { const t = TYPES_MAIL.find(function (x) { return x.code === code; }); return t ? t.label : code; }
+// Les 7 irritants des mails + l'irritant des comptes rendus.
+const CODE_CR = "ACTIONS_NON_FERMEES";
+const TYPES_PILOTAGE = TYPES_MAIL.concat([{ code: CODE_CR, label: "Actions de réunion jamais fermées", reponse: "Simplifier : modèle de compte rendu avec tableau d'actions" }]);
+function sourceDe(code) { return code === CODE_CR ? "dans les comptes rendus de réunion" : "dans la boîte partagée"; }
+function libelleType(code) { const t = TYPES_PILOTAGE.find(function (x) { return x.code === code; }); return t ? t.label : code; }
 function libStatut(id) { const s = STATUTS_HRBP.find(function (x) { return x.id === id; }); return s || { label: "Sans décision", cls: "b-sky" }; }
 function libReponse(id) { const r = REPONSES_HRBP.find(function (x) { return x.id === id; }); return r ? r.label : "—"; }
 
@@ -59,7 +71,7 @@ function aciaSignaux() {
   const fb = window.ACIA_FB.classement_mails;
   const res = { ok: fb && fb.statut === "ok", erreur: fb ? fb.erreur : "", parCode: {}, semMax: 0 };
   if (!res.ok) return res;
-  TYPES_MAIL.forEach(function (t) { res.parCode[t.code] = { total: 0, parSem: {}, reels: [] }; });
+  TYPES_PILOTAGE.forEach(function (t) { res.parCode[t.code] = { total: 0, parSem: {}, reels: [], semMax: 0 }; });
   fb.docs.forEach(function (d) {
     if (d.type === "ECARTE") return;
     const m = /^J(\d+)$/.exec(String(d.jour_fictif || "").trim());
@@ -74,7 +86,30 @@ function aciaSignaux() {
       if (s) p.parSem[s] = (p.parSem[s] || 0) + 1; else if (recu) p.reels.push(recu);
     });
   });
+  TYPES_MAIL.forEach(function (t) { res.parCode[t.code].semMax = res.semMax; });
+  signauxComptesRendus(res.parCode[CODE_CR]);
   return res;
+}
+// Comptes rendus : un signal = une action reportée, ou ouverte sans responsable, dans un compte rendu.
+// Semaine = semaine fictive de la réunion. Chaque source garde sa propre « dernière semaine observée ».
+function signauxComptesRendus(p) {
+  const fb = window.ACIA_FB.comptes_rendus;
+  p.disponible = !!(fb && fb.statut === "ok");
+  if (!p.disponible || typeof lireAnalyseCR !== "function") return;
+  const vus = {};
+  fb.docs.filter(function (d) { return d.statut === "ANALYSE" || d.statut === "ECARTE"; })
+    .sort(function (a, b) { return (Number(a.jour_reunion) || 0) - (Number(b.jour_reunion) || 0); })
+    .forEach(function (cr) {
+      const s = Math.ceil((Number(cr.jour_reunion) || 0) / 7);
+      if (s > p.semMax) p.semMax = s;
+      if (cr.statut !== "ANALYSE") return;
+      lireAnalyseCR(cr.analyse).actions.forEach(function (x) {
+        let st = x.statut;
+        if (st === "NOUVELLE" && vus[x.libelle]) st = "REPORTEE";
+        vus[x.libelle] = true;
+        if (st === "REPORTEE" || (st !== "FERMEE" && !x.resp)) { p.total += 1; p.parSem[s] = (p.parSem[s] || 0) + 1; }
+      });
+    });
 }
 function decisionDe(code) {
   const fb = window.ACIA_FB.decisions_hrbp;
@@ -82,7 +117,7 @@ function decisionDe(code) {
   return fb.docs.find(function (d) { return d.id === code; }) || null;
 }
 // « À examiner » : au moins 3 signaux sur les 2 dernières semaines observées.
-function aExaminer(p, semMax) { return ((p.parSem[semMax] || 0) + (p.parSem[semMax - 1] || 0)) >= 3; }
+function aExaminer(p) { const m = p.semMax; return ((p.parSem[m] || 0) + (p.parSem[m - 1] || 0)) >= 3; }
 
 function messageSansBase(titre, sig) {
   const msg = window.ACIA_FB.classement_mails.statut === "chargement" ? "Lecture de Firebase en cours…" : "Données indisponibles : " + sig.erreur;
@@ -108,9 +143,9 @@ function enregistrerDecision(code) {
   if (!(data.semaine_effet >= 1 && data.semaine_effet <= 53)) { state.msgPilot = "Semaine d'effet invalide (1 à 53)."; render(); return; }
   // Pas d'effet rétroactif : une décision prise aujourd'hui ne s'applique qu'aux semaines à venir
   // (sinon le suivi « avant / après » mesurerait une baisse qui précède la décision).
-  const sig = aciaSignaux(), avant = decisionDe(code);
-  if (data.semaine_effet <= sig.semMax && !(avant && avant.semaine_effet === data.semaine_effet)) {
-    state.msgPilot = "La semaine d'effet doit être postérieure à la dernière semaine observée (S" + sig.semMax + ") : pas de décision rétroactive."; render(); return;
+  const sig = aciaSignaux(), avant = decisionDe(code), semMax = sig.parCode[code] ? sig.parCode[code].semMax : sig.semMax;
+  if (data.semaine_effet <= semMax && !(avant && avant.semaine_effet === data.semaine_effet)) {
+    state.msgPilot = "La semaine d'effet doit être postérieure à la dernière semaine observée (S" + semMax + ") : pas de décision rétroactive."; render(); return;
   }
   if (typeof window.aciaEcrireDecision !== "function") { state.msgPilot = "Écriture impossible : connexion à Firebase absente."; render(); return; }
   state.msgPilot = "Enregistrement…"; render();
@@ -121,7 +156,7 @@ function enregistrerDecision(code) {
 function viewPilotOrienter() {
   const sig = aciaSignaux();
   if (!sig.ok) return messageSansBase("Valider et orienter", sig);
-  const codes = TYPES_MAIL.map(function (t) { return t.code; }).sort(function (a, b) { return sig.parCode[b].total - sig.parCode[a].total; });
+  const codes = TYPES_PILOTAGE.map(function (t) { return t.code; }).sort(function (a, b) { return sig.parCode[b].total - sig.parCode[a].total; });
   if (codes.indexOf(state.selPilot) < 0) state.selPilot = codes[0];
 
   const picks = codes.map(function (c) {
@@ -129,7 +164,7 @@ function viewPilotOrienter() {
     return '<button class="pick' + (state.selPilot === c ? " selected" : "") + '" onclick="selPilot(\'' + c + '\')">' +
       '<div style="font-weight:700;font-size:14px">' + esc(libelleType(c)) + "</div>" +
       '<div class="psub">' + p.total + " signal(s) · " + esc(st.label) + (d ? " · " + esc(libReponse(d.reponse)) : "") +
-      (aExaminer(p, sig.semMax) ? " · à examiner" : "") + "</div></button>";
+      (aExaminer(p) ? " · à examiner" : "") + "</div></button>";
   }).join("");
 
   const c = state.selPilot, p = sig.parCode[c], d = decisionDe(c), conf = PILOTAGE[c];
@@ -137,12 +172,13 @@ function viewPilotOrienter() {
   const detailSem = semaines.length ? semaines.map(function (s) { return "S" + s + " : " + p.parSem[s]; }).join(" · ") : "aucun signal daté";
   const reco = conf.reco;
   const opt = function (list, val) { return list.map(function (x) { return '<option value="' + x.id + '"' + (x.id === val ? " selected" : "") + ">" + esc(x.label) + "</option>"; }).join(""); };
-  const semDefaut = d && d.semaine_effet ? d.semaine_effet : sig.semMax + 1;
+  const semDefaut = d && d.semaine_effet ? d.semaine_effet : p.semMax + 1;
 
   const right = '<div class="card">' +
     "<div class='spechead'>Ce que dit la base</div><div class='spech3'>" + esc(libelleType(c)) + "</div>" +
-    '<p style="margin-top:8px;font-size:14px"><b>' + p.total + " signal(s)</b> dans la boîte partagée (" + esc(detailSem) + (p.reels.length ? " · " + p.reels.length + " mail(s) réel(s)" : "") + ").</p>" +
-    (aExaminer(p, sig.semMax) ? '<p style="margin-top:4px">' + badge("b-rose", "À examiner : 3 signaux ou plus sur les 2 dernières semaines") + "</p>" : "") +
+    '<p style="margin-top:8px;font-size:14px"><b>' + p.total + " signal(s)</b> " + esc(sourceDe(c)) + " (" + esc(detailSem) + (p.reels.length ? " · " + p.reels.length + " mail(s) réel(s)" : "") + ").</p>" +
+    (c === CODE_CR && !p.disponible ? '<p class="note">Comptes rendus indisponibles dans la base : compteur à zéro par défaut.</p>' : "") +
+    (aExaminer(p) ? '<p style="margin-top:4px">' + badge("b-rose", "À examiner : 3 signaux ou plus sur les 2 dernières semaines") + "</p>" : "") +
     '<p style="margin-top:10px;font-size:14px"><b>Proposition de l\'assistant :</b> ' + esc(libReponse(reco)) + (conf.action ? " : " + esc(conf.action) : "") + "</p>" +
     '<p class="note">Grille du livrable 01 : la réponse la plus simple qui suffit. Un agent seulement si la tâche demande du jugement ou de la rédaction.</p></div>' +
     '<div class="card" style="margin-top:16px;border-color:#fde68a;background:#fffbeb"><div class="spechead" style="color:#b45309">Décision du HRBP</div>' +
@@ -150,7 +186,7 @@ function viewPilotOrienter() {
         " · effet en semaine " + esc(d.semaine_effet) + (d.maj && d.maj.toDate ? " · enregistrée le " + esc(d.maj.toDate().toLocaleString("fr-FR")) : "") + "</p>" : '<p class="note">Aucune décision enregistrée pour cet irritant.</p>') +
       '<label class="fl">Statut<select id="dp-statut">' + opt(STATUTS_HRBP, d ? d.statut : "VALIDE") + "</select></label>" +
       '<label class="fl">Réponse retenue<select id="dp-reponse">' + opt(REPONSES_HRBP, d ? d.reponse : reco) + "</select></label>" +
-      '<label class="fl">Semaine à partir de laquelle la réponse s\'applique<input id="dp-sem" type="number" min="' + (sig.semMax + 1) + '" max="53" value="' + esc(semDefaut) + '"></label>' +
+      '<label class="fl">Semaine à partir de laquelle la réponse s\'applique<input id="dp-sem" type="number" min="' + (p.semMax + 1) + '" max="53" value="' + esc(semDefaut) + '"></label>' +
       '<label class="fl">Commentaire (280 caractères maximum, sans nom de personne)<input id="dp-comm" maxlength="280" value="' + esc(d && d.commentaire ? d.commentaire : "") + '"></label>' +
       '<div class="btns" style="margin-top:12px"><button class="btn ok" onclick="enregistrerDecision(\'' + c + '\')">Enregistrer la décision</button></div>' +
       (state.msgPilot ? '<p class="note">' + esc(state.msgPilot) + "</p>" : "") +
@@ -165,7 +201,7 @@ function viewPilotOrienter() {
 function viewPilotSpec() {
   const sig = aciaSignaux();
   if (!sig.ok) return messageSansBase("Spécifications", sig);
-  const valides = TYPES_MAIL.map(function (t) { return t.code; }).filter(function (c) { const d = decisionDe(c); return d && d.statut === "VALIDE"; });
+  const valides = TYPES_PILOTAGE.map(function (t) { return t.code; }).filter(function (c) { const d = decisionDe(c); return d && d.statut === "VALIDE"; });
   if (!valides.length) {
     return "<h2>Spécifications</h2>" + bandeauVersionC() + '<div class="card"><p style="font-size:14px;margin:0">Aucun irritant validé pour l\'instant.</p><p class="note">Une fiche n\'est produite qu\'après une décision « validé » du HRBP, dans l\'onglet « Valider et orienter ».</p></div>';
   }
@@ -184,12 +220,12 @@ function viewPilotSpec() {
     return '<div class="card" style="margin-top:12px"><div class="spechead">Fiche générée à partir de la base · ' + esc(libReponse(d.reponse)) + '</div><div class="spech3">' + esc(libelleType(c)) + "</div>" +
       '<table style="margin-top:8px;font-size:13px"><tbody>' +
       ligne("Besoin métier", esc(besoin)) +
-      ligne("Signal observé", p.total + " signal(s) dans la boîte partagée" + (semaines.length ? " (semaines " + semaines.join(", ") + ")" : "") + ".") +
+      ligne("Signal observé", p.total + " signal(s) " + sourceDe(c) + (semaines.length ? " (semaines " + semaines.join(", ") + ")" : "") + ".") +
       ligne("Entrées", esc(conf.entrees || "À définir")) +
       ligne("Sorties", esc(conf.sorties || "À définir")) +
       ligne("Workflow", workflow) +
       ligne("Niveau d'autonomie", esc(autonomie)) +
-      ligne("Garde-fous", "Aucun mail confidentiel traité ; aucune donnée sur une personne ; rien n'est envoyé sans validation humaine.") +
+      ligne("Garde-fous", "Aucun mail ni compte rendu confidentiel traité ; aucune donnée sur une personne ; rien n'est envoyé sans validation humaine.") +
       ligne("Indicateur de suivi", esc(conf.indicateur) + ", mesuré dans l'onglet « Suivi des réponses ».") +
       ligne("Décision", "Effet à partir de la semaine " + esc(d.semaine_effet) + (d.commentaire ? " · « " + esc(d.commentaire) + " »" : "")) +
       "</tbody></table></div>";
@@ -203,14 +239,15 @@ function viewPilotSpec() {
 function viewPilotSuivre() {
   const sig = aciaSignaux();
   if (!sig.ok) return messageSansBase("Suivi des réponses", sig);
-  const suivis = TYPES_MAIL.map(function (t) { return t.code; }).filter(function (c) { const d = decisionDe(c); return d && d.statut !== "ECARTE"; });
+  const suivis = TYPES_PILOTAGE.map(function (t) { return t.code; }).filter(function (c) { const d = decisionDe(c); return d && d.statut !== "ECARTE"; });
   if (!suivis.length) {
     return "<h2>Suivi des réponses</h2>" + bandeauVersionC() + '<div class="card"><p style="font-size:14px;margin:0">Aucune décision à suivre pour l\'instant.</p><p class="note">Le suivi compare les signaux avant et après la semaine d\'effet de chaque décision.</p></div>';
   }
   const cartes = suivis.map(function (c) {
     const d = decisionDe(c), p = sig.parCode[c], se = Number(d.semaine_effet) || 0;
-    const semaines = []; for (let s = 1; s <= Math.max(sig.semMax, se); s++) semaines.push(s);
-    const av = semaines.filter(function (s) { return s < se; }), ap = semaines.filter(function (s) { return s >= se && s <= sig.semMax; });
+    const semMax = p.semMax;
+    const semaines = []; for (let s = 1; s <= Math.max(semMax, se); s++) semaines.push(s);
+    const av = semaines.filter(function (s) { return s < se; }), ap = semaines.filter(function (s) { return s >= se && s <= semMax; });
     const somme = function (l) { return l.reduce(function (t, s) { return t + (p.parSem[s] || 0); }, 0); };
     const mAv = av.length ? somme(av) / av.length : null, mAp = ap.length ? somme(ap) / ap.length : null;
     let verdict;
@@ -224,7 +261,7 @@ function viewPilotSuivre() {
     const fmt = function (m) { return m === null ? "—" : (Math.round(m * 10) / 10).toString().replace(".", ","); };
     const cases = semaines.map(function (s) {
       const v = p.parSem[s] || 0, apres = s >= se;
-      return '<td style="text-align:center;padding:4px 6px;font-weight:700;' + (apres ? "background:#ecfdf5" : "") + '">' + (s > sig.semMax ? "·" : v) + '<br><small style="font-weight:400;color:#64748b">S' + s + "</small></td>";
+      return '<td style="text-align:center;padding:4px 6px;font-weight:700;' + (apres ? "background:#ecfdf5" : "") + '">' + (s > semMax ? "·" : v) + '<br><small style="font-weight:400;color:#64748b">S' + s + "</small></td>";
     }).join("");
     return '<div class="card" style="margin:0"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap">' +
       '<div class="irrtitle">' + esc(libelleType(c)) + "</div>" + verdict + "</div>" +
@@ -235,5 +272,5 @@ function viewPilotSuivre() {
   }).join("");
   return "<h2>Suivi des réponses</h2>" + bandeauVersionC() +
     '<div class="row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">' + cartes + "</div>" +
-    '<p class="note">Mesure réelle, tirée des mails classés : signaux par semaine avant et après la semaine d\'effet (fond vert). « En baisse » = au moins 20 % de moins en moyenne. Peu de semaines = conclusion fragile : à lire comme une tendance, pas comme une preuve.</p>';
+    '<p class="note">Mesure réelle, tirée des mails classés et des comptes rendus analysés : signaux par semaine avant et après la semaine d\'effet (fond vert). « En baisse » = au moins 20 % de moins en moyenne. Peu de semaines = conclusion fragile : à lire comme une tendance, pas comme une preuve.</p>';
 }
