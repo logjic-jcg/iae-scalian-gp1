@@ -15,11 +15,16 @@ function majBouton() { $("lg-go").disabled = !($("lg-id").value.trim() && $("lg-
 function attente(oui) { $("lg-go").disabled = oui; $("lg-go").textContent = oui ? "Connexion…" : "Se connecter"; }
 
 // Lit la fiche de l'utilisateur connecté et ouvre l'application, ou refuse.
+// DIAGNOSTIC TEMPORAIRE (v15-diag) : messages précis pour trouver ce qui bloque.
+// À retirer ensuite : en temps normal, on ne dit pas lequel des deux est faux.
+const DIAG = true;
 async function entrer(user) {
   let fiche = null;
   try { fiche = await ficheUtilisateur(user); }
   catch (e) { await deconnecter(); erreur("Lecture de la table des utilisateurs impossible (" + ((e && e.code) || e) + ")."); return false; }
-  if (!fiche || !ACIA_AUTH.ouvrir(fiche)) { await deconnecter(); erreur(MSG_REFUS); return false; }
+  if (!fiche) { await deconnecter(); erreur(DIAG ? "[diag v15] Mot de passe OK, mais aucune fiche « utilisateurs/" + (user.email || "").split("@")[0] + " » dans la base." : MSG_REFUS); return false; }
+  if (typeof ACIA_AUTH.ouvrir !== "function") { await deconnecter(); erreur("[diag v15] Mot de passe OK, fiche trouvée, mais auth.js est une ANCIENNE version (cache du navigateur ou fichier non déposé)."); return false; }
+  if (!ACIA_AUTH.ouvrir(fiche)) { await deconnecter(); erreur(DIAG ? "[diag v15] Mot de passe OK, fiche trouvée, mais profil non reconnu : « " + fiche.Profil + " » / ModeDemo « " + fiche.ModeDemo + " »." : MSG_REFUS); return false; }
   return true;
 }
 
@@ -32,7 +37,7 @@ async function seConnecter(ev) {
   try {
     const cred = await connecter(id, mdp);
     if (await entrer(cred.user)) return;
-  } catch (e) { erreur(messageErreur(e)); }
+  } catch (e) { erreur(DIAG ? "[diag v15] Refus de Firebase sur le mot de passe : " + ((e && e.code) || (e && e.message) || e) + " (compte " + id.toLowerCase() + "@example.com, " + mdp.length + " caractères saisis)." : messageErreur(e)); }
   attente(false); majBouton();
 }
 
