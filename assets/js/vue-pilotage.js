@@ -148,6 +148,34 @@ state.selPilot = state.selPilot || "ANNONCE_INCOMPLETE";
 state.msgPilot = "";
 function selPilot(code) { state.selPilot = code; state.msgPilot = ""; render(); }
 
+// v13 : filtre de la liste par statut de décision.
+const FILTRES_PILOT = [
+  { id: "TOUS",         label: "Tous",          test: function () { return true; } },
+  { id: "SANS",         label: "Sans décision", test: function (d) { return !d; } },
+  { id: "VALIDE",       label: "Validé",        test: function (d) { return !!d && d.statut === "VALIDE"; } },
+  { id: "A_SURVEILLER", label: "À surveiller",  test: function (d) { return !!d && d.statut === "A_SURVEILLER"; } },
+  { id: "ECARTE",       label: "Écarté",        test: function (d) { return !!d && d.statut === "ECARTE"; } },
+  { id: "EXAMINER",     label: "À examiner",    test: function (d, p) { return aExaminer(p); } },
+];
+state.filtrePilot = state.filtrePilot || "TOUS";
+function filtrePilot(id) { state.filtrePilot = id; state.msgPilot = ""; render(); }
+
+// v13 : indicateur en anneau du nombre de signaux d'un type.
+// Remplissage = total / total du type le plus signalé. Couleur = activité récente
+// (2 dernières semaines observées) : rouge >= 3 (seuil « à examiner »), orange 1-2,
+// vert 0 récent, gris aucun signal du tout.
+function anneauSignaux(p, maxTot) {
+  const recents = (p.parSem[p.semMax] || 0) + (p.parSem[p.semMax - 1] || 0);
+  const coul = !p.total ? "#94a3b8" : recents >= 3 ? "#e11d48" : recents >= 1 ? "#d97706" : "#059669";
+  const r = 19, L = 2 * Math.PI * r, part = p.total ? Math.max(0.06, p.total / maxTot) : 0;
+  const titre = p.total + " signal(s) au total, dont " + recents + " sur les 2 dernières semaines observées";
+  return '<span title="' + esc(titre) + '" style="flex:0 0 auto;display:inline-block;width:46px;height:46px;background:#fff;border-radius:50%">' +
+    '<svg viewBox="0 0 46 46" width="46" height="46" role="img" aria-label="' + esc(titre) + '">' +
+    '<circle cx="23" cy="23" r="' + r + '" fill="none" stroke="#f1f5f9" stroke-width="4"/>' +
+    '<circle cx="23" cy="23" r="' + r + '" fill="none" stroke="' + coul + '" stroke-width="4" stroke-linecap="round" transform="rotate(-90 23 23)" stroke-dasharray="' + (L * part).toFixed(1) + " " + L.toFixed(1) + '"/>' +
+    '<text x="23" y="23" text-anchor="middle" dominant-baseline="central" font-size="15" font-weight="800" fill="' + coul + '">' + p.total + "</text></svg></span>";
+}
+
 function enregistrerDecision(code) {
   const v = function (id) { const el = document.getElementById(id); return el ? el.value : ""; };
   const data = { statut: v("dp-statut"), reponse: v("dp-reponse"), commentaire: v("dp-comm").slice(0, 280), semaine_effet: parseInt(v("dp-sem"), 10) };
@@ -167,16 +195,28 @@ function enregistrerDecision(code) {
 function viewPilotOrienter() {
   const sig = aciaSignaux();
   if (!sig.ok) return messageSansBase("Valider et orienter", sig);
-  const codes = typesPilotage().filter(function (t) { return t.actif || sig.parCode[t.code].total || decisionDe(t.code); }).map(function (t) { return t.code; }).sort(function (a, b) { return sig.parCode[b].total - sig.parCode[a].total; });
-  if (codes.indexOf(state.selPilot) < 0) state.selPilot = codes[0];
+  const tous = typesPilotage().filter(function (t) { return t.actif || sig.parCode[t.code].total || decisionDe(t.code); }).map(function (t) { return t.code; }).sort(function (a, b) { return sig.parCode[b].total - sig.parCode[a].total; });
+  // v13 : filtre par statut de décision (ou « à examiner »).
+  const filtre = FILTRES_PILOT.find(function (f) { return f.id === state.filtrePilot; }) || FILTRES_PILOT[0];
+  const passe = function (f, c) { return f.test(decisionDe(c), sig.parCode[c]); };
+  const codes = tous.filter(function (c) { return passe(filtre, c); });
+  if (codes.length && codes.indexOf(state.selPilot) < 0) state.selPilot = codes[0];
+  const chips = '<div class="chips" style="margin:0 0 10px">' + FILTRES_PILOT.map(function (f) {
+    const n = tous.filter(function (c) { return passe(f, c); }).length;
+    return '<button class="chip' + (f.id === filtre.id ? " active" : "") + '" onclick="filtrePilot(\'' + f.id + '\')">' + esc(f.label) + " (" + n + ")</button>";
+  }).join("") + "</div>";
+  const maxTot = Math.max(1, Math.max.apply(null, tous.map(function (c) { return sig.parCode[c].total; })));
 
   const picks = codes.map(function (c) {
     const p = sig.parCode[c], d = decisionDe(c), st = libStatut(d && d.statut);
-    return '<button class="pick' + (state.selPilot === c ? " selected" : "") + '" onclick="selPilot(\'' + c + '\')">' +
+    return '<button class="pick' + (state.selPilot === c ? " selected" : "") + '" onclick="selPilot(\'' + c + '\')" style="display:flex;gap:12px;align-items:center">' +
+      anneauSignaux(p, maxTot) + '<div style="min-width:0">' +
       '<div style="font-weight:700;font-size:14px">' + esc(libelleType(c)) + (actifType(c) ? "" : " (désactivé)") + "</div>" +
-      '<div class="psub">' + p.total + " signal(s) · " + esc(st.label) + (d ? " · " + esc(libReponse(d.reponse)) : "") +
-      (aExaminer(p) ? " · à examiner" : "") + "</div></button>";
-  }).join("");
+      '<div class="psub">' + esc(st.label) + (d ? " · " + esc(libReponse(d.reponse)) : "") +
+      (aExaminer(p) ? " · à examiner" : "") + "</div></div></button>";
+  }).join("") || '<div class="card"><p class="note" style="margin:0">Aucune catégorie avec ce statut.</p></div>';
+  const legende = '<p class="note" style="margin-top:10px">Anneau : nombre total de signaux, rempli en proportion du type le plus signalé. Couleur selon les 2 dernières semaines observées : ' +
+    '<b style="color:#e11d48">rouge</b> 3 signaux ou plus (à examiner) · <b style="color:#d97706">orange</b> 1 ou 2 · <b style="color:#059669">vert</b> aucun récent · <b style="color:#94a3b8">gris</b> aucun signal.</p>';
 
   const c = state.selPilot, p = sig.parCode[c], d = decisionDe(c), conf = confDe(c);
   const semaines = Object.keys(p.parSem).map(Number).sort(function (a, b) { return a - b; });
@@ -203,8 +243,11 @@ function viewPilotOrienter() {
       (state.msgPilot ? '<p class="note">' + esc(state.msgPilot) + "</p>" : "") +
       '<p class="note">La décision porte sur un processus, jamais sur une personne. Sans décision « validé », aucune fiche n\'est produite.</p></div>';
 
-  return "<h2>Valider et orienter</h2>" + bandeauVersionC() +
-    '<div class="row c-1-2"><div>' + picks + "</div><div>" + right + "</div></div>";
+  if (!codes.length) {
+    return "<h2>Valider et orienter</h2>" + bandeauVersionC() + chips + '<div class="row c-1-2"><div>' + picks + legende + "</div><div></div></div>";
+  }
+  return "<h2>Valider et orienter</h2>" + bandeauVersionC() + chips +
+    '<div class="row c-1-2"><div>' + picks + legende + "</div><div>" + right + "</div></div>";
 }
 
 // ------------------------------ SPÉCIFICATIONS -----------------------------
