@@ -21,6 +21,14 @@ const CODES_RESERVES = ["AUCUN", "ECARTE", "AUTRE", "FILTRE", "NA"];
 state.selType = state.selType || null;     // code du type affiché, ou "_nouveau"
 state.brType = state.brType || null;       // brouillon du formulaire (survit aux mises à jour en direct)
 state.msgType = "";
+// Filtre de la liste : tous, actifs, désactivés.
+const FILTRES_TYPES = [
+  { id: "TOUS",   label: "Tous",        test: function () { return true; } },
+  { id: "ACTIFS", label: "Actifs",      test: function (d) { return d.actif !== false; } },
+  { id: "INACTIFS", label: "Désactivés", test: function (d) { return d.actif === false; } },
+];
+state.filtreType = state.filtreType || "TOUS";
+function filtreType(id) { state.filtreType = id; state.selType = null; state.brType = null; state.msgType = ""; render(); }
 
 // Code stable fabriqué à partir du titre : majuscules, sans accent, mots séparés par « _ ».
 function codeDepuisTitre(titre) {
@@ -96,8 +104,11 @@ function viewTypesIrritants() {
     return titre + '<div class="card"><p class="note" style="margin:0">' + esc(msg) + '</p><p class="note">La liste des types n\'est affichée que depuis la base.</p></div>';
   }
   const types = typesTable() || [];
-  if (!state.selType || (state.selType !== "_nouveau" && !types.some(function (d) { return d.id === state.selType; }))) {
-    if (!types.length) { state.selType = "_nouveau"; } else { selTypeSansRendu(types[0].id); }
+  // Filtre actif / désactivé.
+  const filtre = FILTRES_TYPES.find(function (f) { return f.id === state.filtreType; }) || FILTRES_TYPES[0];
+  const visibles = types.filter(filtre.test);
+  if (!state.selType || (state.selType !== "_nouveau" && !visibles.some(function (d) { return d.id === state.selType; }))) {
+    if (!visibles.length) { selTypeSansRendu("_nouveau"); } else { selTypeSansRendu(visibles[0].id); }
   }
   if (!state.brType) selTypeSansRendu(state.selType);
 
@@ -105,7 +116,10 @@ function viewTypesIrritants() {
   const entete = '<p class="note" style="margin:-4px 0 12px">' + badge("b-emerald", "● Firebase, en direct") + " " + actifs + " type(s) actif(s) sur " + types.length +
     ". L'IA du classement relit cette liste à chaque passage (toutes les heures) : une modification vaut pour les <b>prochains</b> mails, pas pour ceux déjà classés.</p>";
 
-  const picks = types.map(function (d) {
+  const chips = '<div class="chips" style="margin:0 0 10px">' + FILTRES_TYPES.map(function (f) {
+    return '<button class="chip' + (f.id === filtre.id ? " active" : "") + '" onclick="filtreType(\'' + f.id + '\')">' + esc(f.label) + " (" + types.filter(f.test).length + ")</button>";
+  }).join("") + "</div>";
+  const picks = (visibles.length ? "" : '<div class="card" style="margin-bottom:8px"><p class="note" style="margin:0">Aucun type dans ce filtre.</p></div>') + visibles.map(function (d) {
     const etat = d.actif === false ? "désactivé" : "actif";
     return '<button class="pick' + (state.selType === d.id ? " selected" : "") + '" onclick="selType(\'' + esc(d.id) + '\')">' +
       '<div style="font-weight:700;font-size:14px">' + esc(d.titre || d.id) + (d.actif === false ? " (désactivé)" : "") + "</div>" +
@@ -135,7 +149,7 @@ function viewTypesIrritants() {
     (d && d.source === "COMPTES_RENDUS" ? "Ce type est détecté dans les comptes rendus Notion par un autre scénario : sa définition sert de référence, elle n'est pas donnée à l'IA du classement des mails." :
       "Un mail que l'IA ne sait pas ranger va dans « Autre ».") + "</p></div>";
 
-  return titre + entete + '<p class="note" style="margin:0 0 12px">Version provisoire : enregistrement sans compte, limité par les règles de la base (champs, longueurs, code figé, aucune suppression). Passage en connexion prévu avant le jury.</p>' + '<div class="row c-1-2"><div>' + picks + "</div><div>" + right + "</div></div>" +
+  return titre + entete + '<p class="note" style="margin:0 0 12px">Version provisoire : enregistrement sans compte, limité par les règles de la base (champs, longueurs, code figé, aucune suppression). Passage en connexion prévu avant le jury.</p>' + chips + '<div class="row c-1-2"><div>' + picks + "</div><div>" + right + "</div></div>" +
     '<p class="note">Un type décrit une étape du processus, jamais une personne ni une équipe.</p>';
 }
 // Sélection sans redessiner (appelée pendant le rendu).
