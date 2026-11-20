@@ -62,9 +62,10 @@ function semaineDe(doc) {
 
 function viewTendances() {
   const fb = window.ACIA_FB.classement_mails;
-  const entete = "<h2>Tendances des irritants</h2>" +
-    '<p class="note" style="margin:-4px 0 12px">Sources : boîte RH partagée (mails) · comptes rendus de réunion (Notion). Les deux sont lues automatiquement par Make + Claude ; rien n\'est saisi à la main.</p>' +
-    '<h3 style="margin-top:4px">Boîte RH partagée</h3>';
+  const entete = "<h2>Fil d'observation : boîte RH et comptes rendus</h2>" +
+    '<p class="note" style="margin:-4px 0 8px">Sources : boîte RH partagée (mails) · comptes rendus de réunion (Notion). Les deux sont lues automatiquement par Make + Claude ; rien n\'est saisi à la main.</p>' +
+    '<p style="margin:0 0 12px;font-size:13px">Aller à : <a href="#" onclick="allerSection(\'sec-mails\');return false">Boîte RH partagée</a> · <a href="#" onclick="allerSection(\'sec-reunions\');return false">Comptes rendus de réunion ↓</a></p>' +
+    '<h3 id="sec-mails" style="margin-top:4px">Boîte RH partagée</h3>';
   if (!fb || fb.statut !== "ok") {
     const msg = !fb || fb.statut === "chargement" ? "Lecture de Firebase en cours…" : "Données indisponibles : " + fb.erreur;
     return entete + '<div class="card"><p class="note" style="margin:0">' + esc(msg) + "</p>" +
@@ -133,4 +134,11 @@ function viewTendances() {
     '<div class="tw" style="margin-top:8px"><table><thead>' + tete + "</thead><tbody>" + corps + "</tbody></table></div>" +
     '<p class="note">Semaines « fictives » : jour du scénario de démo indiqué dans le mail. Les mails réels sont rangés par semaine de réception.</p></div>' +
     '<p class="note">Ce que cet écran ne montre pas, volontairement : aucun mail, aucun expéditeur, aucun objet, aucun nom. La base ne les stocke pas. Classement automatique toutes les heures (lun-sam, 8h-20h) par Claude Haiku via Make ; la confiance est une auto-évaluation de l\'IA, pas une probabilité mesurée.</p>';
+}
+
+// v13 : raccourci vers une section de l'onglet, sous l'en-tête fixe.
+function allerSection(id) {
+  const el = document.getElementById(id); if (!el) return;
+  const h = document.querySelector("header.app"), haut = h && getComputedStyle(h).position !== "static" ? h.offsetHeight : 0;
+  window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - haut - 12, behavior: "smooth" });
 }
