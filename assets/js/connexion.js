@@ -4,9 +4,10 @@
 // Connexion refusée si le compte n'existe pas, si le mot de passe est faux,
 // ou si l'identifiant n'a pas de fiche (ou un profil inconnu) dans la table.
 // ---------------------------------------------------------------------------
-import { auth, utilisateurInitial, connecter, deconnecter, ficheUtilisateur, messageErreur } from "./firebase-session.js";
+import { auth, utilisateurInitial, connecter, deconnecter, ficheUtilisateur, messageErreur } from "./firebase-session.js?v=15diag2";
 
-window.ACIA_CONNEXION_ACTIVE = true;   // le module s'est chargé (voir index.html)
+window.ACIA_CONNEXION_ACTIVE = true;
+{ const v = document.getElementById("lg-version"); if (v) v.textContent += " · connexion v15-diag2"; }   // le module s'est chargé (voir index.html)
 const $ = function (id) { return document.getElementById(id); };
 const MSG_REFUS = "Identifiant ou mot de passe incorrect.";
 

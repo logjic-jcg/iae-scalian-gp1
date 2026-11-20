@@ -32,6 +32,7 @@
       </form>
       <p id="lg-err" class="lg-err" role="alert"></p>
       <p id="lg-attente" class="lg-note">Vérification de la session…</p>
+      <p id="lg-version" class="lg-note" style="opacity:.6">Version de la page : index v15-diag2</p>
       <div id="lg-secours" class="lg-secours" hidden>
         <p>Firebase est injoignable (réseau ou bloqueur). Vous pouvez continuer sur les écrans de démonstration du HRBP, <strong>sans les données de la base</strong>.</p>
         <button type="button" class="lg-btn lg-btn2" onclick="ACIA_AUTH.ouvrirMaquette()">Continuer en mode maquette</button>
@@ -51,6 +52,6 @@
     document.getElementById("lg-secours").hidden = false;
   }, 10000);
 </script>
-<script type="module" src="assets/js/connexion.js"></script>
+<script type="module" src="assets/js/connexion.js?v=15diag2"></script>
 </body>
 </html>
