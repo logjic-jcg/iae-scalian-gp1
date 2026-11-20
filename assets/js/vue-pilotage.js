@@ -252,6 +252,7 @@ function viewPilotOrienter() {
 
 // ------------------------------ SPÉCIFICATIONS -----------------------------
 
+function filtreSpec(id) { state.filtreSpec = id; render(); }
 // v13 : rappel en tête de page de ce qui est affiché.
 function aideSpec() {
   return '<p class="note" style="margin:0 0 12px"><b>Ce qui apparaît ici :</b> les irritants au statut « Validé » dans « Valider et orienter ». ' +
@@ -266,7 +267,14 @@ function viewPilotSpec() {
   if (!valides.length) {
     return "<h2>Spécifications</h2>" + bandeauVersionC() + aideSpec() + '<div class="card"><p style="font-size:14px;margin:0">Aucun irritant validé pour l\'instant.</p><p class="note">Une fiche n\'est produite qu\'après une décision « validé » du HRBP, dans l\'onglet « Valider et orienter ».</p></div>';
   }
-  const fiches = valides.map(function (c) {
+  // v13 : filtre par réponse retenue.
+  const fRep = state.filtreSpec || "TOUS";
+  const visibles = valides.filter(function (c) { return fRep === "TOUS" || decisionDe(c).reponse === fRep; });
+  const chips = '<div class="chips" style="margin:0 0 4px">' + [{ id: "TOUS", label: "Toutes" }].concat(REPONSES_HRBP).map(function (r) {
+    const n = r.id === "TOUS" ? valides.length : valides.filter(function (c) { return decisionDe(c).reponse === r.id; }).length;
+    return '<button class="chip' + (r.id === fRep ? " active" : "") + '" onclick="filtreSpec(\'' + r.id + '\')">' + esc(r.label) + " (" + n + ")</button>";
+  }).join("") + "</div>";
+  const fiches = (visibles.length ? "" : '<div class="card" style="margin-top:12px"><p class="note" style="margin:0">Aucune spécification validée avec cette réponse.</p></div>') + visibles.map(function (c) {
     const d = decisionDe(c), p = sig.parCode[c], conf = confDe(c);
     const semaines = Object.keys(p.parSem).map(Number).sort(function (a, b) { return a - b; });
     if (d.reponse === "SIMPLIFIER") {
@@ -286,12 +294,12 @@ function viewPilotSpec() {
       ligne("Sorties", esc(conf.sorties || "À définir")) +
       ligne("Workflow", workflow) +
       ligne("Niveau d'autonomie", esc(autonomie)) +
-      ligne("Garde-fous", "Aucun mail ni compte rendu confidentiel traité ; aucune donnée sur une personne ; rien n'est envoyé sans validation humaine.") +
+      ligne("Garde-fous", "Aucun mail ni compte rendu confidentiel traité ; aucune donnée sur une personne ; " + (d.reponse === "AUTOMATISER" ? "seule la réponse standard part automatiquement ; tout autre envoi passe par une validation humaine." : "rien n'est envoyé sans validation humaine.")) +
       ligne("Indicateur de suivi", esc(conf.indicateur) + ", mesuré dans l'onglet « Suivi des réponses ».") +
       ligne("Décision", "Effet à partir de la semaine " + esc(d.semaine_effet) + (d.commentaire ? " · « " + esc(d.commentaire) + " »" : "")) +
       "</tbody></table></div>";
   }).join("");
-  return "<h2>Spécifications</h2>" + bandeauVersionC() + aideSpec() + fiches +
+  return "<h2>Spécifications</h2>" + bandeauVersionC() + aideSpec() + '<p class="note" style="margin:0 0 6px"><b>Réponse retenue</b></p>' + chips + fiches +
     '<p class="note">Fiches remplies automatiquement avec les données de la base et la grille du livrable 01. Elles ne se mettent pas à jour seules en texte libre : une rédaction plus riche se fait avec Claude, à partir de cette fiche.</p>';
 }
 
