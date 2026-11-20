@@ -46,9 +46,72 @@ function typesMail() {
   const t = typesTable();
   const liste = t ? t.filter(function (d) { return d.source !== "COMPTES_RENDUS"; }).map(function (d) { return { code: d.id, label: d.titre || d.id, actif: d.actif !== false }; })
                   : TYPES_MAIL_DEFAUT.map(function (d) { return { code: d.code, label: d.label, actif: true }; });
-  liste.forEach(function (d) { d.reponse = REPONSE_TYPE[d.code] || "À définir par le HRBP"; });
+  liste.forEach(function (d) { d.reponse = REPONSE_TYPE[d.code] || "À définir par le HRBP"; d.processus = processusDe(d.code); });
   return liste;
 }
+
+// ---------------------------------------------------------------------------
+// v14 : filtre « Processus » (liste déroulante à choix multiples), partagé par
+// « Tendances des irritants » et « Valider et orienter ». Le processus est un
+// champ texte de la table « types_irritants ». Aucune case cochée = tout afficher.
+// La comparaison ignore la casse et les espaces en trop.
+// ---------------------------------------------------------------------------
+const PROC_NR = "_NR";   // « Non renseigné »
+state.filtreProc = state.filtreProc || [];
+state.procOuvert = !!state.procOuvert;
+function procTexte(v) { return String(v || "").trim().replace(/\s+/g, " "); }
+function procCle(v) { const t = procTexte(v); return t ? t.toLowerCase() : PROC_NR; }
+function processusDe(code) {
+  const t = typesTable(), d = t && t.find(function (x) { return x.id === code; });
+  return d ? procTexte(d.processus) : "";
+}
+// Valeurs proposées : celles présentes dans la table (+ « Non renseigné » si un type n'en a pas).
+function choixProcessus() {
+  const vus = {}, out = []; let nr = false;
+  (typesTable() || []).forEach(function (d) {
+    const t = procTexte(d.processus); if (!t) { nr = true; return; }
+    const k = t.toLowerCase(); if (!vus[k]) { vus[k] = 1; out.push({ cle: k, label: t }); }
+  });
+  out.sort(function (a, b) { return a.label.localeCompare(b.label, "fr"); });
+  if (nr) out.push({ cle: PROC_NR, label: "Non renseigné" });
+  return out;
+}
+function filtreProcActif() {
+  const dispo = choixProcessus().map(function (c) { return c.cle; });
+  return state.filtreProc.filter(function (k) { return dispo.indexOf(k) >= 0; });
+}
+function passeProcessus(code) {
+  const f = filtreProcActif();
+  return !f.length || f.indexOf(procCle(processusDe(code))) >= 0;
+}
+function basculerProc(cle) {
+  const i = state.filtreProc.indexOf(cle);
+  if (i >= 0) state.filtreProc.splice(i, 1); else state.filtreProc.push(cle);
+  state.procOuvert = true; render();
+}
+function viderProc() { state.filtreProc = []; state.procOuvert = false; render(); }
+function filtreProcessusHtml() {
+  const choix = choixProcessus();
+  if (!choix.length) return "";
+  const actifs = filtreProcActif();
+  const resume = !actifs.length ? "Tous" : choix.filter(function (c) { return actifs.indexOf(c.cle) >= 0; }).map(function (c) { return c.label; }).join(", ");
+  const cases = choix.map(function (c) {
+    return '<label style="display:flex;gap:8px;align-items:center;padding:5px 4px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap">' +
+      '<input type="checkbox" style="width:auto;margin:0"' + (actifs.indexOf(c.cle) >= 0 ? " checked" : "") + ' data-cle="' + esc(c.cle) + '" onchange="basculerProc(this.dataset.cle)"> ' + esc(c.label) + "</label>";
+  }).join("");
+  return '<details class="proc-filtre" style="position:relative;display:inline-block;margin:0 0 10px"' + (state.procOuvert ? " open" : "") + ' ontoggle="state.procOuvert=this.open">' +
+    '<summary class="chip' + (actifs.length ? " active" : "") + '" style="list-style:none;display:inline-block">Processus : ' + esc(resume) + " ▾</summary>" +
+    '<div style="position:absolute;z-index:30;top:calc(100% + 4px);left:0;min-width:220px;background:#fff;border:1px solid #cbd5e1;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.12);padding:6px 8px">' +
+    cases + '<div style="border-top:1px solid #e2e8f0;margin-top:4px;padding-top:6px;display:flex;justify-content:space-between;gap:8px">' +
+    '<button class="chip" onclick="viderProc()">Tout afficher</button><button class="chip" onclick="state.procOuvert=false;render()">Fermer</button></div></div></details>';
+}
+// Ferme la liste quand on clique ailleurs.
+document.addEventListener("click", function (e) {
+  if (!state.procOuvert) return;
+  if (e.target && e.target.closest && e.target.closest(".proc-filtre")) return;
+  state.procOuvert = false;
+  const d = document.querySelector(".proc-filtre"); if (d) d.open = false;
+});
 const CODES_HORS_IRRITANT = ["AUCUN", "ECARTE"];
 
 function semaineDe(doc) {
@@ -65,6 +128,7 @@ function viewTendances() {
   const entete = "<h2>Fil d'observation : boîte RH et comptes rendus</h2>" +
     '<p class="note" style="margin:-4px 0 8px">Sources : boîte RH partagée (mails) · comptes rendus de réunion (Notion). Les deux sont lues automatiquement par Make + Claude ; rien n\'est saisi à la main.</p>' +
     blocRelance() +
+    filtreProcessusHtml() +
     '<p style="margin:0 0 12px;font-size:13px">Aller à : <a href="#" onclick="allerSection(\'sec-mails\');return false">Boîte RH partagée</a> · <a href="#" onclick="allerSection(\'sec-reunions\');return false">Comptes rendus de réunion ↓</a></p>' +
     '<h3 id="sec-mails" style="margin-top:4px">Boîte RH partagée</h3>';
   if (!fb || fb.statut !== "ok") {
@@ -98,7 +162,8 @@ function viewTendances() {
   const max = Math.max(1, Math.max.apply(null, Object.keys(parSem).map(function (k) { return parSem[k]; }).concat([0])));
   const maxTot = Math.max(1, Math.max.apply(null, Object.keys(total).map(function (k) { return total[k]; }).concat([0])));
   // Un type désactivé reste affiché tant qu'il a des signaux (historique conservé).
-  const lignes = types.filter(function (t) { return t.actif || total[t.code]; }).sort(function (a, b) { return (total[b.code] || 0) - (total[a.code] || 0); });
+  // v14 : filtre « Processus » appliqué aux irritants affichés (les compteurs du haut restent globaux).
+  const lignes = types.filter(function (t) { return (t.actif || total[t.code]) && passeProcessus(t.code); }).sort(function (a, b) { return (total[b.code] || 0) - (total[a.code] || 0); });
 
   const tiles = [
     ["Mails analysés", String(analyses.length), "Depuis la mise en service du classement"],
@@ -113,7 +178,7 @@ function viewTendances() {
   const bars = lignes.map(function (t) {
     const v = total[t.code] || 0;
     return '<div class="bar"><span class="lbl">' + esc(t.label) + (t.actif ? "" : " (désactivé)") + '</span><span class="track"><span class="fill" style="display:block;width:' + Math.round(v / maxTot * 100) + '%"></span></span><span class="val">' + v + "</span></div>";
-  }).join("");
+  }).join("") || '<p class="note">Aucun irritant pour ce processus.</p>';
 
   const tete = "<tr><th>Irritant</th>" + cols.map(function (c) { return "<th>" + esc(c.label) + "</th>"; }).join("") + "<th>Réponse la plus simple qui suffit</th></tr>";
   const corps = lignes.map(function (t) {
@@ -129,7 +194,8 @@ function viewTendances() {
     ' <span class="note">' + (derniere ? "Dernier mail classé : " + esc(derniere.toLocaleString("fr-FR")) + " · boîte vérifiée toutes les heures (lun-sam, 8h-20h) ; sans nouveau mail, rien n'est réécrit." : "") + "</span>";
 
   return entete + '<div class="card"><div>' + source + "</div>" + kpis + "</div>" +
-    '<div class="card" style="margin-top:16px"><div class="spechead">Signaux par irritant (irritant principal + secondaire)</div>' + bars +
+    '<div class="card" style="margin-top:16px"><div class="spechead">Signaux par irritant (irritant principal + secondaire)</div>' +
+    (filtreProcActif().length ? '<p class="note" style="margin:2px 0 6px">Filtré par processus. Les compteurs du haut portent sur toute la boîte.</p>' : "") + bars +
     (nbInconnus ? '<p class="note">' + nbInconnus + " code(s) renvoyé(s) par l'IA non reconnu(s), non comptés.</p>" : "") + "</div>" +
     '<div class="card" style="margin-top:16px"><div class="spechead">Évolution par semaine</div>' +
     '<div class="tw" style="margin-top:8px"><table><thead>' + tete + "</thead><tbody>" + corps + "</tbody></table></div>" +

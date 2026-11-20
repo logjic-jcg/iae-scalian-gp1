@@ -2,7 +2,8 @@
 // Onglet HRBP « Types des irritants » (v13)
 // ---------------------------------------------------------------------------
 // Lit et écrit la collection Firestore « types_irritants » (un document par type) :
-//   { code, titre, definition, exemple, actif, ordre, source, protege, maj }
+//   { code, titre, definition, exemple, processus, actif, ordre, source, protege, maj }
+// « processus » (v14) : texte libre facultatif (Paie, onBoarding…), sert aux filtres, pas donné à l'IA.
 // Le scénario Make de classement de la boîte RH relit cette table à chaque
 // passage : les types actifs de la source « mails », avec leur définition et
 // leur exemple, sont donnés à Claude. Un code inconnu est rangé dans « Autre ».
@@ -15,7 +16,24 @@
 // Version C (provisoire) : écriture sans compte, encadrée par les règles.
 // ---------------------------------------------------------------------------
 
-const TYPE_LIMITES = { titre: 80, definition: 400, exemple: 300 };
+const TYPE_LIMITES = { titre: 80, definition: 400, exemple: 300, processus: 60 };
+// Suggestions de saisie du processus (en plus des valeurs déjà présentes dans la table).
+const PROCESSUS_SUGGERES = ["onBoarding", "Paie", "Temps de travail", "Congés et absences"];
+// Valeurs de processus distinctes de la table (sans tenir compte de la casse ni des espaces en trop).
+function processusConnus(avecSuggestions) {
+  const vus = {}, out = [];
+  const ajoute = function (v) { v = String(v || "").trim().replace(/\s+/g, " "); const k = v.toLowerCase(); if (v && !vus[k]) { vus[k] = 1; out.push(v); } };
+  (typesTable() || []).forEach(function (d) { ajoute(d.processus); });
+  if (avecSuggestions) PROCESSUS_SUGGERES.forEach(ajoute);
+  return out.sort(function (a, b) { return a.localeCompare(b, "fr"); });
+}
+// Normalise une saisie : espaces en trop retirés, et même écriture qu'une valeur existante si seule la casse diffère.
+function normaliserProcessus(v) {
+  v = String(v || "").trim().replace(/\s+/g, " ");
+  const k = v.toLowerCase();
+  const ex = processusConnus(true).find(function (x) { return x.toLowerCase() === k; });
+  return ex || v;
+}
 const CODES_RESERVES = ["AUCUN", "ECARTE", "AUTRE", "FILTRE", "NA"];
 
 state.selType = state.selType || null;     // code du type affiché, ou "_nouveau"
@@ -41,8 +59,8 @@ function libSource(s) { return s === "COMPTES_RENDUS" ? "Comptes rendus de réun
 function selType(code) {
   state.selType = code; state.msgType = "";
   const d = code === "_nouveau" ? null : (typesTable() || []).find(function (x) { return x.id === code; });
-  state.brType = d ? { titre: d.titre || "", definition: d.definition || "", exemple: d.exemple || "", ordre: Number(d.ordre) || 1, actif: d.actif !== false }
-                   : { titre: "", definition: "", exemple: "", ordre: prochainOrdre(), actif: true };
+  state.brType = d ? { titre: d.titre || "", definition: d.definition || "", exemple: d.exemple || "", processus: d.processus || "", ordre: Number(d.ordre) || 1, actif: d.actif !== false }
+                   : { titre: "", definition: "", exemple: "", processus: "", ordre: prochainOrdre(), actif: true };
   render();
 }
 function prochainOrdre() {
@@ -67,6 +85,7 @@ function verifierType(b, nouveau, code, existants) {
   if (titre.length < 3 || titre.length > TYPE_LIMITES.titre) return "Le titre doit faire entre 3 et " + TYPE_LIMITES.titre + " caractères.";
   if (def.length < 10 || def.length > TYPE_LIMITES.definition) return "La définition doit faire entre 10 et " + TYPE_LIMITES.definition + " caractères.";
   if (ex.length > TYPE_LIMITES.exemple) return "L'exemple doit faire au plus " + TYPE_LIMITES.exemple + " caractères.";
+  if ((b.processus || "").trim().length > TYPE_LIMITES.processus) return "Le processus doit faire au plus " + TYPE_LIMITES.processus + " caractères.";
   if (!(b.ordre >= 1 && b.ordre <= 99)) return "L'ordre d'affichage doit être compris entre 1 et 99.";
   if (nouveau) {
     if (!/^[A-Z][A-Z0-9_]{2,39}$/.test(code)) return "Le titre ne permet pas de fabriquer un code (au moins 3 lettres).";
@@ -87,7 +106,7 @@ function enregistrerType() {
   const protege = avant ? avant.protege === true : false;
   if (protege && !b.actif) { state.msgType = "« Autre » ne peut pas être désactivé : c'est la case des mails que l'IA ne sait pas ranger."; render(); return; }
   if (typeof window.aciaEcrireType !== "function") { state.msgType = "Écriture impossible : connexion à Firebase absente."; render(); return; }
-  const data = { titre: b.titre.trim(), definition: b.definition.trim(), exemple: b.exemple.trim(), ordre: b.ordre,
+  const data = { titre: b.titre.trim(), definition: b.definition.trim(), exemple: b.exemple.trim(), processus: normaliserProcessus(b.processus), ordre: b.ordre,
     actif: protege ? true : !!b.actif, source: avant ? avant.source : "MAILS", protege: protege };
   state.msgType = "Enregistrement…"; render();
   window.aciaEcrireType(code, data).then(function () {
@@ -123,7 +142,7 @@ function viewTypesIrritants() {
     const etat = d.actif === false ? "désactivé" : "actif";
     return '<button class="pick' + (state.selType === d.id ? " selected" : "") + '" onclick="selType(\'' + esc(d.id) + '\')">' +
       '<div style="font-weight:700;font-size:14px">' + esc(d.titre || d.id) + (d.actif === false ? " (désactivé)" : "") + "</div>" +
-      '<div class="psub">' + esc(d.id) + " · " + esc(etat) + " · " + esc(libSource(d.source)) + (d.protege ? " · protégé" : "") + "</div></button>";
+      '<div class="psub">' + esc(d.id) + " · " + esc(etat) + (d.processus ? " · " + esc(d.processus) : "") + " · " + esc(libSource(d.source)) + (d.protege ? " · protégé" : "") + "</div></button>";
   }).join("") +
     '<button class="pick' + (state.selType === "_nouveau" ? " selected" : "") + '" onclick="selType(\'_nouveau\')"><div style="font-weight:700;font-size:14px">+ Nouveau type</div><div class="psub">Titre, définition, exemple</div></button>';
 
@@ -141,6 +160,8 @@ function viewTypesIrritants() {
     '<label class="fl">Titre' + compteur("titre") + '<input maxlength="' + TYPE_LIMITES.titre + '" value="' + esc(b.titre) + '" oninput="majBrType(\'titre\', this)"></label>' +
     '<label class="fl">Définition (ce que l\'IA doit reconnaître)' + compteur("definition") + '<textarea rows="4" maxlength="' + TYPE_LIMITES.definition + '" ' + ta + ' oninput="majBrType(\'definition\', this)">' + esc(b.definition) + "</textarea></label>" +
     '<label class="fl">Exemple (une phrase typique, sans nom de personne)' + compteur("exemple") + '<textarea rows="2" maxlength="' + TYPE_LIMITES.exemple + '" ' + ta + ' oninput="majBrType(\'exemple\', this)">' + esc(b.exemple) + "</textarea></label>" +
+    '<label class="fl">Processus (facultatif : Paie, Temps de travail, Congés et absences…)' + compteur("processus") + '<input list="ty-processus" maxlength="' + TYPE_LIMITES.processus + '" value="' + esc(b.processus) + '" oninput="majBrType(\'processus\', this)"></label>' +
+    '<datalist id="ty-processus">' + processusConnus(true).map(function (v) { return '<option value="' + esc(v) + '">'; }).join("") + "</datalist>" +
     '<label class="fl">Ordre d\'affichage (1 à 99)<input type="number" min="1" max="99" value="' + esc(b.ordre) + '" oninput="majBrType(\'ordre\', this)"></label>' +
     (d && d.protege ? "" : '<label class="fl" style="display:flex;gap:8px;align-items:center"><input type="checkbox" style="width:auto;display:inline;margin:0"' + (b.actif ? " checked" : "") + ' onchange="majBrType(\'actif\', this)"> Actif (proposé à l\'IA et affiché dans les onglets)</label>') +
     '<div class="btns" style="margin-top:12px"><button class="btn ok" onclick="enregistrerType()">' + (nouveau ? "Créer le type" : "Enregistrer") + "</button></div>" +

@@ -64,7 +64,7 @@ if (!config) {
     // encadrée par les règles Firestore : champs, longueurs, code figé, pas de suppression).
     window.aciaEcrireType = function (code, t) {
       return setDoc(doc(db, "types_irritants", code), {
-        code: code, titre: t.titre, definition: t.definition, exemple: t.exemple,
+        code: code, titre: t.titre, definition: t.definition, exemple: t.exemple, processus: t.processus || "",
         actif: t.actif, ordre: t.ordre, source: t.source, protege: t.protege, maj: serverTimestamp()
       });
     };

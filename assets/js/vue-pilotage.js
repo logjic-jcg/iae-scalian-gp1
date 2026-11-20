@@ -69,7 +69,7 @@ function confDe(code) {
 const CODE_CR = "ACTIONS_NON_FERMEES";
 function typesPilotage() {
   const t = typesTable(), cr = t && t.find(function (d) { return d.id === CODE_CR; });
-  return typesMail().concat([{ code: CODE_CR, label: cr && cr.titre ? cr.titre : "Actions de réunion jamais fermées", actif: !cr || cr.actif !== false }]);
+  return typesMail().concat([{ code: CODE_CR, label: cr && cr.titre ? cr.titre : "Actions de réunion jamais fermées", actif: !cr || cr.actif !== false, processus: processusDe(CODE_CR) }]);
 }
 function sourceDe(code) { return code === CODE_CR ? "dans les comptes rendus de réunion" : "dans la boîte partagée"; }
 function libelleType(code) { const t = typesPilotage().find(function (x) { return x.code === code; }); return t ? t.label : code; }
@@ -195,13 +195,14 @@ function enregistrerDecision(code) {
 function viewPilotOrienter() {
   const sig = aciaSignaux();
   if (!sig.ok) return messageSansBase("Valider et orienter", sig);
-  const tous = typesPilotage().filter(function (t) { return t.actif || sig.parCode[t.code].total || decisionDe(t.code); }).map(function (t) { return t.code; }).sort(function (a, b) { return sig.parCode[b].total - sig.parCode[a].total; });
+  // v14 : filtre « Processus » appliqué avant le filtre de statut (les compteurs des puces en tiennent compte).
+  const tous = typesPilotage().filter(function (t) { return (t.actif || sig.parCode[t.code].total || decisionDe(t.code)) && passeProcessus(t.code); }).map(function (t) { return t.code; }).sort(function (a, b) { return sig.parCode[b].total - sig.parCode[a].total; });
   // v13 : filtre par statut de décision (ou « à examiner »).
   const filtre = FILTRES_PILOT.find(function (f) { return f.id === state.filtrePilot; }) || FILTRES_PILOT[0];
   const passe = function (f, c) { return f.test(decisionDe(c), sig.parCode[c]); };
   const codes = tous.filter(function (c) { return passe(filtre, c); });
   if (codes.length && codes.indexOf(state.selPilot) < 0) state.selPilot = codes[0];
-  const chips = '<div class="chips" style="margin:0 0 10px">' + FILTRES_PILOT.map(function (f) {
+  const chips = filtreProcessusHtml() + '<div class="chips" style="margin:0 0 10px">' + FILTRES_PILOT.map(function (f) {
     const n = tous.filter(function (c) { return passe(f, c); }).length;
     return '<button class="chip' + (f.id === filtre.id ? " active" : "") + '" onclick="filtrePilot(\'' + f.id + '\')">' + esc(f.label) + " (" + n + ")</button>";
   }).join("") + "</div>";
@@ -212,9 +213,9 @@ function viewPilotOrienter() {
     return '<button class="pick' + (state.selPilot === c ? " selected" : "") + '" onclick="selPilot(\'' + c + '\')" style="display:flex;gap:12px;align-items:center">' +
       anneauSignaux(p, maxTot) + '<div style="min-width:0">' +
       '<div style="font-weight:700;font-size:14px">' + esc(libelleType(c)) + (actifType(c) ? "" : " (désactivé)") + "</div>" +
-      '<div class="psub">' + esc(st.label) + (d ? " · " + esc(libReponse(d.reponse)) : "") +
+      '<div class="psub">' + esc(st.label) + (d ? " · " + esc(libReponse(d.reponse)) : "") + (processusDe(c) ? " · " + esc(processusDe(c)) : "") +
       (aExaminer(p) ? " · à examiner" : "") + "</div></div></button>";
-  }).join("") || '<div class="card"><p class="note" style="margin:0">Aucune catégorie avec ce statut.</p></div>';
+  }).join("") || '<div class="card"><p class="note" style="margin:0">Aucune catégorie avec ce statut' + (filtreProcActif().length ? " et ce processus" : "") + ".</p></div>";
   const legende = '<p class="note" style="margin-top:10px">Anneau : nombre total de signaux, rempli en proportion du type le plus signalé. Couleur selon les 2 dernières semaines observées : ' +
     '<b style="color:#e11d48">rouge</b> 3 signaux ou plus (à examiner) · <b style="color:#d97706">orange</b> 1 ou 2 · <b style="color:#059669">vert</b> aucun récent · <b style="color:#94a3b8">gris</b> aucun signal.</p>';
 

@@ -42,6 +42,11 @@ function carteReunions() {
     return titre + '<div class="card"><p class="note" style="margin:0">' + esc(msg) + "</p>" +
       '<p class="note">Aucun chiffre n\'est affiché sans la base : rien n\'est simulé.</p></div>';
   }
+  // v14 : section masquée si le filtre « Processus » exclut l'irritant des comptes rendus.
+  if (typeof passeProcessus === "function" && !passeProcessus("ACTIONS_NON_FERMEES")) {
+    const pr = processusDe("ACTIONS_NON_FERMEES");
+    return titre + '<div class="card"><p class="note" style="margin:0">Masqué par le filtre « Processus » (processus de cet irritant : ' + esc(pr || "non renseigné") + ").</p></div>";
+  }
   const crs = fb.docs.filter(function (d) { return d.statut === "ANALYSE" || d.statut === "ECARTE"; })
     .sort(function (a, b) { return (Number(a.jour_reunion) || 0) - (Number(b.jour_reunion) || 0) || String(a.ref).localeCompare(String(b.ref)); });
   const ecartes = crs.filter(function (d) { return d.statut === "ECARTE"; });
