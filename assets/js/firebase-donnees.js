@@ -7,6 +7,7 @@
 //   - arrivees  : fiches d'arrivée écrites par l'agent (via Make)
 //   - decisions_hrbp : décisions du HRBP (lecture + écriture, onglets de pilotage)
 //   - classement_mails : classement horaire de la boîte RH (Make + Claude), onglet HRBP « Tendances »
+//   - comptes_rendus : actions des comptes rendus Notion (Make + Claude), même onglet (v10)
 // Résultat rangé dans window.ACIA_FB[collection] :
 //   { statut: "chargement" | "ok" | "repli", docs: [...], modifies: [ids], erreur, lu }
 // En cas d'échec, statut = "repli" : l'écran garde les données de la maquette.
@@ -44,6 +45,7 @@ if (!config) {
   repli("arrivees", "Configuration Firebase absente (firebase-config.js).");
   repli("classement_mails", "Configuration Firebase absente (firebase-config.js).");
   repli("decisions_hrbp", "Configuration Firebase absente (firebase-config.js).");
+  repli("comptes_rendus", "Configuration Firebase absente (firebase-config.js).");
 } else {
   try {
     const db = getFirestore(initializeApp(config));
@@ -51,11 +53,12 @@ if (!config) {
     ecouter(db, "arrivees", query(collection(db, "arrivees")));
     ecouter(db, "classement_mails", query(collection(db, "classement_mails")));
     ecouter(db, "decisions_hrbp", query(collection(db, "decisions_hrbp")));
+    ecouter(db, "comptes_rendus", query(collection(db, "comptes_rendus")));
     // Écriture d'une décision du HRBP (version C : sans compte, encadrée par les règles Firestore).
     window.aciaEcrireDecision = function (code, d) {
       return setDoc(doc(db, "decisions_hrbp", code), {
         statut: d.statut, reponse: d.reponse, commentaire: d.commentaire, semaine_effet: d.semaine_effet, maj: serverTimestamp()
       });
     };
-  } catch (e) { repli("irritants", e); repli("arrivees", e); repli("classement_mails", e); repli("decisions_hrbp", e); }
+  } catch (e) { repli("irritants", e); repli("arrivees", e); repli("classement_mails", e); repli("decisions_hrbp", e); repli("comptes_rendus", e); }
 }
