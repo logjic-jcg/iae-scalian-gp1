@@ -252,12 +252,19 @@ function viewPilotOrienter() {
 
 // ------------------------------ SPÉCIFICATIONS -----------------------------
 
+// v13 : rappel en tête de page de ce qui est affiché.
+function aideSpec() {
+  return '<p class="note" style="margin:0 0 12px"><b>Ce qui apparaît ici :</b> les irritants au statut « Validé » dans « Valider et orienter ». ' +
+    "La fiche dépend de la réponse retenue : <b>Assister</b> ou <b>Automatiser</b> donnent une spécification complète (l'agent prépare, ou agit sur les cas standard) ; " +
+    "<b>Simplifier</b> donne une fiche courte, sans outil à construire.</p>";
+}
+
 function viewPilotSpec() {
   const sig = aciaSignaux();
   if (!sig.ok) return messageSansBase("Spécifications", sig);
   const valides = typesPilotage().map(function (t) { return t.code; }).filter(function (c) { const d = decisionDe(c); return d && d.statut === "VALIDE"; });
   if (!valides.length) {
-    return "<h2>Spécifications</h2>" + bandeauVersionC() + '<div class="card"><p style="font-size:14px;margin:0">Aucun irritant validé pour l\'instant.</p><p class="note">Une fiche n\'est produite qu\'après une décision « validé » du HRBP, dans l\'onglet « Valider et orienter ».</p></div>';
+    return "<h2>Spécifications</h2>" + bandeauVersionC() + aideSpec() + '<div class="card"><p style="font-size:14px;margin:0">Aucun irritant validé pour l\'instant.</p><p class="note">Une fiche n\'est produite qu\'après une décision « validé » du HRBP, dans l\'onglet « Valider et orienter ».</p></div>';
   }
   const fiches = valides.map(function (c) {
     const d = decisionDe(c), p = sig.parCode[c], conf = confDe(c);
@@ -284,7 +291,7 @@ function viewPilotSpec() {
       ligne("Décision", "Effet à partir de la semaine " + esc(d.semaine_effet) + (d.commentaire ? " · « " + esc(d.commentaire) + " »" : "")) +
       "</tbody></table></div>";
   }).join("");
-  return "<h2>Spécifications</h2>" + bandeauVersionC() + fiches +
+  return "<h2>Spécifications</h2>" + bandeauVersionC() + aideSpec() + fiches +
     '<p class="note">Fiches remplies automatiquement avec les données de la base et la grille du livrable 01. Elles ne se mettent pas à jour seules en texte libre : une rédaction plus riche se fait avec Claude, à partir de cette fiche.</p>';
 }
 
