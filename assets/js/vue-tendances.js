@@ -126,7 +126,7 @@ function viewTendances() {
 
   const nbInconnus = Object.keys(inconnus).reduce(function (s, k) { return s + inconnus[k]; }, 0);
   const source = badge("b-emerald", "● Firebase, en direct") +
-    ' <span class="note">' + (derniere ? "Dernière analyse : " + esc(derniere.toLocaleString("fr-FR")) : "") + "</span>";
+    ' <span class="note">' + (derniere ? "Dernier mail classé : " + esc(derniere.toLocaleString("fr-FR")) + " · boîte vérifiée toutes les heures (lun-sam, 8h-20h) ; sans nouveau mail, rien n'est réécrit." : "") + "</span>";
 
   return entete + '<div class="card"><div>' + source + "</div>" + kpis + "</div>" +
     '<div class="card" style="margin-top:16px"><div class="spechead">Signaux par irritant (irritant principal + secondaire)</div>' + bars +
