@@ -19,7 +19,7 @@
 // présents dans la table « utilisateurs » : on attend donc la session Firebase
 // avant d'écouter. Sans session : retour à la connexion (sauf mode maquette).
 import { app, utilisateurInitial, deconnecter } from "./firebase-session.js";
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, setDoc, updateDoc, serverTimestamp, writeBatch, Timestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const DELAI_MAX_MS = 8000;
 
@@ -86,6 +86,15 @@ if (!app) {
       const maj = { maj_hrbp: serverTimestamp() };
       maj["s" + n] = statut; maj["m" + n] = String(motif || "").slice(0, 120);
       return updateDoc(doc(db, "suggestions_ia", id), maj);
+    };
+    // v26 : « Réinitialiser les agents » (menu du compte, HRBP connecté) : efface toutes les
+    // réponses des deux contradicteurs et lève leurs verrous (10 min revue, 1 min avant décision).
+    // Une seule écriture groupée : tout passe ou rien (règles Firestore v26).
+    window.aciaReinitAgents = function (ids) {
+      const b = writeBatch(db), passe = Timestamp.fromDate(new Date("2000-01-01T00:00:00Z"));
+      ids.forEach(function (id) { b.delete(doc(db, "suggestions_ia", id)); });
+      b.update(doc(db, "parametres", "revue_ia"), { derniere_demande: passe, derniere_decision: passe });
+      return b.commit();
     };
   } catch (e) { replis(e); }
 }

@@ -503,6 +503,10 @@ function renderWho() {
   document.getElementById("who-fn").textContent = w[1];
   document.getElementById("um-nom").textContent = w[0];
   document.getElementById("um-fn").textContent = w[1];
+  // v26 : mention « En direct » et réinitialisation des agents, réservées au HRBP en direct.
+  const direct = state.role === "hrbp";
+  const et = document.getElementById("um-etat"); if (et) et.hidden = !direct;
+  const ra = document.getElementById("um-agents"); if (ra) ra.hidden = !direct;
 }
 function toggleBento(e) {
   e.stopPropagation(); closeUser();
@@ -527,7 +531,7 @@ function renderTabs() {
     return '<button class="tab' + (state.tab === t[0] ? " active" : "") + '" onclick="setTab(\'' + t[0] + '\')">' + esc(t[1]) + "</button>";
   }).join("");
   const bandeaux = {
-    hrbp: ["#d1fae5", "#047857", "● En direct : uniquement les données lues dans la boîte RH partagée et dans les comptes rendus Notion (Make + Claude → Firebase). Aucune donnée de maquette."],
+    // v26 : plus de bandeau pour le HRBP en direct : mention « En direct » dans le menu du compte.
     hrbp_demo: ["#fef3c7", "#b45309", "Maquette : écrans scénarisés avec les données fictives du jeu de démo. Rien ne vient des sources réelles."],
   };
   // v15 : ModeDemo = Oui dans la table « utilisateurs » -> bandeau « maquette » sur les écrans sans bandeau propre.

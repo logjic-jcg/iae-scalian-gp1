@@ -428,3 +428,10 @@ tr.fb-neuf td { animation: fb-flash 3s ease-out; }
   #exp-tete span{color:#6b6280}
   #exp-pied{margin-top:16px;padding-top:6px;border-top:1px solid #d9cdea;font-size:9.5px;color:#6b6280}
 }
+
+/* v26 : « En direct » dans le menu du compte, réinitialisation des agents */
+.um-etat{display:inline-block !important;margin-top:8px;padding:3px 9px;border-radius:6px;background:#d1fae5;color:#047857 !important;border:1px solid #6ee7b7;font-size:12px !important;font-weight:700}
+.um-etat[hidden]{display:none !important}
+.um-out[hidden]{display:none}
+.acia-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;background:#290f50;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(41,15,80,.3);max-width:calc(100vw - 32px)}
+.acia-toast.err{background:#9f1239}
