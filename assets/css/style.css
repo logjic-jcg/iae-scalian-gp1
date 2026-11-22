@@ -495,3 +495,14 @@ tr.fb-neuf td { animation: fb-flash 3s ease-out; }
 @media (max-width:760px){.ve-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .ve-nom{cursor:pointer;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
 .ve-nom:hover{fill:#4b2882;text-decoration:underline}
+/* v31 : Vue d'ensemble, mise en page et « Pour en parler avec l'équipe » */
+.ve-duo{grid-template-columns:minmax(0,1.65fr) minmax(0,1fr)}
+.ve-col{min-width:0}
+.ved-card{border-color:#d9cdea;background:linear-gradient(180deg,#faf7fe,#fff 120px)}
+.ved-l{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:12px}
+.ved-l li{font-size:13.5px;line-height:1.45}
+.ved-l b{display:block;color:#2d1650;margin-bottom:2px}
+.ved-c{display:block;color:#4a4060}
+.ved-q{display:block;margin-top:4px;padding:6px 10px;border-left:3px solid #7c5cc4;background:#f4effb;border-radius:0 6px 6px 0;font-style:italic;color:#2d1650}
+@media (max-width:760px){.ve-duo{grid-template-columns:1fr}}
+.ve-table td:nth-child(3) .tdb-sub{display:block;white-space:nowrap}

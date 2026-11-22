@@ -81,7 +81,7 @@
     const fb = window.ACIA_FB && window.ACIA_FB.suggestions_ia;
     if (typeof window.aciaReinitAgents !== "function" || !fb || fb.statut !== "ok") { aciaToast("Réinitialisation impossible : base non connectée.", true); return; }
     const ids = fb.docs.map(function (d) { return d.id; });
-    if (!confirm("Réinitialiser les agents contradicteurs ?\n\n" + ids.length + " réponse(s) de l'IA seront effacées (avant décision et revue), et les boutons redeviennent disponibles tout de suite.\nVos décisions enregistrées sont conservées.")) return;
+    if (!confirm("Réinitialiser les agents contradicteurs ?\n\n" + ids.length + " réponse(s) de l'IA seront effacées (avant décision, revue et conseils de la Vue d’ensemble Direction), et les boutons redeviennent disponibles tout de suite.\nVos décisions enregistrées sont conservées.")) return;
     window.aciaReinitAgents(ids).then(function () {
       state.revue = { envoi: "", msg: "" }; state.avd = { code: "", envoi: "", msg: "", depuis: 0 }; state.prefillPilot = null;
       render(); aciaToast("Agents réinitialisés : " + ids.length + " réponse(s) effacée(s).");

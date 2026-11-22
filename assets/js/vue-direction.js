@@ -42,7 +42,9 @@ function veLignes(sig) {
 }
 
 function veCarte(L) {
-  const W = 640, H = 330, G = 56, R = 24, T = 22, B = 46;
+  // v31 : carte pleine largeur (plus large sur ordinateur, plus haute en proportion sur mobile).
+  const etroit = window.innerWidth < 760;
+  const W = etroit ? 520 : 960, H = etroit ? 360 : 380, G = 56, R = 24, T = 22, B = 46;
   const maxRec = Math.max(1, Math.max.apply(null, L.map(function (l) { return l.rec.sur; })));
   const maxTot = Math.max(1, Math.max.apply(null, L.map(function (l) { return l.p.total; })));
   const X = function (t) { return G + (t + 1) / 2 * (W - G - R); };
@@ -147,21 +149,119 @@ function viewVueEnsemble() {
   const totCR = L.filter(function (l) { return l.code === CODE_CR; }).reduce(function (t, l) { return t + l.p.total; }, 0);
   const tot = Math.max(1, totMail + totCR), pM = Math.round(100 * totMail / tot), pC = 100 - pM;
   const barre = function (lib, v, pct, col) { return '<div class="ve-src"><div><span>' + esc(lib) + "</span><b>" + v + " signal(s) · " + pct + ' %</b></div><div class="ve-bar"><i style="width:' + pct + "%;background:" + col + '"></i></div></div>'; };
-  const sources = '<div class="card"><div class="kpi-h">' + tendIcone("mail") + '<div class="spechead">Répartition par source</div></div>' +
+  const sources = '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("mail") + '<div class="spechead">Répartition par source</div></div>' +
     '<p class="note" style="margin:4px 0 12px">Part des signaux par origine. Chaque type d\'irritant vient d\'une seule source.</p>' +
     barre("Boîte RH partagée (mails)", totMail, pM, "#4b2882") + barre("Comptes rendus de réunion", totCR, pC, "#61b99a") +
     '<p class="note">Données de démonstration du hackathon : les volumes sont faibles, les tendances à lire avec prudence.</p></div>';
   const tri = L.slice().sort(function (a, b) { return (aExaminer(b.p) && !b.d) - (aExaminer(a.p) && !a.d) || b.p.total - a.p.total; });
-  const table = '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("etiquette") + '<div class="spechead">Irritants à suivre</div></div>' +
+  const table = '<div class="card"><div class="kpi-h">' + tendIcone("etiquette") + '<div class="spechead">Irritants à suivre</div></div>' +
     '<p class="note" style="margin:4px 0 8px">Les irritants à examiner sans décision d\'abord, puis par nombre de signaux. Clic sur un nom pour ouvrir sa fiche.</p>' +
-    '<div class="tw"><table class="ve-table"><thead><tr><th>Irritant</th><th>Signaux</th><th>Évolution</th><th>Source</th><th>État</th><th>Réponse retenue</th></tr></thead><tbody>' +
+    '<div class="tw"><table class="ve-table"><thead><tr><th>Irritant</th><th>Signaux</th><th>Évolution</th><th>État</th><th>Réponse retenue</th></tr></thead><tbody>' +
     tri.map(function (l) {
-      return "<tr><td><b>" + lienFiche(l.code, esc(l.label)) + "</b>" + (!l.d && aExaminer(l.p) ? " " + badge("b-rose", "À examiner") : "") + "</td><td>" + l.p.total + "</td><td>" + veSpark(l.p) + ' <span class="tdb-sub">' + esc(l.tend.lib) + "</span></td><td>" + esc(l.source) +
-        '</td><td><span class="ve-etat" style="--c:' + VE_ETATS[l.etat][1] + '">' + esc(VE_ETATS[l.etat][0]) + "</span></td><td>" + (l.d ? esc(libReponse(l.d.reponse)) : '<span class="tdb-sub">—</span>') + "</td></tr>";
+      return "<tr><td><b>" + lienFiche(l.code, esc(l.label)) + "</b>" + (l.code === CODE_CR ? ' <small class="tdb-sub">comptes rendus</small>' : "") + (!l.d && aExaminer(l.p) ? " " + badge("b-rose", "À examiner") : "") + "</td><td>" + l.p.total + "</td><td>" + veSpark(l.p) + ' <span class="tdb-sub">' + esc(l.tend.lib) + "</span></td>" +
+        '<td><span class="ve-etat" style="--c:' + VE_ETATS[l.etat][1] + '">' + esc(VE_ETATS[l.etat][0]) + "</span></td><td>" + (l.d ? esc(libReponse(l.d.reponse)) : '<span class="tdb-sub">—</span>') + "</td></tr>";
     }).join("") + "</tbody></table></div></div>";
   return "<h2>Vue d'ensemble des irritants</h2>" +
     '<p class="note" style="margin:-4px 0 12px">' + badge("b-emerald", "● En direct") + " Lecture seule : la Direction voit les tendances, le HRBP décide. Agrégats par type d'irritant, aucune donnée sur une personne ni sur une équipe.</p>" +
     kpis +
-    '<div class="ve-duo"><div class="card"><div class="kpi-h">' + tendIcone("courbe") + '<div class="spechead">Carte des irritants</div></div>' +
-    '<p class="note" style="margin:4px 0 6px">Plus une bulle est à droite, plus l\'irritant progresse ; plus elle est haute, plus il revient souvent. Clic sur une bulle : fiche de l\'irritant.</p>' + veCarte(L) + "</div>" + sources + "</div>" + table;
+    '<div class="card ve-carte" style="margin-top:16px"><div class="kpi-h">' + tendIcone("courbe") + '<div class="spechead">Carte des irritants</div></div>' +
+    '<p class="note" style="margin:4px 0 6px">Plus une bulle est à droite, plus l\'irritant progresse ; plus elle est haute, plus il revient souvent. Clic sur une bulle ou sur un nom : fiche de l\'irritant.</p>' + veCarte(L) + "</div>" +
+    '<div class="ve-duo"><div class="ve-col">' + table + sources + "</div>" + vedCarte(L) + "</div>";
+}
+
+// ---------------------------------------------------------------------------
+// v31 : « Pour en parler avec l'équipe » : l'IA propose au DRH 3 sujets d'échange
+// avec ses HRBP, à partir des SEULS agrégats affichés sur cette page.
+// Site → webhook Make (« ACIA : conseils Direction ») → Claude Haiku →
+// Firestore suggestions_ia/x{date}, type DIRECTION. 1 demande par minute au plus.
+// Format : SUJET|titre|constat|question (1 à 3)  VIGILANCE|…  CONFIANCE|…
+// ---------------------------------------------------------------------------
+const VED_WEBHOOK = "https://hook.eu1.make.com/jfq7waurc1ppszb88v8c3uchs8p3z7k9";
+state.ved = state.ved || { envoi: "", msg: "", depuis: 0 };
+
+function vedDossier(L) {
+  const m = L.reduce(function (x, l) { return Math.max(x, l.p.semMax || 0); }, 0);
+  const fbD = window.ACIA_FB.decisions_hrbp;
+  const rep = fbD && fbD.statut === "ok" ? fbD.docs.filter(function (x) { return x.statut !== "ECARTE" && x.reponse; }) : [];
+  const part = rep.length ? Math.round(100 * rep.filter(function (x) { return x.reponse === "ASSISTER"; }).length / rep.length) : null;
+  const D = ["CONTEXTE|irritants suivis : " + L.length + "|semaines observées : " + m + "|réponses faisant appel à un agent IA : " + (part === null ? "aucune réponse retenue" : part + " %") +
+    "|cible maximale : " + (typeof TDB_CIBLE_AGENT !== "undefined" ? TDB_CIBLE_AGENT : 30) + " %"];
+  L.forEach(function (l) {
+    const sem = []; for (let s = 1; s <= (l.p.semMax || 0); s++) sem.push("S" + s + "=" + (l.p.parSem[s] || 0));
+    let effet = "";
+    if (l.d && l.d.semaine_effet && typeof tdbEffet === "function" && l.etat !== "SURVEILLER") {
+      const e = tdbEffet(l.p, Number(l.d.semaine_effet));
+      if (e.mAv !== null && e.mAp !== null) effet = "|mesure : " + tdbFr(e.mAv, 1) + " signal(s) par semaine avant S" + l.d.semaine_effet + ", " + tdbFr(e.mAp, 1) + " après";
+    }
+    D.push("IRRITANT|" + l.label + "|signaux : " + l.p.total + "|par semaine : " + (sem.join(" ") || "aucune") + "|tendance : " + l.tend.lib +
+      "|récurrence : " + l.rec.n + " semaine(s) sur " + l.rec.sur + "|état : " + VE_ETATS[l.etat][0].toLowerCase() +
+      "|réponse retenue : " + (l.d ? libReponse(l.d.reponse) : "aucune") + effet);
+  });
+  return D.join("\n").replace(/\r/g, "");
+}
+
+function vedDerniere() {
+  const fb = window.ACIA_FB.suggestions_ia;
+  if (!fb || fb.statut !== "ok") return null;
+  const t = function (d) { return d.demande && d.demande.toDate ? d.demande.toDate().getTime() : 0; };
+  const docs = fb.docs.filter(function (d) { return d.type === "DIRECTION" && String(d.id).indexOf("test") !== 0; });
+  return docs.length ? docs.sort(function (a, b) { return t(b) - t(a); })[0] : null;
+}
+
+function vedLire(texte) {
+  const r = { sujets: [], vigilance: "", confiance: "BASSE" };
+  String(texte || "").split(/\r?\n/).forEach(function (l) {
+    const c = l.split("|").map(function (x) { return x.trim(); }), k = (c[0] || "").toUpperCase().replace(/[^A-Z]/g, "");
+    if (k === "SUJET" && c.length >= 4 && r.sujets.length < 3) r.sujets.push({ titre: c[1].slice(0, 80), constat: c[2].slice(0, 260), question: c.slice(3).join(" ").slice(0, 240) });
+    else if (k === "VIGILANCE" && !r.vigilance) r.vigilance = c.slice(1).join(" ").slice(0, 240);
+    else if (k === "CONFIANCE") { const m = (c[1] || "").toUpperCase().match(/HAUTE|MOYENNE|BASSE/); if (m) r.confiance = m[0]; }
+  });
+  return r.sujets.length ? r : null;
+}
+
+function vedLancer() {
+  const der = vedDerniere();
+  const ilya = der && der.demande && der.demande.toDate ? Date.now() - der.demande.toDate().getTime() : Infinity;
+  if (ilya < 60000 || Date.now() - (state.ved.depuis || 0) < 60000) {
+    state.ved = { envoi: "", msg: "Des suggestions ont été demandées il y a moins d'une minute : attendez avant de relancer.", depuis: state.ved.depuis }; render(); return;
+  }
+  const sig = aciaSignaux();
+  if (!sig.ok) { state.ved = { envoi: "", msg: "Données de la base indisponibles.", depuis: 0 }; render(); return; }
+  const dossier = vedDossier(veLignes(sig));
+  state.ved = { envoi: "attente", msg: "Demande envoyée. Les suggestions s'afficheront ici dans une trentaine de secondes.", depuis: Date.now() }; render();
+  fetch(VED_WEBHOOK, { method: "POST", mode: "no-cors", body: new URLSearchParams({ dossier: dossier, origine: "site ACIA" }) })
+    .catch(function (e) { state.ved.envoi = ""; state.ved.msg = "Envoi impossible : " + ((e && e.message) || e); render(); });
+  const debut = state.ved.depuis;
+  setTimeout(function () {
+    if (state.ved.envoi === "attente" && state.ved.depuis === debut) { state.ved.envoi = ""; state.ved.msg = "Pas de suggestion reçue après 90 secondes : réessayez dans un instant."; render(); }
+  }, 90000);
+}
+
+function vedCarte(L) {
+  const fb = window.ACIA_FB.suggestions_ia, der = vedDerniere();
+  if (state.ved.depuis && der && der.demande && der.demande.toDate && der.demande.toDate().getTime() >= state.ved.depuis - 5000) { state.ved.envoi = ""; state.ved.msg = ""; state.ved.depuis = 0; }
+  const attente = state.ved.envoi === "attente";
+  const bouton = '<button class="btn slim" ' + (attente || !L.length ? "disabled" : "") + ' onclick="vedLancer()">' + (attente ? "Suggestions en cours…" : der ? "Relancer les suggestions" : "Suggérer des sujets d’échange") + "</button>";
+  const r = der ? vedLire(der.texte) : null;
+  let corps;
+  if (!fb || fb.statut === "chargement") corps = '<p class="note">Lecture des suggestions…</p>';
+  else if (fb.statut !== "ok") corps = '<p class="note">Suggestions indisponibles : ' + esc(fb.erreur || "") + "</p>";
+  else if (!der) corps = '<p class="note">Avant votre point avec les HRBP, demandez à l’IA les sujets qui méritent un échange : irritants qui reviennent, réponses à revoir, enseignements à partager.</p>';
+  else if (!r) corps = '<p class="note">La dernière réponse de l’IA ne respecte pas le format attendu : relancez les suggestions.</p>';
+  else {
+    const dansDossier = String(der.entree || "").match(/\d+(?:,\d+)?/g) || [];
+    const tout = r.sujets.map(function (x) { return x.constat + " " + x.question; }).join(" ") + " " + r.vigilance;
+    const hors = der.entree ? (tout.match(/\d+(?:,\d+)?/g) || []).filter(function (n, i, t) { return t.indexOf(n) === i && dansDossier.indexOf(n) < 0; }) : [];
+    corps = '<ol class="ved-l">' + r.sujets.map(function (x) {
+      return "<li><b>" + esc(x.titre) + '</b><span class="ved-c">' + esc(x.constat) + '</span><span class="ved-q">' + esc(x.question) + "</span></li>";
+    }).join("") + "</ol>" +
+      (r.vigilance ? '<p class="note"><b>Vigilance :</b> ' + esc(r.vigilance) + "</p>" : "") +
+      '<p class="note">' + badge(r.confiance === "HAUTE" ? "b-emerald" : r.confiance === "MOYENNE" ? "b-amber" : "b-slate", "Confiance " + r.confiance.toLowerCase()) +
+      " Suggestions du " + esc(der.demande && der.demande.toDate ? der.demande.toDate().toLocaleString("fr-FR") : "?") + ". L’IA ne reçoit que les agrégats de cette page ; elle peut se tromper.</p>" +
+      (hors.length ? '<p class="note">' + badge("b-rose", "Attention") + " Nombre(s) absent(s) des données envoyées : " + esc(hors.join(", ")) + ". Ne pas s’y fier.</p>" : "");
+  }
+  return '<div class="card ved-card"><div class="kpi-h">' + tendIcone("groupe") + '<div class="spechead">Pour en parler avec l’équipe ' + badge("b-violet", "IA") + "</div></div>" +
+    '<p class="tdb-sub" style="margin:4px 0 10px">Des sujets et des questions ouvertes pour votre prochain échange avec les HRBP. L’IA suggère ; les HRBP décident des réponses.</p>' +
+    '<div class="rv-actions" style="margin:0 0 10px">' + bouton + "</div>" +
+    (state.ved.msg ? '<p class="note">' + esc(state.ved.msg) + "</p>" : "") + corps + "</div>";
 }
