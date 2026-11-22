@@ -5,21 +5,20 @@
 // démonstration hors ligne, adapté à ACIA : 2 sources (boîte RH, comptes rendus
 // Notion), réponse la plus simple qui suffit, décision du HRBP, aucun nom.
 //
-// MODE STATIQUE pour l'instant (TDB_MODE = "statique") : les chiffres sont
-// calculés à partir d'un instantané construit sur le CORRIGÉ du jeu de données
-// (mails 1 à 20, comptes rendus 1 à 8) et de décisions D'EXEMPLE. Ce n'est pas
-// une lecture de la base. Le bandeau jaune le dit à l'écran.
-//
-// BRANCHEMENT FIREBASE (étape suivante) : passer TDB_MODE à "firebase".
-// donneesTdb() lit alors les mêmes collections que les autres onglets HRBP :
+// v18 : BRANCHÉ SUR FIREBASE par défaut. donneesTdb() lit les mêmes
+// collections que les autres onglets HRBP :
 //   classement_mails  → signaux par type et par semaine (aciaSignaux), écartés, « Autre », confiance basse
 //   comptes_rendus    → actions reportées ou sans responsable (signauxComptesRendus), CR analysés / écartés
 //   decisions_hrbp    → statut, réponse retenue, semaine d'effet (decisionDe)
 //   types_irritants   → libellés et types actifs (typesPilotage)
 // Tout le reste de l'écran (calculs, règles, affichage) est commun aux deux modes.
+// Secours pour la démo : bouton « Instantané de démonstration » (ou app.html?tdb=statique)
+// = l'instantané v17 (corrigé du jeu de données + décisions d'exemple), bandeau jaune.
+// Sans la base et sans ce choix explicite, aucun chiffre n'est affiché.
 // ---------------------------------------------------------------------------
 
-const TDB_MODE = "statique";
+state.tdbStatique = state.tdbStatique || /[?&]tdb=statique\b/.test(location.search);
+function tdbBascule(v) { state.tdbStatique = v; render(); }
 
 // --- Instantané statique (même forme que les documents Firestore) ----------
 // classement_mails : un document par mail, sans expéditeur ni objet.
@@ -103,25 +102,33 @@ function donneesStatiques() {
   };
 }
 
-// Branchement Firebase : prêt mais NON ACTIVÉ et non testé contre la vraie base.
+// Lecture Firebase (v18). Testée avec une base simulée, à confirmer sur la vraie base.
 function donneesFirebase() {
+  const fbm = window.ACIA_FB.classement_mails;
+  if (!fbm || fbm.statut === "chargement") return { erreur: "Lecture de Firebase en cours…", attente: true };
   const sig = aciaSignaux();
-  if (!sig.ok) return { erreur: sig.erreur || "lecture en cours" };
+  if (!sig.ok) return { erreur: "Données indisponibles : " + (sig.erreur || "base injoignable") };
   const mails = window.ACIA_FB.classement_mails.docs;
   const crfb = window.ACIA_FB.comptes_rendus;
   const crDocs = crfb && crfb.statut === "ok" ? crfb.docs : [];
+  const dfb = window.ACIA_FB.decisions_hrbp;
+  const crAna = crDocs.filter(function (d) { return d.statut === "ANALYSE"; });
+  const reels = Object.keys(sig.parCode).reduce(function (t, k) { return t + ((sig.parCode[k].reels || []).length); }, 0);
   return {
-    mode: "firebase", types: typesPilotage(), parCode: sig.parCode, decision: decisionDe,
+    mode: "firebase", types: typesPilotage().filter(function (t) { return t.actif || (sig.parCode[t.code] && sig.parCode[t.code].total); }),
+    parCode: sig.parCode, decision: decisionDe,
+    etat: { crOk: !!(crfb && crfb.statut === "ok"), decOk: !!(dfb && dfb.statut === "ok"), nbDec: dfb && dfb.docs ? dfb.docs.length : 0, reels: reels },
     compteurs: {
       mails: mails.length, mailsEcartes: mails.filter(function (d) { return d.type === "ECARTE"; }).length,
       mailsAutre: mails.filter(function (d) { return d.type === "AUTRE"; }).length,
-      confianceBasse: mails.filter(function (d) { return d.confiance === "BASSE"; }).length,
-      crAnalyses: crDocs.filter(function (d) { return d.statut === "ANALYSE"; }).length,
+      confianceBasse: mails.filter(function (d) { return String(d.confiance || "").toUpperCase() === "BASSE"; }).length +
+        (typeof lireAnalyseCR === "function" ? crAna.filter(function (d) { return lireAnalyseCR(d.analyse).confiance === "BASSE"; }).length : 0),
+      crAnalyses: crAna.length,
       crEcartes: crDocs.filter(function (d) { return d.statut === "ECARTE"; }).length,
     },
   };
 }
-function donneesTdb() { return TDB_MODE === "firebase" ? donneesFirebase() : donneesStatiques(); }
+function donneesTdb() { return state.tdbStatique ? donneesStatiques() : donneesFirebase(); }
 
 // --- Calculs communs --------------------------------------------------------
 function tdbFr(x, d) { return x === null || x === undefined ? "—" : (Math.round(x * Math.pow(10, d || 0)) / Math.pow(10, d || 0)).toString().replace(".", ","); }
@@ -171,7 +178,9 @@ function tdbBarre(lbl, v, max, sous) {
 // --- Écran ------------------------------------------------------------------
 function viewTableauBordHrbp() {
   const D = donneesTdb();
-  if (D.erreur) return "<h2>Tableau de bord</h2>" + '<div class="card"><p class="note" style="margin:0">Données indisponibles : ' + esc(D.erreur) + "</p></div>";
+  if (D.erreur) return "<h2>Tableau de bord · pilotage des irritants</h2>" + '<div class="card"><p class="note" style="margin:0">' + esc(D.erreur) + "</p>" +
+    '<p class="note">Aucun chiffre n\'est affiché sans la base.' + (D.attente ? "" : " En secours pour une démonstration :") + "</p>" +
+    (D.attente ? "" : '<button class="btn" onclick="tdbBascule(true)">Afficher l\'instantané de démonstration</button>') + "</div>";
   const C = D.compteurs;
   const lignes = D.types.map(function (t) {
     const p = D.parCode[t.code] || { total: 0, parSem: {}, semMax: 0 };
@@ -192,10 +201,15 @@ function viewTableauBordHrbp() {
   const classes = C.mails - C.mailsEcartes;
 
   // Bandeau de mode
+  const E = D.etat || {};
   const bandeau = D.mode === "statique"
-    ? '<div class="tdb-bandeau">' + badge("b-amber", "Données statiques de démonstration") +
-      " Instantané construit sur le corrigé du jeu de données (mails 1 à 20, comptes rendus 1 à 8) et sur des <b>décisions d'exemple</b>. Ce n'est pas encore une lecture de Firebase : cet onglet fait exception au bandeau vert « En direct ».</div>"
-    : '<p class="note" style="margin:0 0 12px">' + badge("b-emerald", "● Firebase, en direct") + "</p>";
+    ? '<div class="tdb-bandeau">' + badge("b-amber", "Instantané de démonstration") +
+      " Construit sur le corrigé du jeu de données (mails 1 à 20, comptes rendus 1 à 8) et sur des <b>décisions d'exemple</b>. Ce n'est pas une lecture de Firebase. " +
+      '<button class="chip" onclick="tdbBascule(false)">Revenir aux données de la base</button></div>'
+    : '<p class="note" style="margin:0 0 12px">' + badge("b-emerald", "● Firebase, en direct") + " " +
+      esc(C.mails + " mail(s) traité(s) · " + C.crAnalyses + " compte(s) rendu(s) analysé(s) · " + E.nbDec + " décision(s) du HRBP") +
+      (E.crOk ? "" : " · " + badge("b-rose", "Comptes rendus indisponibles")) + (E.decOk ? "" : " · " + badge("b-rose", "Décisions indisponibles")) +
+      (E.reels ? " · " + esc(E.reels + " signal(s) de mails réels sans semaine fictive, non placés dans les semaines") : "") + "</p>";
 
   // 1. Tuiles
   const tuiles = '<div class="tdb-kpis">' +
@@ -243,7 +257,7 @@ function viewTableauBordHrbp() {
     tdbQ("Classement conforme au corrigé", Math.round(100 * M.concordance.ok / M.concordance.total) + " %", M.concordance.ok + " mails sur " + M.concordance.total + " · mesure du " + M.concordance.date, "b-emerald", "Mesuré") +
     tdbQ("Mails classés « Autre »", classes ? Math.round(100 * C.mailsAutre / classes) + " %" : "—", C.mailsAutre + " sur " + classes + " mails classés · à relire", C.mailsAutre ? "b-amber" : "b-emerald", C.mailsAutre ? "À relire" : "Aucun") +
     tdbQ("Contenus écartés sans IA", String(C.mailsEcartes + C.crEcartes), C.mailsEcartes + " mail(s), " + C.crEcartes + " compte(s) rendu(s) · jamais envoyés à l'IA", "b-emerald", "Garde-fou actif") +
-    tdbQ("Classements en confiance basse", C.confianceBasse === null ? "—" : String(C.confianceBasse), C.confianceBasse === null ? "Disponible une fois relié à la base" : "Auto-évaluation de l'IA, à vérifier", C.confianceBasse ? "b-amber" : "b-slate", C.confianceBasse === null ? "Non mesuré ici" : (C.confianceBasse ? "À vérifier" : "Aucun")) +
+    tdbQ("Classements en confiance basse", C.confianceBasse === null ? "—" : String(C.confianceBasse), C.confianceBasse === null ? "Non disponible dans l'instantané" : "Mails et comptes rendus · auto-évaluation de l'IA, à vérifier", C.confianceBasse ? "b-amber" : "b-slate", C.confianceBasse === null ? "Non mesuré ici" : (C.confianceBasse ? "À vérifier" : "Aucun")) +
     "</div><p class=\"note\">Aucune donnée individuelle : la base ne garde ni expéditeur, ni objet, ni nom. Les indicateurs portent sur des types d'irritants, jamais sur des personnes.</p></div>";
 
   // 5. Effet des réponses et revue mensuelle
