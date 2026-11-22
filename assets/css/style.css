@@ -304,3 +304,31 @@ label.fl input, label.fl select { display: block; width: 100%; margin-top: 4px; 
 @keyframes fb-flash { from { background: #fde68a; } to { background: transparent; } }
 tr.fb-neuf td { animation: fb-flash 3s ease-out; }
 .fb-carte.fb-neuf { animation: fb-flash 3s ease-out; }
+
+/* v17 : onglet HRBP « Tableau de bord » (vue-tableau-bord.js) */
+.tdb-bandeau { font-size: 13px; color: #4a4360; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 9px 12px; margin: 0 0 14px; line-height: 1.5; }
+.tdb-kpis { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }
+.tdb-kpi { border-radius: 12px; padding: 12px 14px; }
+.tdb-kpi-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+.tdb-kpi .kv { font-size: 26px; margin: 0; line-height: 1.1; }
+.tdb-kpi-l { font-size: 13px; font-weight: 600; color: var(--ink); margin-top: 6px; }
+.tdb-h { margin: 22px 0 8px; }
+.tdb-sub { font-size: 11.5px; color: var(--muted); font-weight: 400; }
+.tdb-heat td, .tdb-heat th { padding: 6px 8px; }
+.tdb-heat .c, table .c { text-align: center; }
+.tdb-cell { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 26px; border-radius: 4px; font-weight: 700; font-size: 12px; }
+.tdb-na { color: var(--faint); }
+.tdb-duo { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; margin-top: 18px; }
+.tdb-duo .card + .card { margin-top: 0; }
+.tdb-duo .bar .lbl { width: 130px; line-height: 1.2; }
+.tdb-q { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tdb-qi { border-left: 3px solid var(--lav2); padding: 4px 10px; }
+.tdb-qv { font-size: 20px; font-weight: 800; color: var(--dark); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 2px 0; }
+.tdb-spark { display: inline-flex; align-items: flex-end; gap: 2px; height: 28px; }
+.tdb-spark span { width: 9px; border-radius: 3px 3px 0 0; background: var(--lav2); }
+.tdb-spark span.ap { background: var(--accent); }
+.tdb-spark span.vide { height: 2px !important; background: var(--line); }
+.tdb-list { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+@media (max-width: 900px) { .tdb-kpis { grid-template-columns: repeat(2, minmax(0,1fr)); } .tdb-duo { grid-template-columns: minmax(0,1fr); } }
+@media (max-width: 480px) { .tdb-q { grid-template-columns: 1fr; } .tdb-kpi .kv { font-size: 22px; } }
+.tdb-wide { min-width: 820px; }
