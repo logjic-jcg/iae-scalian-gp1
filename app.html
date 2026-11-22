@@ -38,7 +38,7 @@
         <button class="avatar" id="user-btn" aria-label="Compte" aria-haspopup="true" aria-expanded="false" onclick="toggleUser(event)" title="Compte"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="8.5" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20.5c1.2-4 4.1-6 7.5-6s6.3 2 7.5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         <div class="usermenu" id="usermenu" role="menu" hidden>
           <div class="um-id"><b id="um-nom"></b><span id="um-fn"></span><span class="um-etat" id="um-etat" hidden title="Données lues dans la boîte RH partagée et les comptes rendus Notion (Make + Claude → base). Aucune donnée de maquette.">● En direct</span></div>
-          <button class="um-out" id="um-agents" role="menuitem" hidden onclick="reinitialiserAgents()" title="Efface les réponses des deux contradicteurs (avant décision et revue) : l'affichage revient à l'état d'avant le premier clic. Vos décisions sont conservées.">Réinitialiser les agents</button>
+          <button class="um-out" id="um-agents" role="menuitem" hidden onclick="reinitialiserAgents()" title="Efface les réponses de l'IA (contradicteurs, revue mensuelle, conseils de la Direction) et libère leurs garde-fous : les boutons redeviennent disponibles. Vos décisions sont conservées.">Réinitialiser les agents</button>
           <button class="um-out" role="menuitem" onclick="reinitialiserDemo()" title="Remet l'écran au début de la démo (ne touche pas à la base)">Réinitialiser la démo</button>
           <button class="um-out" role="menuitem" onclick="seDeconnecter()">Se déconnecter</button>
         </div>

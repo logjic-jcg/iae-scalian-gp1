@@ -504,8 +504,9 @@ function renderWho() {
   document.getElementById("um-nom").textContent = w[0];
   document.getElementById("um-fn").textContent = w[1];
   // v26 : mention « En direct » et réinitialisation des agents, réservées au HRBP en direct.
+  // v36 : la mention « En direct » s'affiche aussi pour la Direction (lecture seule, même base).
   const direct = state.role === "hrbp";
-  const et = document.getElementById("um-etat"); if (et) et.hidden = !direct;
+  const et = document.getElementById("um-etat"); if (et) et.hidden = !(direct || state.role === "dir");
   const ra = document.getElementById("um-agents"); if (ra) ra.hidden = !direct;
 }
 function toggleBento(e) {

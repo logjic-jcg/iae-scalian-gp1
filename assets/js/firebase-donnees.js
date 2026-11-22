@@ -93,7 +93,7 @@ if (!app) {
     window.aciaReinitAgents = function (ids) {
       const b = writeBatch(db), passe = Timestamp.fromDate(new Date("2000-01-01T00:00:00Z"));
       ids.forEach(function (id) { b.delete(doc(db, "suggestions_ia", id)); });
-      b.update(doc(db, "parametres", "revue_ia"), { derniere_demande: passe, derniere_decision: passe });
+      b.update(doc(db, "parametres", "revue_ia"), { derniere_demande: passe, derniere_decision: passe, derniere_direction: passe });   // v36 : + garde-fou de la Direction
       return b.commit();
     };
   } catch (e) { replis(e); }
