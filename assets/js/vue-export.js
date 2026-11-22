@@ -105,17 +105,23 @@ function expMail() {
   window.location.href = "mailto:?subject=" + encodeURIComponent(objet) + "&body=" + encodeURIComponent(b);
 }
 
-// ------------------------------ BARRE --------------------------------------
-
-function expBarre() {
-  const c = expContexte(); if (!c) return "";
-  return '<div class="exp-barre">' +
-    '<button class="btn ghost slim" type="button" onclick="expPdf()" title="Ouvre l\'impression : choisir « Enregistrer au format PDF »">⤓ Exporter en PDF</button>' +
-    '<button class="btn ghost slim" type="button" onclick="expMail()" title="Ouvre votre messagerie avec un résumé et le lien ; joignez le PDF vous-même">✉ Partager par mail</button></div>';
+// ------------------------------ ICÔNES -------------------------------------
+// v24.1 : deux petites icônes discrètes à droite du titre de la page.
+const EXP_SVG_PDF = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19.5h14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const EXP_SVG_MAIL = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M4.5 7.5l7.5 6 7.5-6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function expIcones() {
+  return '<span class="exp-ic">' +
+    '<button type="button" onclick="expPdf()" title="Exporter en PDF (choisir « Enregistrer au format PDF »)" aria-label="Exporter en PDF">' + EXP_SVG_PDF + "</button>" +
+    '<button type="button" onclick="expMail()" title="Partager par mail : résumé et lien ; joignez le PDF vous-même" aria-label="Partager par mail">' + EXP_SVG_MAIL + "</button></span>";
 }
-// Ajoute la barre en tête des pages exportables (après l'enveloppe de la fiche irritant).
+function expAjouter(h) {
+  const i = h.indexOf("<h2>"), j = h.indexOf("</h2>");
+  if (i < 0 || j < i) return h;
+  return h.slice(0, i) + '<h2 class="exp-h2"><span>' + h.slice(i + 4, j) + "</span>" + expIcones() + h.slice(j);
+}
+// Ajoute les icônes sur les pages exportables (après l'enveloppe de la fiche irritant).
 ["viewPilotSpec", "viewTableauBordHrbp", "viewRevueMensuelle", "viewTendances", "viewPilotOrienter", "viewTypesIrritants"].forEach(function (nom) {
   const orig = window[nom];
   if (typeof orig !== "function") return;
-  window[nom] = function () { const h = orig(); return expContexte() ? expBarre() + h : h; };
+  window[nom] = function () { const h = orig(); return expContexte() ? expAjouter(h) : h; };
 });

@@ -406,13 +406,15 @@ tr.fb-neuf td { animation: fb-flash 3s ease-out; }
 @media print{.btn-haut{display:none}}
 
 /* v24 : export PDF et partage par mail */
-.exp-barre{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin:0 0 -6px}
-.exp-barre .btn{width:auto}
+.exp-h2{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.exp-ic{display:inline-flex;gap:4px;flex:0 0 auto}
+.exp-ic button{width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:8px;background:transparent;color:#6b6280;cursor:pointer}
+.exp-ic button:hover,.exp-ic button:focus-visible{background:#eee8f5;border-color:#d9cdea;color:#4b2882}
 .exp-print{display:none}
 @media print{
   @page{size:A4;margin:14mm 12mm}
   body{background:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  header.app,.exp-barre,.btn-haut,.btn,button,select,.chip,.chips,.proc-filtre,.fi-back,.fi-top,.pick-fiche,.rv-actions,.rv-btn,.tdb-renvoi .btn,.bento,.usermenu{display:none !important}
+  header.app,.exp-ic,.btn-haut,.btn,button,select,.chip,.chips,.proc-filtre,.fi-back,.fi-top,.pick-fiche,.rv-actions,.rv-btn,.tdb-renvoi .btn,.bento,.usermenu{display:none !important}
   main{max-width:none !important;padding:0 !important;margin:0 !important}
   .card,.rv-item,.fi-sug,.tdb-qi,table tr{break-inside:avoid;page-break-inside:avoid}
   .card{box-shadow:none !important}
