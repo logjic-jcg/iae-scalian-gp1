@@ -12,6 +12,7 @@ window.ACIA_FB = {
   comptes_rendus: { statut: "chargement", docs: [], modifies: [], erreur: "" },
   types_irritants: { statut: "chargement", docs: [], modifies: [], erreur: "" },
   parametres: { statut: "chargement", docs: [], modifies: [], erreur: "" },
+  suggestions_ia: { statut: "chargement", docs: [], modifies: [], erreur: "" },
 };
 
 // Appelée par firebase-donnees.js à chaque changement dans la base.
@@ -19,6 +20,7 @@ window.ACIA_FB = {
 function aciaFbMisAJour(nom) {
   // v13 : les titres des types servent dans tous les onglets HRBP en direct.
   if (nom === "parametres" && state.tab === "tendances") { render(); return; }
+  if (nom === "suggestions_ia") { if (state.tab === "b_pilotage") render(); return; }
   if (nom === "types_irritants" && ["types", "tendances", "b_orienter", "b_spec", "b_suivre", "b_pilotage"].indexOf(state.tab) >= 0) { render(); return; }
   if (state.tab === "firebase" || (nom === "arrivees" && state.tab === "arrivees") || ((nom === "classement_mails" || nom === "comptes_rendus") && state.tab === "tendances") ||
       ((nom === "classement_mails" || nom === "decisions_hrbp" || nom === "comptes_rendus") && ["b_orienter", "b_spec", "b_suivre", "b_pilotage"].indexOf(state.tab) >= 0)) render();
@@ -28,10 +30,10 @@ function aciaFbMisAJour(nom) {
 // le module ne s'exécute jamais : on bascule nous-mêmes sur le repli.
 setTimeout(function () {
   if (window.ACIA_FB_ACTIF) return;
-  ["irritants", "arrivees", "classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres"].forEach(function (n) {
+  ["irritants", "arrivees", "classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres", "suggestions_ia"].forEach(function (n) {
     window.ACIA_FB[n] = { statut: "repli", docs: [], modifies: [], erreur: "Le SDK Firebase n'a pas pu être chargé (réseau ou bloqueur)." };
   });
-  aciaFbMisAJour("irritants"); aciaFbMisAJour("arrivees"); aciaFbMisAJour("classement_mails"); aciaFbMisAJour("decisions_hrbp"); aciaFbMisAJour("comptes_rendus"); aciaFbMisAJour("types_irritants"); aciaFbMisAJour("parametres");
+  aciaFbMisAJour("irritants"); aciaFbMisAJour("arrivees"); aciaFbMisAJour("classement_mails"); aciaFbMisAJour("decisions_hrbp"); aciaFbMisAJour("comptes_rendus"); aciaFbMisAJour("types_irritants"); aciaFbMisAJour("parametres"); aciaFbMisAJour("suggestions_ia");
 }, 10000);
 
 function viewFirebase() {

@@ -188,7 +188,7 @@ function enregistrerDecision(code) {
   }
   if (typeof window.aciaEcrireDecision !== "function") { state.msgPilot = "Écriture impossible : connexion à Firebase absente."; render(); return; }
   state.msgPilot = "Enregistrement…"; render();
-  window.aciaEcrireDecision(code, data).then(function () { state.msgPilot = "Décision enregistrée dans la base."; render(); })
+  window.aciaEcrireDecision(code, data).then(function () { state.prefillPilot = null; state.msgPilot = "Décision enregistrée dans la base."; render(); })
     .catch(function (e) { state.msgPilot = "Refusé par la base : " + ((e && e.message) || e); render(); });
 }
 
@@ -223,6 +223,8 @@ function viewPilotOrienter() {
   const semaines = Object.keys(p.parSem).map(Number).sort(function (a, b) { return a - b; });
   const detailSem = semaines.length ? semaines.map(function (s) { return "S" + s + " : " + p.parSem[s]; }).join(" · ") : "aucun signal daté";
   const reco = conf.reco;
+  // v19 : décision pré-remplie depuis une suggestion de l'IA acceptée (à relire puis enregistrer).
+  const pre = state.prefillPilot && state.prefillPilot.code === c ? state.prefillPilot : null;
   const opt = function (list, val) { return list.map(function (x) { return '<option value="' + x.id + '"' + (x.id === val ? " selected" : "") + ">" + esc(x.label) + "</option>"; }).join(""); };
   const semDefaut = d && d.semaine_effet ? d.semaine_effet : p.semMax + 1;
 
@@ -236,10 +238,11 @@ function viewPilotOrienter() {
     '<div class="card" style="margin-top:16px;border-color:#fde68a;background:#fffbeb"><div class="spechead" style="color:#b45309">Décision du HRBP</div>' +
       (d ? '<p style="font-size:13px;margin-top:6px">Décision actuelle : ' + badge(libStatut(d.statut).cls, libStatut(d.statut).label) + " " + esc(libReponse(d.reponse)) +
         " · effet en semaine " + esc(d.semaine_effet) + (d.maj && d.maj.toDate ? " · enregistrée le " + esc(d.maj.toDate().toLocaleString("fr-FR")) : "") + "</p>" : '<p class="note">Aucune décision enregistrée pour cet irritant.</p>') +
-      '<label class="fl">Statut<select id="dp-statut">' + opt(STATUTS_HRBP, d ? d.statut : "VALIDE") + "</select></label>" +
-      '<label class="fl">Réponse retenue<select id="dp-reponse">' + opt(REPONSES_HRBP, d ? d.reponse : reco) + "</select></label>" +
+      '<label class="fl">Statut<select id="dp-statut">' + opt(STATUTS_HRBP, pre ? "VALIDE" : d ? d.statut : "VALIDE") + "</select></label>" +
+      '<label class="fl">Réponse retenue<select id="dp-reponse">' + opt(REPONSES_HRBP, pre ? pre.reponse : d ? d.reponse : reco) + "</select></label>" +
       '<label class="fl">Semaine à partir de laquelle la réponse s\'applique<input id="dp-sem" type="number" min="' + (p.semMax + 1) + '" max="53" value="' + esc(semDefaut) + '"></label>' +
-      '<label class="fl">Commentaire (280 caractères maximum, sans nom de personne)<input id="dp-comm" maxlength="280" value="' + esc(d && d.commentaire ? d.commentaire : "") + '"></label>' +
+      '<label class="fl">Commentaire (280 caractères maximum, sans nom de personne)<input id="dp-comm" maxlength="280" value="' + esc(pre ? pre.commentaire : d && d.commentaire ? d.commentaire : "") + '"></label>' +
+      (pre ? '<p class="note">' + badge("b-violet", "IA") + " Pré-rempli d'après la suggestion acceptée dans le Tableau de bord : relisez, puis enregistrez vous-même.</p>" : "") +
       '<div class="btns" style="margin-top:12px"><button class="btn ok" onclick="enregistrerDecision(\'' + c + '\')">Enregistrer la décision</button></div>' +
       (state.msgPilot ? '<p class="note">' + esc(state.msgPilot) + "</p>" : "") +
       '<p class="note">La décision porte sur un processus, jamais sur une personne. Sans décision « validé », aucune fiche n\'est produite.</p></div>';

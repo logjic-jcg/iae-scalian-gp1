@@ -332,3 +332,17 @@ tr.fb-neuf td { animation: fb-flash 3s ease-out; }
 @media (max-width: 900px) { .tdb-kpis { grid-template-columns: repeat(2, minmax(0,1fr)); } .tdb-duo { grid-template-columns: minmax(0,1fr); } }
 @media (max-width: 480px) { .tdb-q { grid-template-columns: 1fr; } .tdb-kpi .kv { font-size: 22px; } }
 .tdb-wide { min-width: 820px; }
+
+/* v19 : contradicteur de revue (vue-revue-ia.js) */
+.rv-card { margin-top: 16px; border-color: var(--lav2); }
+.rv-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+.rv-btn { flex: none; }
+.rv-list { display: grid; gap: 10px; margin-top: 10px; }
+.rv-item { border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; padding: 10px 12px; background: #fff; }
+.rv-item.contra { border-left-color: #e11d48; }
+.rv-h { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.rv-a { font-size: 14px; font-weight: 700; margin-top: 6px; color: var(--ink); }
+.rv-j { font-size: 13px; color: #4a4360; margin-top: 3px; }
+.rv-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.rv-sel { font: inherit; font-size: 12px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.btn[disabled] { opacity: .6; cursor: default; }

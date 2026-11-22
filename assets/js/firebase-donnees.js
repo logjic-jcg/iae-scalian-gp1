@@ -10,6 +10,7 @@
 //   - comptes_rendus : actions des comptes rendus Notion (Make + Claude), même onglet (v10)
 //   - types_irritants : types d'irritants administrés par le HRBP, lus aussi par Make (v13)
 //   - parametres : paramètres de l'interface (refresh_ihm), modifiables seulement via Claude + Make (v13)
+//   - suggestions_ia : suggestions du contradicteur de revue, écrites par Make, statut modifié par le HRBP (v19)
 // Résultat rangé dans window.ACIA_FB[collection] :
 //   { statut: "chargement" | "ok" | "repli", docs: [...], modifies: [ids], erreur, lu }
 // En cas d'échec, statut = "repli" : l'écran garde les données de la maquette.
@@ -18,7 +19,7 @@
 // présents dans la table « utilisateurs » : on attend donc la session Firebase
 // avant d'écouter. Sans session : retour à la connexion (sauf mode maquette).
 import { app, utilisateurInitial, deconnecter } from "./firebase-session.js";
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const DELAI_MAX_MS = 8000;
 
@@ -44,7 +45,7 @@ function ecouter(db, nom, q) {
 }
 
 window.ACIA_FB_ACTIF = true;   // le module s'est chargé (sinon vue-firebase.js bascule en repli)
-const COLLECTIONS = ["irritants", "arrivees", "classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres"];
+const COLLECTIONS = ["irritants", "arrivees", "classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres", "suggestions_ia"];
 function replis(msg) { COLLECTIONS.forEach(function (c) { repli(c, msg); }); }
 // Déconnexion complète, appelée par le menu du compte (app.html).
 window.aciaFbDeconnexion = deconnecter;
@@ -65,6 +66,7 @@ if (!app) {
     ecouter(db, "comptes_rendus", query(collection(db, "comptes_rendus")));
     ecouter(db, "types_irritants", query(collection(db, "types_irritants"), orderBy("ordre")));
     ecouter(db, "parametres", query(collection(db, "parametres")));
+    ecouter(db, "suggestions_ia", query(collection(db, "suggestions_ia")));
     // v13 : création ou modification d'un type d'irritant (v15 : réservé au HRBP connecté,
     // encadrée par les règles Firestore : champs, longueurs, code figé, pas de suppression).
     window.aciaEcrireType = function (code, t) {
@@ -78,6 +80,12 @@ if (!app) {
       return setDoc(doc(db, "decisions_hrbp", code), {
         statut: d.statut, reponse: d.reponse, commentaire: d.commentaire, semaine_effet: d.semaine_effet, maj: serverTimestamp()
       });
+    };
+    // v19 : le HRBP accepte ou rejette une suggestion de l'IA (seuls s1..s3, m1..m3 et maj_hrbp changent).
+    window.aciaEcrireSuggestion = function (id, n, statut, motif) {
+      const maj = { maj_hrbp: serverTimestamp() };
+      maj["s" + n] = statut; maj["m" + n] = String(motif || "").slice(0, 120);
+      return updateDoc(doc(db, "suggestions_ia", id), maj);
     };
   } catch (e) { replis(e); }
 }

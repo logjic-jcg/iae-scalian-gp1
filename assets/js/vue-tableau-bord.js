@@ -304,7 +304,8 @@ function viewTableauBordHrbp() {
   if (partAgent !== null && partAgent > TDB_CIBLE_AGENT) A.push("Vérifier qu'une réponse plus simple ne suffirait pas pour les irritants confiés à un agent IA.");
   A.push("Valider les cibles proposées et organiser la mesure du temps gagné et de la satisfaction (aujourd'hui non mesurés).");
 
-  return "<h2>Tableau de bord · pilotage des irritants</h2>" + bandeau + tuiles +
+  const revue = typeof carteRevueIa === "function" ? carteRevueIa({ mode: D.mode, lignes: lignes, C: C, partAgent: partAgent }) : "";
+  return "<h2>Tableau de bord · pilotage des irritants</h2>" + bandeau + tuiles + revue +
     '<h3 class="tdb-h">Signaux par semaine et par irritant</h3>' + chaleur +
     '<div class="tdb-duo">' + portefeuille + qualite + "</div>" +
     '<h3 class="tdb-h">Effet des réponses et revue mensuelle</h3>' + effets +
