@@ -150,7 +150,7 @@ function selPilot(code) { state.selPilot = code; state.msgPilot = ""; render(); 
 
 // v13 : filtre de la liste par statut de décision.
 const FILTRES_PILOT = [
-  { id: "TOUS",         label: "Tous",          test: function () { return true; } },
+  { id: "TOUS",         label: "Tous les statuts", test: function () { return true; } },
   { id: "SANS",         label: "Sans décision", test: function (d) { return !d; } },
   { id: "VALIDE",       label: "Validé",        test: function (d) { return !!d && d.statut === "VALIDE"; } },
   { id: "A_SURVEILLER", label: "À surveiller",  test: function (d) { return !!d && d.statut === "A_SURVEILLER"; } },
@@ -202,10 +202,11 @@ function viewPilotOrienter() {
   const passe = function (f, c) { return f.test(decisionDe(c), sig.parCode[c]); };
   const codes = tous.filter(function (c) { return passe(filtre, c); });
   if (codes.length && codes.indexOf(state.selPilot) < 0) state.selPilot = codes[0];
-  const chips = filtreProcessusHtml() + '<div class="chips" style="margin:0 0 10px">' + FILTRES_PILOT.map(function (f) {
+  // v23 : liste des processus à gauche des boutons de statut, sur une seule ligne.
+  const chips = '<div class="filtres-ligne">' + filtreProcessusHtml() + '<div class="chips">' + FILTRES_PILOT.map(function (f) {
     const n = tous.filter(function (c) { return passe(f, c); }).length;
     return '<button class="chip' + (f.id === filtre.id ? " active" : "") + '" onclick="filtrePilot(\'' + f.id + '\')">' + esc(f.label) + " (" + n + ")</button>";
-  }).join("") + "</div>";
+  }).join("") + "</div></div>";
   const maxTot = Math.max(1, Math.max.apply(null, tous.map(function (c) { return sig.parCode[c].total; })));
 
   const picks = codes.map(function (c) {

@@ -36,7 +36,8 @@ function lireAnalyseCR(texte) {
 
 function carteReunions() {
   const fb = window.ACIA_FB.comptes_rendus;
-  const titre = '<h3 id="sec-reunions" style="margin-top:26px">Comptes rendus de réunion : actions qui traînent</h3>';
+  const titre = '<div class="sec-titre"><h3 id="sec-reunions" style="margin:26px 0 0">Comptes rendus de réunion : actions qui traînent</h3>' +
+    '<a href="#" class="lien-haut" onclick="hautDePage();return false">↑ Haut de l\'onglet</a></div>';
   if (!fb || fb.statut !== "ok") {
     const msg = !fb || fb.statut === "chargement" ? "Lecture de Firebase en cours…" : "Données indisponibles : " + fb.erreur;
     return titre + '<div class="card"><p class="note" style="margin:0">' + esc(msg) + "</p>" +

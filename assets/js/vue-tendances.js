@@ -249,3 +249,10 @@ function relancerTraitement() {
     .catch(function () { state.msgRelance = "Relance impossible : Make n'a pas répondu."; render(); });
   setTimeout(function () { state.msgRelance = ""; if (state.tab === "tendances") render(); }, 60000);
 }
+
+// v23 : bouton flottant « haut de l'onglet », visible dès qu'on a défilé (tous les onglets).
+function hautDePage() { window.scrollTo({ top: 0, behavior: "smooth" }); }
+window.addEventListener("scroll", function () {
+  const b = document.getElementById("btn-haut");
+  if (b) b.classList.toggle("visible", window.scrollY > 500);
+}, { passive: true });
