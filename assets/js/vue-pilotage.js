@@ -230,6 +230,7 @@ function viewPilotOrienter() {
 
   const right = '<div class="card">' +
     "<div class='spechead'>Ce que dit la base</div><div class='spech3'>" + esc(libelleType(c)) + "</div>" +
+    '<a href="#" class="pick-fiche" onclick="ouvrirFiche(\'' + c + '\', false);return false">Ouvrir la fiche de l\'irritant →</a>' +
     '<p style="margin-top:8px;font-size:14px"><b>' + p.total + " signal(s)</b> " + esc(sourceDe(c)) + " (" + esc(detailSem) + (p.reels.length ? " · " + p.reels.length + " mail(s) réel(s)" : "") + ").</p>" +
     (c === CODE_CR && !p.disponible ? '<p class="note">Comptes rendus indisponibles dans la base : compteur à zéro par défaut.</p>' : "") +
     (aExaminer(p) ? '<p style="margin-top:4px">' + badge("b-rose", "À examiner : 3 signaux ou plus sur les 2 dernières semaines") + "</p>" : "") +
@@ -282,7 +283,7 @@ function viewPilotSpec() {
     const d = decisionDe(c), p = sig.parCode[c], conf = confDe(c);
     const semaines = Object.keys(p.parSem).map(Number).sort(function (a, b) { return a - b; });
     if (d.reponse === "SIMPLIFIER") {
-      return '<div class="card" style="margin-top:12px"><div class="spechead">Réponse sans IA : pas de spécification d\'outil</div><div class="spech3">' + esc(libelleType(c)) + "</div>" +
+      return '<div class="card" id="spec-' + c + '" style="margin-top:12px"><div class="spechead">Réponse sans IA : pas de spécification d\'outil</div><div class="spech3">' + esc(libelleType(c)) + "</div>" +
         '<p style="font-size:14px;margin-top:6px"><b>Action :</b> ' + esc(conf.action || "À définir par le HRBP.") + "</p>" +
         '<p class="note">Signal observé : ' + p.total + " signal(s). Indicateur de suivi : " + esc(conf.indicateur) + ".</p></div>";
     }
@@ -290,7 +291,7 @@ function viewPilotSpec() {
     const autonomie = d.reponse === "ASSISTER" ? "Préparer : l'agent prépare, un humain relit et envoie." : "Agir sur les cas standard, sans jugement ; tout cas hors règle revient à un humain.";
     const ligne = function (k, v) { return "<tr><td style='padding:6px 10px 6px 0;color:#64748b;vertical-align:top;white-space:nowrap'>" + esc(k) + "</td><td style='padding:6px 0'>" + v + "</td></tr>"; };
     const workflow = (conf.workflow || ["À définir"]).map(function (s, k) { return (k + 1) + ". " + esc(s); }).join("<br>");
-    return '<div class="card" style="margin-top:12px"><div class="spechead">Fiche générée à partir de la base · ' + esc(libReponse(d.reponse)) + '</div><div class="spech3">' + esc(libelleType(c)) + "</div>" +
+    return '<div class="card" id="spec-' + c + '" style="margin-top:12px"><div class="spechead">Fiche générée à partir de la base · ' + esc(libReponse(d.reponse)) + '</div><div class="spech3">' + esc(libelleType(c)) + "</div>" +
       '<table style="margin-top:8px;font-size:13px"><tbody>' +
       ligne("Besoin métier", esc(besoin)) +
       ligne("Signal observé", p.total + " signal(s) " + sourceDe(c) + (semaines.length ? " (semaines " + semaines.join(", ") + ")" : "") + ".") +

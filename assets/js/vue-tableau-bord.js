@@ -231,7 +231,7 @@ function viewTableauBordHrbp() {
     '<th class="c">Total</th></tr></thead><tbody>' +
     lignes.map(function (l) {
       const horsSource = function (s) { return s > l.p.semMax; };
-      return "<tr><td>" + esc(l.label) + (l.code === CODE_CR ? ' <small class="tdb-sub">comptes rendus</small>' : "") + (l.examiner ? " " + badge("b-amber", "À examiner") : "") + "</td>" +
+      return "<tr><td>" + lienFiche(l.code, esc(l.label), D.mode === "statique") + (l.code === CODE_CR ? ' <small class="tdb-sub">comptes rendus</small>' : "") + (l.examiner ? " " + badge("b-amber", "À examiner") : "") + "</td>" +
         sems.map(function (s) {
           const v = l.p.parSem[s] || 0;
           if (horsSource(s)) return '<td class="c tdb-na" title="Semaine pas encore observée pour cette source">·</td>';
@@ -268,7 +268,7 @@ function viewTableauBordHrbp() {
         const val = l.p.parSem[s] || 0, h = s > l.p.semMax ? 0 : Math.max(3, Math.round(26 * val / Math.max(1, maxCase)));
         return '<span class="' + (s >= se ? "ap" : "av") + (s > l.p.semMax ? " vide" : "") + '" style="height:' + h + 'px" title="S' + s + " : " + (s > l.p.semMax ? "pas encore observée" : val + " signal(s)") + '"></span>';
       }).join("") + "</span>";
-      return "<tr><td><b>" + esc(l.label) + "</b>" + (l.d.statut === "A_SURVEILLER" ? " " + badge("b-amber", "À surveiller") : "") + "</td><td>" + esc(libReponse(l.d.reponse)) + '</td><td class="c">S' + se + "</td><td>" + spark +
+      return "<tr><td><b>" + lienFiche(l.code, esc(l.label), D.mode === "statique") + "</b>" + (l.d.statut === "A_SURVEILLER" ? " " + badge("b-amber", "À surveiller") : "") + "</td><td>" + esc(libReponse(l.d.reponse)) + '</td><td class="c">S' + se + "</td><td>" + spark +
         '</td><td class="c">' + tdbFr(e.mAv, 1) + '</td><td class="c">' + tdbFr(e.mAp, 1) + "</td><td>" + badge(v[0], v[1]) + "</td><td>" + badge(r[0], r[1]) + '<div class="tdb-sub" style="margin-top:4px">' + esc(r[2]) + "</div></td></tr>";
     }).join("") + "</tbody></table></div>" +
     '<p class="note">Moyenne de signaux par semaine avant et après la semaine d\'effet (barres foncées = après). Règles de la revue : en baisse → conserver ; stable → adapter ; en hausse sur plusieurs semaines → réorienter ; trop peu de recul → attendre. L\'assistant propose, le HRBP décide.</p>';

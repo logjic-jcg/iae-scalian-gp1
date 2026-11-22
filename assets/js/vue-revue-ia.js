@@ -145,7 +145,7 @@ function carteRevueIa(modele) {
         return '<div class="rv-item' + (s.genre === "CONTRADICTION" ? " contra" : "") + '"><div class="rv-h">' +
           badge(s.genre === "CONTRADICTION" ? "b-rose" : "b-violet", s.genre === "CONTRADICTION" ? "Contradiction" : "Action") + " " +
           badge(s.confiance === "HAUTE" ? "b-emerald" : s.confiance === "MOYENNE" ? "b-amber" : "b-slate", "Confiance " + s.confiance.toLowerCase()) +
-          ' <span class="tdb-sub">' + esc(lib(s.code)) + (s.reponse !== "AUCUNE" ? " · réponse proposée : " + esc(libReponse(s.reponse)) : "") + "</span></div>" +
+          ' <span class="tdb-sub">' + lienFiche(s.code, esc(lib(s.code))) + (s.reponse !== "AUCUNE" ? " · réponse proposée : " + esc(libReponse(s.reponse)) : "") + "</span></div>" +
           '<div class="rv-a">' + esc(s.action) + "</div><div class=\"rv-j\">" + esc(s.justification) + "</div>" +
           '<div class="tdb-sub" style="margin-top:4px">Dans la base : ' + esc(chiffres) + "</div>" +
           '<div class="rv-actions">' + pied + "</div></div>";

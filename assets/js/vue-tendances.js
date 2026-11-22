@@ -177,12 +177,12 @@ function viewTendances() {
 
   const bars = lignes.map(function (t) {
     const v = total[t.code] || 0;
-    return '<div class="bar"><span class="lbl">' + esc(t.label) + (t.actif ? "" : " (désactivé)") + '</span><span class="track"><span class="fill" style="display:block;width:' + Math.round(v / maxTot * 100) + '%"></span></span><span class="val">' + v + "</span></div>";
+    return '<div class="bar"><span class="lbl">' + lienFiche(t.code, esc(t.label)) + (t.actif ? "" : " (désactivé)") + '</span><span class="track"><span class="fill" style="display:block;width:' + Math.round(v / maxTot * 100) + '%"></span></span><span class="val">' + v + "</span></div>";
   }).join("") || '<p class="note">Aucun irritant pour ce processus.</p>';
 
   const tete = "<tr><th>Irritant</th>" + cols.map(function (c) { return "<th>" + esc(c.label) + "</th>"; }).join("") + "<th>Réponse la plus simple qui suffit</th></tr>";
   const corps = lignes.map(function (t) {
-    return "<tr><td><b>" + esc(t.label) + "</b>" + (t.actif ? "" : " <small>(désactivé)</small>") + "</td>" + cols.map(function (c) {
+    return "<tr><td><b>" + lienFiche(t.code, esc(t.label)) + "</b>" + (t.actif ? "" : " <small>(désactivé)</small>") + "</td>" + cols.map(function (c) {
       const v = parSem[t.code + "|" + c.cle] || 0;
       const a = v ? (0.12 + 0.6 * v / max).toFixed(2) : 0;
       return '<td style="text-align:center;font-weight:700;background:rgba(228,0,91,' + a + ')">' + (v || "") + "</td>";
