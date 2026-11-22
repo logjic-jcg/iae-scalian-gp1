@@ -10,7 +10,7 @@
 // Si la base est indisponible, aucun chiffre n'est inventé : message seulement.
 // ---------------------------------------------------------------------------
 // v13 : la liste des types vient de la table Firestore « types_irritants »,
-// administrée par le HRBP (onglet « Types des irritants ») et lue par Make à
+// administrée par le HRBP (onglet « Types d’irritants ») et lue par Make à
 // chaque passage. Le code est figé, seul le titre peut changer : les tendances
 // restent comparables. Si la table est indisponible, repli sur la liste d'origine.
 const TYPES_MAIL_DEFAUT = [
@@ -52,7 +52,7 @@ function typesMail() {
 
 // ---------------------------------------------------------------------------
 // v14 : filtre « Processus » (liste déroulante à choix multiples), partagé par
-// « Tendances des irritants » et « Valider et orienter ». Le processus est un
+// « Tendances » et « Décisions ». Le processus est un
 // champ texte de la table « types_irritants ». Aucune case cochée = tout afficher.
 // La comparaison ignore la casse et les espaces en trop.
 // ---------------------------------------------------------------------------

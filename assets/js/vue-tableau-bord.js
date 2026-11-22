@@ -48,7 +48,7 @@ const TDB_INSTANTANE = {
   ],
   // Comptes rendus : signaux par semaine tels que calculés par le site v12 sur les CR 1 à 8.
   comptes_rendus: { analyses: 7, ecartes: 1, parSem: { 1: 2, 2: 3, 3: 4, 4: 4, 5: 1 } },
-  // Décisions D'EXEMPLE (à saisir en vrai dans « Valider et orienter »).
+  // Décisions D'EXEMPLE (à saisir en vrai dans « Décisions »).
   decisions_hrbp: [
     { id: "ANNONCE_INCOMPLETE",  statut: "VALIDE",       reponse: "ASSISTER",    semaine_effet: 4 },
     { id: "DEMANDE_TARDIVE",     statut: "VALIDE",       reponse: "ASSISTER",    semaine_effet: 4 },
@@ -302,7 +302,7 @@ function tdbSections(titre) {
   const A = [];
   aExaminer.filter(function (l) { return !l.d; }).forEach(function (l) { A.push("Statuer sur « " + l.label + " » : irritant à examiner sans décision."); });
   suivis.forEach(function (l) { const r = tdbRecommandation(l.d, l.effet); if (r[1] === "Statuer" || r[1] === "Adapter" || r[1] === "Réorienter") A.push(r[1] + " : « " + l.label + " » (" + TDB_VERDICT[l.effet.verdict][1].toLowerCase() + ")."); });
-  if (C.mailsAutre) A.push("Relire les " + C.mailsAutre + " mail(s) classé(s) « Autre » : si un motif revient, créer un type dans « Types des irritants ».");
+  if (C.mailsAutre) A.push("Relire les " + C.mailsAutre + " mail(s) classé(s) « Autre » : si un motif revient, créer un type dans « Types d’irritants ».");
   if (partAgent !== null && partAgent > TDB_CIBLE_AGENT) A.push("Vérifier qu'une réponse plus simple ne suffirait pas pour les irritants confiés à un agent IA.");
   A.push("Valider les cibles proposées et organiser la mesure du temps gagné et de la satisfaction (aujourd'hui non mesurés).");
 

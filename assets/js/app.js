@@ -270,7 +270,7 @@ function viewOrienter() {
   }).join("") + "</div>";
 
   // v22 : l'ancien contradicteur scénarisé est remplacé par le vrai (IA), dans le profil HRBP.
-  const contre = '<p style="font-size:13px;margin-top:6px">Le contradicteur avant décision fonctionne en vrai (Claude, via Make) dans le profil <b>HRBP</b>, onglet « Valider et orienter » : ' +
+  const contre = '<p style="font-size:13px;margin-top:6px">Le contradicteur avant décision fonctionne en vrai (Claude, via Make) dans le profil <b>HRBP</b>, onglet « Décisions » : ' +
     "bouton « Contredire la proposition » sur chaque irritant. Il ne reçoit que les agrégats de l'irritant, jamais de mail ni de nom.</p>";
 
   const st = state.status[i.id];
@@ -457,10 +457,10 @@ const ROLES = [
   // v11 : deux HRBP pour ne pas mélanger les données.
   // Julien = uniquement ce qui vient des sources réelles (boîte RH partagée, comptes rendus Notion) via Firebase.
   { id: "hrbp",    nom: "Julien", role: "HRBP", persona: "HRBP",
-    tabs: [["tendances", "Tendances des irritants"], ["b_orienter", "Valider et orienter"], ["b_spec", "Spécifications"], ["b_pilotage", "Tableau de bord"], ["b_revue", "Revue mensuelle"], ["types", "Types des irritants"]] },
+    tabs: [["tendances", "Tendances"], ["b_orienter", "Décisions"], ["b_spec", "Spécifications"], ["b_pilotage", "Tableau de bord"], ["b_revue", "Revue mensuelle"], ["types", "Types d’irritants"]] },
   // HRBP de démo = uniquement les écrans scénarisés de la maquette (données fictives écrites dans le code).
   { id: "hrbp_demo", nom: "HRBP de démo", role: "HRBP", persona: "HRBP",
-    tabs: [["registre", "Registre RH"], ["orienter", "Valider et orienter"], ["spec", "Spécifications"], ["suivre", "Suivi des réponses"], ["firebase", "Données Firebase"]] },
+    tabs: [["registre", "Registre RH"], ["orienter", "Décisions"], ["spec", "Spécifications"], ["suivre", "Suivi des réponses"], ["firebase", "Données Firebase"]] },
   { id: "dir",     nom: "Direction", role: "Direction d'agence", persona: "Dirigeants",
     tabs: [["tableau", "Tableau de bord"], ["firebase", "Données Firebase"]] },
   { id: "futur",   nom: "Lucas", role: "Futur employé", persona: "Futur employé",

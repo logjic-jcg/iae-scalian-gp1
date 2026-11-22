@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Fiche irritant (v20) : tout le parcours d'un irritant sur un seul écran,
 // du signal à l'effet. Pas d'onglet dédié : la fiche s'ouvre en cliquant sur
-// un irritant depuis « Tendances des irritants », « Valider et orienter » ou
+// un irritant depuis « Tendances », « Décisions » ou
 // le « Tableau de bord », et remplace le contenu de l'onglet courant
 // (« ← Retour » ramène à l'onglet d'origine).
 // Données : celles déjà lues par le site (classement_mails, comptes_rendus,
@@ -13,7 +13,7 @@
 state.ficheCode = state.ficheCode || null;
 
 // Libellé des onglets d'origine, pour le lien « Retour ».
-const FICHE_ORIGINES = { tendances: "Tendances des irritants", b_orienter: "Valider et orienter", b_spec: "Spécifications", b_pilotage: "Tableau de bord", b_revue: "Revue mensuelle", types: "Types des irritants" };
+const FICHE_ORIGINES = { tendances: "Tendances", b_orienter: "Décisions", b_spec: "Spécifications", b_pilotage: "Tableau de bord", b_revue: "Revue mensuelle", types: "Types d’irritants" };
 
 function ouvrirFiche(code, statique) {
   state.ficheCode = code;
@@ -144,7 +144,7 @@ function viewFicheIrritant() {
   const type = '<div class="card"><div class="fi-h">Ce que recouvre ce type</div>' +
     (def ? '<div style="font-size:14px">' + esc(def) + "</div>" : '<p class="note" style="margin:0">Définition ' + (state.ficheStatique ? "non incluse dans l'instantané." : "non renseignée dans la table des types.") + "</p>") +
     (ex ? '<div class="fi-ex"><b>Exemple (fictif) :</b> ' + esc(ex) + "</div>" : "") +
-    '<p class="note" style="margin-top:8px">Définition et exemple tenus par le HRBP (onglet Types des irritants). Aucun extrait de mail réel n\'est affiché.</p></div>';
+    '<p class="note" style="margin-top:8px">Définition et exemple tenus par le HRBP (onglet Types d’irritants). Aucun extrait de mail réel n\'est affiché.</p></div>';
 
   // Décision
   const kv = function (k, v, fin) { return v ? "<dt>" + esc(k) + "</dt><dd" + (fin ? ' class="fin"' : "") + ">" + esc(v) + "</dd>" : ""; };
@@ -156,7 +156,7 @@ function viewFicheIrritant() {
 
   // Suggestions de l'IA
   const libSt = { PROPOSEE: ["b-slate", "Proposée"], ACCEPTEE: ["b-emerald", "Acceptée"], REJETEE: ["b-slate", "Rejetée"] };
-  // v22 : objections demandées avant décision (Valider et orienter), séparées des suggestions de revue.
+  // v22 : objections demandées avant décision (Décisions), séparées des suggestions de revue.
   const avdFiche = function (c) {
     if (state.ficheStatique || typeof avdToutes !== "function") return "";
     const l = avdToutes(c).slice(0, 2).map(function (doc) {

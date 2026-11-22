@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Onglets HRBP reliés à la base (v9) : Valider et orienter · Spécifications ·
+// Onglets HRBP reliés à la base (v9) : Décisions · Spécifications ·
 // Suivi des réponses
 // ---------------------------------------------------------------------------
 // Lit  : classement_mails (écrit toutes les heures par Make + Claude)
@@ -57,11 +57,11 @@ const PILOTAGE = {
   DOC_DISPERSEE: { reco: "SIMPLIFIER",
     action: "Page de référence unique, une seule version par document, un responsable nommé.", indicateur: "Signaux « documentation dispersée » par semaine" },
   AUTRE: { reco: "SIMPLIFIER",
-    action: "Relire les mails classés « Autre » : si un même motif revient, créer un nouveau type dans l'onglet « Types des irritants ».", indicateur: "Mails classés « Autre » par semaine" },
+    action: "Relire les mails classés « Autre » : si un même motif revient, créer un nouveau type dans l'onglet « Types d’irritants ».", indicateur: "Mails classés « Autre » par semaine" },
 };
 // v13 : un type créé par le HRBP n'a pas encore de fiche : contenu générique, à compléter.
 function confDe(code) {
-  return PILOTAGE[code] || { reco: "SIMPLIFIER", action: "À définir par le HRBP (type créé dans l'onglet « Types des irritants »).",
+  return PILOTAGE[code] || { reco: "SIMPLIFIER", action: "À définir par le HRBP (type créé dans l'onglet « Types d’irritants »).",
     indicateur: "Signaux « " + libelleType(code) + " » par semaine" };
 }
 
@@ -194,7 +194,7 @@ function enregistrerDecision(code) {
 
 function viewPilotOrienter() {
   const sig = aciaSignaux();
-  if (!sig.ok) return messageSansBase("Valider et orienter", sig);
+  if (!sig.ok) return messageSansBase("Décisions", sig);
   // v14 : filtre « Processus » appliqué avant le filtre de statut (les compteurs des puces en tiennent compte).
   const tous = typesPilotage().filter(function (t) { return (t.actif || sig.parCode[t.code].total || decisionDe(t.code)) && passeProcessus(t.code); }).map(function (t) { return t.code; }).sort(function (a, b) { return sig.parCode[b].total - sig.parCode[a].total; });
   // v13 : filtre par statut de décision (ou « à examiner »).
@@ -251,9 +251,9 @@ function viewPilotOrienter() {
       '<p class="note">La décision porte sur un processus, jamais sur une personne. Sans décision « validé », aucune fiche n\'est produite.</p></div>';
 
   if (!codes.length) {
-    return "<h2>Valider et orienter</h2>" + bandeauVersionC() + chips + '<div class="row c-1-2"><div>' + picks + legende + "</div><div></div></div>";
+    return "<h2>Décisions</h2>" + bandeauVersionC() + chips + '<div class="row c-1-2"><div>' + picks + legende + "</div><div></div></div>";
   }
-  return "<h2>Valider et orienter</h2>" + bandeauVersionC() + chips +
+  return "<h2>Décisions</h2>" + bandeauVersionC() + chips +
     '<div class="row c-1-2"><div>' + picks + legende + "</div><div>" + right + "</div></div>";
 }
 
@@ -262,7 +262,7 @@ function viewPilotOrienter() {
 function filtreSpec(id) { state.filtreSpec = id; render(); }
 // v13 : rappel en tête de page de ce qui est affiché.
 function aideSpec() {
-  return '<p class="note" style="margin:0 0 12px"><b>Ce qui apparaît ici :</b> les irritants au statut « Validé » dans « Valider et orienter ». ' +
+  return '<p class="note" style="margin:0 0 12px"><b>Ce qui apparaît ici :</b> les irritants au statut « Validé » dans « Décisions ». ' +
     "La fiche dépend de la réponse retenue : <b>Assister</b> ou <b>Automatiser</b> donnent une spécification complète (l'agent prépare, ou agit sur les cas standard) ; " +
     "<b>Simplifier</b> donne une fiche courte, sans outil à construire.</p>";
 }
@@ -272,7 +272,7 @@ function viewPilotSpec() {
   if (!sig.ok) return messageSansBase("Spécifications", sig);
   const valides = typesPilotage().map(function (t) { return t.code; }).filter(function (c) { const d = decisionDe(c); return d && d.statut === "VALIDE"; });
   if (!valides.length) {
-    return "<h2>Spécifications</h2>" + bandeauVersionC() + aideSpec() + '<div class="card"><p style="font-size:14px;margin:0">Aucun irritant validé pour l\'instant.</p><p class="note">Une fiche n\'est produite qu\'après une décision « validé » du HRBP, dans l\'onglet « Valider et orienter ».</p></div>';
+    return "<h2>Spécifications</h2>" + bandeauVersionC() + aideSpec() + '<div class="card"><p style="font-size:14px;margin:0">Aucun irritant validé pour l\'instant.</p><p class="note">Une fiche n\'est produite qu\'après une décision « validé » du HRBP, dans l\'onglet « Décisions ».</p></div>';
   }
   // v13 : filtre par réponse retenue.
   const fRep = state.filtreSpec || "TOUS";

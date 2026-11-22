@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Onglet HRBP « Types des irritants » (v13)
+// Onglet HRBP « Types d’irritants » (v13)
 // ---------------------------------------------------------------------------
 // Lit et écrit la collection Firestore « types_irritants » (un document par type) :
 //   { code, titre, definition, exemple, processus, actif, ordre, source, protege, maj }
@@ -117,7 +117,7 @@ function enregistrerType() {
 
 function viewTypesIrritants() {
   const fb = window.ACIA_FB.types_irritants;
-  const titre = "<h2>Types des irritants</h2>";
+  const titre = "<h2>Types d’irritants</h2>";
   if (!fb || fb.statut !== "ok") {
     const msg = !fb || fb.statut === "chargement" ? "Lecture de Firebase en cours…" : "Données indisponibles : " + fb.erreur;
     return titre + '<div class="card"><p class="note" style="margin:0">' + esc(msg) + '</p><p class="note">La liste des types n\'est affichée que depuis la base.</p></div>';

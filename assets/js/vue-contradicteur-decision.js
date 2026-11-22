@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v22 : « Contradicteur avant décision » (IA), onglet « Valider et orienter »
+// v22 : « Contradicteur avant décision » (IA), onglet « Décisions »
 // ---------------------------------------------------------------------------
 // Complète le « Contradicteur de revue » (Revue mensuelle, APRÈS les décisions) :
 // ici l'IA intervient AVANT que le HRBP valide un irritant et choisisse la réponse.
@@ -126,7 +126,7 @@ function avdReprendre(code, reponse) {
   const el = document.getElementById("dp-reponse"); if (el && el.scrollIntoView) el.scrollIntoView({ block: "center" });
 }
 
-// Carte affichée dans « Valider et orienter », au-dessus du formulaire de décision.
+// Carte affichée dans « Décisions », au-dessus du formulaire de décision.
 function avdCarte(code) {
   const fb = window.ACIA_FB.suggestions_ia;
   const der = avdDerniere(code);

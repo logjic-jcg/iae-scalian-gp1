@@ -8,7 +8,7 @@
 // 3. Make (scénario « ACIA : contradicteur de revue ») : garde-fou 1 demande / 10 min
 //    → Claude Haiku → Firestore suggestions_ia/{id} (3 suggestions au plus).
 // 4. Le site lit suggestions_ia en direct ; le HRBP accepte (décision pré-remplie
-//    dans « Valider et orienter », qu'il enregistre lui-même) ou rejette (motif).
+//    dans « Décisions », qu'il enregistre lui-même) ou rejette (motif).
 // L'IA propose, le HRBP décide : elle n'écrit jamais de décision.
 // Format d'une suggestion (une ligne) : SUGG|CODE|GENRE|REPONSE|ACTION|JUSTIFICATION|CONFIANCE
 // ---------------------------------------------------------------------------
@@ -137,7 +137,7 @@ function carteRevueIa(modele) {
       '<div class="rv-list">' + sugg.map(function (s, i) {
         const n = i + 1, st = der["s" + n] || "PROPOSEE", l = modele.lignes.find(function (x) { return x.code === s.code; });
         const chiffres = l ? l.p.total + " signal(s) au total" + (l.d ? " · décision : " + libStatut(l.d.statut).label + ", " + libReponse(l.d.reponse) : " · aucune décision") + (l.effet ? " · mesure : " + TDB_VERDICT[l.effet.verdict][1].toLowerCase() : "") : "";
-        const pied = st === "ACCEPTEE" ? badge("b-emerald", "Acceptée") + (s.reponse !== "AUCUNE" ? ' <button class="chip" onclick="revueAccepter(\'' + esc(der.id) + "'," + n + ",'" + s.code + "','" + s.reponse + '\')">Rouvrir dans Valider et orienter</button>' : "")
+        const pied = st === "ACCEPTEE" ? badge("b-emerald", "Acceptée") + (s.reponse !== "AUCUNE" ? ' <button class="chip" onclick="revueAccepter(\'' + esc(der.id) + "'," + n + ",'" + s.code + "','" + s.reponse + '\')">Rouvrir dans Décisions</button>' : "")
           : st === "REJETEE" ? badge("b-slate", "Rejetée" + (der["m" + n] ? " : " + der["m" + n] : ""))
           : '<button class="btn ok slim" onclick="revueAccepter(\'' + esc(der.id) + "'," + n + ",'" + s.code + "','" + s.reponse + '\')">Accepter' + (s.reponse !== "AUCUNE" ? " et pré-remplir la décision" : "") + "</button>" +
             '<select id="rv-motif-' + n + '" class="rv-sel">' + REVUE_MOTIFS.map(function (m) { return "<option>" + esc(m) + "</option>"; }).join("") + "</select>" +
