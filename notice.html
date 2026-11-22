@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>ACIA : notice d'information</title>
+<link rel="icon" href="assets/img/logo-scalian.png" />
+<link rel="stylesheet" href="assets/css/style.css" />
+<style>
+  .nt-head { background: var(--dark); color: #fff; }
+  .nt-head > div { max-width: 860px; margin: 0 auto; padding: 18px 20px; display: flex; align-items: center; gap: 14px; }
+  .nt-head img { height: 30px; }
+  .nt-head b { font-size: 17px; display: block; }
+  .nt-head span { font-size: 12px; color: var(--lav2); }
+  .nt { max-width: 860px; margin: 0 auto; padding: 24px 20px 48px; }
+  .nt h1 { font-size: 24px; margin-bottom: 6px; }
+  .nt .chapo { color: var(--muted); margin-bottom: 18px; }
+  .nt section { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 12px; }
+  .nt h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; color: var(--accent); margin-bottom: 8px; }
+  .nt ul { padding-left: 20px; }
+  .nt li { margin: 3px 0; }
+  .nt .jamais li::marker { content: "✕  "; color: #be123c; }
+  .nt .afaire { display: inline-block; font-size: 12px; font-weight: 700; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 1px 8px; border-radius: 999px; }
+  .nt .bas { font-size: 12px; color: var(--muted); margin-top: 16px; }
+  .nt a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header class="nt-head"><div>
+  <img src="assets/img/logo-scalian-blanc.png" alt="Scalian" />
+  <div><b>ACIA</b><span>Assistant d'amélioration continue · démonstration, données fictives</span></div>
+</div></header>
+<main class="nt">
+  <h1>Notice d'information</h1>
+  <p class="chapo">Cette page s'adresse à toutes les personnes dont les mails ou les comptes rendus passent par l'assistant, qu'elles aient ou non un compte sur le site. Elle se lit sans connexion.</p>
+
+  <section>
+    <h2>Finalité</h2>
+    <p>Repérer les irritants d'un processus RH, par exemple l'intégration des nouveaux collaborateurs, et proposer la réponse la plus simple pour les réduire. L'assistant décrit des étapes du processus, jamais des personnes. <b>Aucune évaluation, aucun classement, aucune sanction.</b></p>
+  </section>
+
+  <section>
+    <h2>Sources lues</h2>
+    <ul>
+      <li>La boîte RH partagée de l'agence.</li>
+      <li>Les comptes rendus des réunions RH, déposés dans l'intranet (Notion).</li>
+    </ul>
+    <p>Aucune autre source : ni messagerie personnelle, ni agenda, ni tickets, ni appels, ni visioconférences.</p>
+  </section>
+
+  <section>
+    <h2>Ce qui est fait du contenu</h2>
+    <ul>
+      <li>Un filtre par mots-clés, <b>sans IA</b>, écarte d'abord les contenus confidentiels (santé, conflit, situation personnelle). Ils ne sont pas envoyés à l'IA : ils sont seulement comptés.</li>
+      <li>Les autres contenus sont transmis à une IA (Claude Haiku, par l'automate Make) le temps du classement, pour en tirer un type d'irritant.</li>
+      <li>Seul le résultat est enregistré : le <b>type d'irritant</b>, un niveau de <b>confiance</b> et la <b>semaine</b>. Pour un compte rendu : les actions et leur statut.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Ce qui n'est jamais enregistré</h2>
+    <ul class="jamais">
+      <li>Le nom, l'adresse ou la fonction de l'expéditeur ou des destinataires.</li>
+      <li>L'objet et le texte des mails, et le texte des comptes rendus.</li>
+      <li>Les pièces jointes, qui ne sont jamais ouvertes.</li>
+      <li>Le contenu des messages confidentiels.</li>
+      <li>Toute donnée ou tout score par personne ou par équipe.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Qui voit quoi</h2>
+    <ul>
+      <li><b>Le HRBP</b>, propriétaire du processus : les tendances par type d'irritant. Il valide chaque irritant et choisit la réponse.</li>
+      <li><b>La Direction</b> : les mêmes tendances, agrégées et en lecture seule.</li>
+    </ul>
+    <p>Personne, Direction comprise, ne voit une donnée individuelle.</p>
+  </section>
+
+  <section>
+    <h2>Durée de conservation</h2>
+    <p>Les résultats de classement, les décisions et les réponses de l'IA sont conservés <b>24 mois</b>, puis effacés.</p>
+    <p><span class="afaire">À automatiser</span> Dans cette démonstration, l'effacement n'est pas encore automatique : il devra l'être avant tout usage réel.</p>
+  </section>
+
+  <section>
+    <h2>Vos droits et contact</h2>
+    <p>La base ne contient aucune donnée nominative. Pour toute question, ou pour exercer vos droits sur les mails de la boîte RH (accès, opposition, effacement), adressez-vous au délégué à la protection des données.</p>
+    <p>Contact du délégué à la protection des données : <span class="afaire">à compléter</span></p>
+  </section>
+
+  <p class="bas">Démonstration du hackathon Scalian × IAE Paris Sorbonne × Neocognition. Toutes les personnes et tous les mails sont fictifs. Avant un usage réel : information-consultation du CSE et validation par un juriste et par le délégué à la protection des données. · <a href="index.html">Connexion</a></p>
+</main>
+</body>
+</html>

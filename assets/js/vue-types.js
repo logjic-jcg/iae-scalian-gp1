@@ -133,7 +133,8 @@ function viewTypesIrritants() {
 
   const actifs = types.filter(function (d) { return d.actif !== false; }).length;
   const entete = '<p class="note" style="margin:-4px 0 12px">' + badge("b-emerald", "● En direct") + " " + actifs + " type(s) actif(s) sur " + types.length +
-    ". L'IA du classement relit cette liste à chaque passage (toutes les heures) : une modification vaut pour les <b>prochains</b> mails, pas pour ceux déjà classés.</p>";
+    ". L'IA du classement relit cette liste à chaque passage (toutes les heures) : une modification vaut pour les <b>prochains</b> mails, pas pour ceux déjà classés.</p>" +
+    '<p class="note" style="margin:-6px 0 12px">Conservation : les classements, décisions et réponses de l\'IA sont gardés 24 mois (effacement à automatiser avant tout usage réel). <a href="notice.html" target="_blank" style="color:var(--accent)">Notice d\'information</a></p>';
 
   const chips = '<div class="chips" style="margin:0 0 10px">' + FILTRES_TYPES.map(function (f) {
     return '<button class="chip' + (f.id === filtre.id ? " active" : "") + '" onclick="filtreType(\'' + f.id + '\')">' + esc(f.label) + " (" + types.filter(f.test).length + ")</button>";
