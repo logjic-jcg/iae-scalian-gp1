@@ -54,7 +54,7 @@ function ficheSuggestions(code, codes) {
   if (!fb || fb.statut !== "ok" || typeof revueLire !== "function") return [];
   const t = function (d) { return d.demande && d.demande.toDate ? d.demande.toDate() : null; };
   const res = [];
-  fb.docs.filter(function (d) { return String(d.id).indexOf("test") !== 0; })
+  fb.docs.filter(function (d) { return String(d.id).indexOf("test") !== 0 && d.type !== "AVANT_DECISION"; })
     .sort(function (a, b) { return (t(b) || 0) - (t(a) || 0); })
     .forEach(function (doc) {
       revueLire(doc.texte, codes).forEach(function (s, i) {
@@ -156,6 +156,18 @@ function viewFicheIrritant() {
 
   // Suggestions de l'IA
   const libSt = { PROPOSEE: ["b-slate", "Proposée"], ACCEPTEE: ["b-emerald", "Acceptée"], REJETEE: ["b-slate", "Rejetée"] };
+  // v22 : objections demandées avant décision (Valider et orienter), séparées des suggestions de revue.
+  const avdFiche = function (c) {
+    if (state.ficheStatique || typeof avdToutes !== "function") return "";
+    const l = avdToutes(c).slice(0, 2).map(function (doc) {
+      const r = avdLire(doc.texte); if (!r) return "";
+      const cc = AVD_CONCLUSIONS[r.conclusion] || ["b-slate", "Conclusion non lisible"];
+      return '<div class="fi-sug contra">' + badge("b-rose", "Objection avant décision") + " " + badge(cc[0], cc[1]) +
+        (r.reponse ? " " + badge("b-violet", libReponse(r.reponse)) : "") + '<div class="a">' + esc(r.objection) + "</div>" +
+        '<div class="tdb-sub">' + (doc.demande && doc.demande.toDate ? "Demandée le " + esc(doc.demande.toDate().toLocaleDateString("fr-FR")) + ". " : "") + "</div></div>";
+    }).join("");
+    return l ? '<div class="fi-h" style="margin-top:14px">Avant décision</div>' + l : "";
+  };
   const ia = '<div class="card"><div class="fi-h">Suggestions de l\'IA sur cet irritant</div>' +
     (state.ficheStatique ? '<p class="note" style="margin:0">Pas de suggestion sur l\'instantané de démonstration.</p>'
      : !sugg.length ? '<p class="note" style="margin:0">Aucune suggestion pour l\'instant. Le contradicteur se lance depuis la Revue mensuelle.</p>'
@@ -168,7 +180,7 @@ function viewFicheIrritant() {
           '<div class="a">' + esc(x.s.action) + "</div>" +
           '<div class="tdb-sub">' + (x.s.reponse !== "AUCUNE" && !(d && d.reponse === x.s.reponse) ? "Réponse proposée : " + esc(libReponse(x.s.reponse)) + ". " : "") +
           (x.date ? "Revue du " + esc(x.date.toLocaleDateString("fr-FR")) + "." : "") + "</div></div>";
-      }).join("") + '<p class="note" style="margin-top:8px">Accepter ou rejeter se fait depuis la Revue mensuelle ; l\'IA n\'écrit jamais de décision.</p>') + "</div>";
+      }).join("") + '<p class="note" style="margin-top:8px">Accepter ou rejeter se fait depuis la Revue mensuelle ; l\'IA n\'écrit jamais de décision.</p>') + avdFiche(code) + "</div>";
 
   // Historique reconstitué
   const ev = [];

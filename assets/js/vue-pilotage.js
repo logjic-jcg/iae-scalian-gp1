@@ -236,6 +236,7 @@ function viewPilotOrienter() {
     (aExaminer(p) ? '<p style="margin-top:4px">' + badge("b-rose", "À examiner : 3 signaux ou plus sur les 2 dernières semaines") + "</p>" : "") +
     '<p style="margin-top:10px;font-size:14px"><b>Proposition de l\'assistant :</b> ' + esc(libReponse(reco)) + (conf.action ? " : " + esc(conf.action) : "") + "</p>" +
     '<p class="note">Grille du livrable 01 : la réponse la plus simple qui suffit. Un agent seulement si la tâche demande du jugement ou de la rédaction.</p></div>' +
+    (typeof avdCarte === "function" ? avdCarte(c) : "") +
     '<div class="card" style="margin-top:16px;border-color:#fde68a;background:#fffbeb"><div class="spechead" style="color:#b45309">Décision du HRBP</div>' +
       (d ? '<p style="font-size:13px;margin-top:6px">Décision actuelle : ' + badge(libStatut(d.statut).cls, libStatut(d.statut).label) + " " + esc(libReponse(d.reponse)) +
         " · effet en semaine " + esc(d.semaine_effet) + (d.maj && d.maj.toDate ? " · enregistrée le " + esc(d.maj.toDate().toLocaleString("fr-FR")) : "") + "</p>" : '<p class="note">Aucune décision enregistrée pour cet irritant.</p>') +
@@ -243,7 +244,7 @@ function viewPilotOrienter() {
       '<label class="fl">Réponse retenue<select id="dp-reponse">' + opt(REPONSES_HRBP, pre ? pre.reponse : d ? d.reponse : reco) + "</select></label>" +
       '<label class="fl">Semaine à partir de laquelle la réponse s\'applique<input id="dp-sem" type="number" min="' + (p.semMax + 1) + '" max="53" value="' + esc(semDefaut) + '"></label>' +
       '<label class="fl">Commentaire (280 caractères maximum, sans nom de personne)<input id="dp-comm" maxlength="280" value="' + esc(pre ? pre.commentaire : d && d.commentaire ? d.commentaire : "") + '"></label>' +
-      (pre ? '<p class="note">' + badge("b-violet", "IA") + " Pré-rempli d'après la suggestion acceptée dans la Revue mensuelle : relisez, puis enregistrez vous-même.</p>" : "") +
+      (pre ? '<p class="note">' + badge("b-violet", "IA") + " " + esc(pre.note || "Pré-rempli d'après la suggestion acceptée dans la Revue mensuelle : relisez, puis enregistrez vous-même.") + "</p>" : "") +
       '<div class="btns" style="margin-top:12px"><button class="btn ok" onclick="enregistrerDecision(\'' + c + '\')">Enregistrer la décision</button></div>' +
       (state.msgPilot ? '<p class="note">' + esc(state.msgPilot) + "</p>" : "") +
       '<p class="note">La décision porte sur un processus, jamais sur une personne. Sans décision « validé », aucune fiche n\'est produite.</p></div>';

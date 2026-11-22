@@ -75,19 +75,6 @@ const LIVE_EVENT = { jour: "Live", src: "mail", ref: "Mail 21", de: "Isabelle Mo
 
 
 
-// Contre-analyse : seuls les résultats écrits dans le jeu de données sont affichés
-const CONTRE = {
-  arrivee: { objection: "Un formulaire d'annonce obligatoire suffirait peut-être, sans agent.", verif: "Les 4 annonces arrivent par mail, écrites librement, par 4 personnes différentes (mails 1, 4, 14, 21). Le délai de 10 jours est connu de tous (CR-1, mail 7) et pourtant dépassé : le problème est autant le calcul des échéances que la saisie.", conclusion: "Irritant maintenu, confiance moyenne. Recommandation : un formulaire (sans IA) ET l'agent pour les annonces qui continueront d'arriver par mail. À confirmer avec la RH.", ok: true },
-  doc: { objection: "Un agent de recherche documentaire aiderait-il les arrivants à trouver le bon livret ?", verif: "Le problème n'est pas de trouver : il existe 3 livrets, 2 formulaires de compte et 2 textes sur le télétravail qui se contredisent (mails 3, 9, 13, CR-4).", conclusion: "Pas d'agent. Une page de référence unique, une version par document. Un agent masquerait le désordre au lieu de le supprimer.", ok: true },
-};
-const QUESTIONS_CONTRE = [
-  "Le mail est-il vraiment ce que la détection affirme (une annonce, une question, un renvoi) ?",
-  "L'information a-t-elle pu circuler ailleurs (téléphone, réunion) ?",
-  "L'irritant tient-il au processus, ou à un cas isolé ?",
-  "Les sources citées disent-elles bien ce que la détection affirme ?",
-  "La réponse proposée est-elle la plus simple ? Un document ou un réglage suffirait-il ?",
-];
-
 // Livrable 03 : spec complète de l'agent d'intégration (modèle en 11 rubriques)
 const SPEC_INTEGRATION = [
   ["Irritant détecté", "Les arrivées sont mal préparées : 3 annonces incomplètes sur 3, demandes au support parties après les délais connus, 3 arrivants sur 3 sans poste ou sans accès complet le premier jour. Sources : mails 1, 4, 6, 7, 11, 12, 14, 16, 20 ; CR-1 à CR-4. Confiance moyenne après contre-analyse. Interprétation des signaux, pas une cause prouvée. Données fictives."],
@@ -131,7 +118,6 @@ const state = {
   idx: 0, playing: false, liveSent: false, fresh: null,
   feed: [],
   status: {},
-  contre: {},
   selOrient: "doc",
   selSpec: null, generating: false, genStep: 0, specReady: false,
   agentRunning: false, agentStep: -1,
@@ -266,7 +252,6 @@ function viewObserver() {
 
 function selOrient(id) { state.selOrient = id; render(); }
 function setStatus(id, s) { state.status[id] = s; render(); }
-function lancerContre(id) { state.contre[id] = true; render(); }
 
 function viewOrienter() {
   const picks = IRRITANTS.map(function (i) {
@@ -284,19 +269,9 @@ function viewOrienter() {
     return '<div class="rung' + (on ? " on" : k > rIdx ? " skip" : "") + '"' + (on ? ' style="background:' + x.color + '"' : "") + ">" + esc(x.label) + "</div>";
   }).join("") + "</div>";
 
-  let contre;
-  if (!state.contre[i.id]) {
-    contre = '<button class="btn ghost" style="width:auto;padding:8px 14px;font-size:13px;margin-top:10px" onclick="lancerContre(\'' + i.id + '\')">Lancer l\'agent contradicteur</button>';
-  } else if (CONTRE[i.id]) {
-    const c = CONTRE[i.id];
-    contre = '<div class="obj"><b>Objection la plus forte :</b> ' + esc(c.objection) + "</div>" +
-      '<div class="obj todo"><b>Vérification dans les sources :</b> ' + esc(c.verif) + "</div>" +
-      '<div class="obj ok"><b>Conclusion :</b> ' + esc(c.conclusion) + "</div>";
-  } else {
-    contre = '<div class="obj todo"><b>Questions posées :</b><ul class="arrows">' +
-      QUESTIONS_CONTRE.map(function (q) { return "<li><span>?</span><span>" + esc(q) + "</span></li>"; }).join("") + "</ul></div>" +
-      '<div class="obj todo"><b>Conclusion :</b> à remplir avec la sortie réelle du prompt contradicteur, lors de la répétition.</div>';
-  }
+  // v22 : l'ancien contradicteur scénarisé est remplacé par le vrai (IA), dans le profil HRBP.
+  const contre = '<p style="font-size:13px;margin-top:6px">Le contradicteur avant décision fonctionne en vrai (Claude, via Make) dans le profil <b>HRBP</b>, onglet « Valider et orienter » : ' +
+    "bouton « Contredire la proposition » sur chaque irritant. Il ne reçoit que les agrégats de l'irritant, jamais de mail ni de nom.</p>";
 
   const st = state.status[i.id];
   const stCls = st === "Validé" ? "b-emerald" : st === "Ignoré" ? "b-slate" : "b-amber";

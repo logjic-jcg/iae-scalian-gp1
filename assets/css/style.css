@@ -388,3 +388,10 @@ tr.fb-neuf td { animation: fb-flash 3s ease-out; }
 /* v21 : renvoi du Tableau de bord vers la Revue mensuelle */
 .tdb-renvoi { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; border-color: var(--lav2); }
 .tdb-renvoi .btn { margin-top: 0; }
+
+/* v22 : contradicteur avant décision */
+.avd-card{border-color:#d9cdea;background:#faf8fd}
+.avd-r{margin-top:10px;display:grid;gap:8px}
+.avd-l{display:grid;grid-template-columns:170px 1fr;gap:10px;font-size:14px;align-items:start}
+.avd-k{color:#6b6280;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding-top:2px}
+@media (max-width:640px){.avd-l{grid-template-columns:1fr;gap:2px}}
