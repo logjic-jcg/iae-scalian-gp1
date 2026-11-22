@@ -478,3 +478,20 @@ tr.fb-neuf td { animation: fb-flash 3s ease-out; }
 @media (max-width:1000px){.suiv-board{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:640px){.suiv-board{grid-template-columns:1fr}.exp-h2{flex-wrap:wrap}}
 .suiv-badges .badge{white-space:normal;max-width:100%}
+
+/* v30 : Vue d'ensemble (Direction) */
+.ve-duo{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;margin-top:16px;align-items:start}
+.ve-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:#6b6280;margin-top:6px}
+.ve-leg span{display:inline-flex;align-items:center;gap:6px}
+.ve-leg b{width:10px;height:10px;border-radius:50%;display:inline-block}
+.ve-bulle{cursor:pointer}.ve-bulle:hover circle,.ve-bulle:focus circle{fill-opacity:.4}
+.ve-src{margin:0 0 14px}.ve-src>div:first-child{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin-bottom:5px}
+.ve-bar{height:10px;border-radius:6px;background:#f1edf7;overflow:hidden}.ve-bar i{display:block;height:100%;border-radius:6px}
+.ve-table td{vertical-align:middle}.ve-table svg{vertical-align:middle}
+.ve-etat{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.ve-etat::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--c)}
+@media (max-width:760px){.ve-duo{grid-template-columns:1fr}}
+.ve-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:760px){.ve-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ve-nom{cursor:pointer;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+.ve-nom:hover{fill:#4b2882;text-decoration:underline}

@@ -462,7 +462,7 @@ const ROLES = [
   { id: "hrbp_demo", nom: "HRBP de démo", role: "HRBP", persona: "HRBP",
     tabs: [["registre", "Registre RH"], ["orienter", "Décisions"], ["spec", "Spécifications"], ["suivre", "Suivi des réponses"], ["firebase", "Données de la base"]] },
   { id: "dir",     nom: "Direction", role: "Direction d'agence", persona: "Dirigeants",
-    tabs: [["tableau", "Tableau de bord"], ["firebase", "Données de la base"]] },
+    tabs: [["ensemble", "Vue d’ensemble"], ["tableau", "Tableau de bord"], ["firebase", "Données de la base"]] },
   { id: "futur",   nom: "Lucas", role: "Futur employé", persona: "Futur employé",
     tabs: [["futur", "Ce qu'il reçoit"]] },
 ];
@@ -713,7 +713,7 @@ function viewFutur() {
 function render() {
   renderTabs();
   renderWho();
-  const views = { arrivees: viewArrivees, registre: viewObserver, orienter: viewOrienter, spec: viewSpec, suivre: viewSuivre, mesarrivees: viewMesArrivees, equipe: viewEquipe, tableau: viewTableau, futur: viewFutur, firebase: viewFirebase, tendances: viewTendances, b_orienter: viewPilotOrienter, b_spec: viewPilotSpec, b_suivre: viewPilotSuivre, b_pilotage: viewTableauBordHrbp, b_revue: function () { return viewRevueMensuelle(); }, types: viewTypesIrritants };
+  const views = { arrivees: viewArrivees, registre: viewObserver, orienter: viewOrienter, spec: viewSpec, suivre: viewSuivre, mesarrivees: viewMesArrivees, equipe: viewEquipe, tableau: viewTableau, futur: viewFutur, firebase: viewFirebase, tendances: viewTendances, b_orienter: viewPilotOrienter, b_spec: viewPilotSpec, b_suivre: viewPilotSuivre, b_pilotage: viewTableauBordHrbp, b_revue: function () { return viewRevueMensuelle(); }, types: viewTypesIrritants, ensemble: function () { return viewVueEnsemble(); } };
   document.getElementById("main").innerHTML = views[state.tab]();
   state.justAdded = false; state.fresh = null;
 }

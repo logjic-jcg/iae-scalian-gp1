@@ -13,7 +13,7 @@
 state.ficheCode = state.ficheCode || null;
 
 // Libellé des onglets d'origine, pour le lien « Retour ».
-const FICHE_ORIGINES = { tendances: "Tendances", b_orienter: "Décisions", b_spec: "Spécifications", b_pilotage: "Tableau de bord", b_revue: "Revue mensuelle", types: "Types d’irritants" };
+const FICHE_ORIGINES = { tendances: "Tendances", b_orienter: "Décisions", b_spec: "Spécifications", b_pilotage: "Tableau de bord", b_revue: "Revue mensuelle", types: "Types d’irritants", ensemble: "Vue d’ensemble" };
 
 function ouvrirFiche(code, statique) {
   state.ficheCode = code;
