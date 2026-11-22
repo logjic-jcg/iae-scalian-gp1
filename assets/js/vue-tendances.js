@@ -132,7 +132,7 @@ function viewTendances() {
     '<div class="tend-outils">' + (filtreProcessusHtml() || "<span></span>") + blocRelance() + "</div>" +
     '<h3 id="sec-mails" style="margin-top:4px">Boîte RH partagée</h3>';
   if (!fb || fb.statut !== "ok") {
-    const msg = !fb || fb.statut === "chargement" ? "Lecture de Firebase en cours…" : "Données indisponibles : " + fb.erreur;
+    const msg = !fb || fb.statut === "chargement" ? "Lecture de la base en cours…" : "Données indisponibles : " + fb.erreur;
     return entete + '<div class="card"><p class="note" style="margin:0">' + esc(msg) + "</p>" +
       '<p class="note">Aucun chiffre n\'est affiché sans la base : rien n\'est simulé sur cet écran.</p></div>';
   }
@@ -166,14 +166,12 @@ function viewTendances() {
   const lignes = types.filter(function (t) { return (t.actif || total[t.code]) && passeProcessus(t.code); }).sort(function (a, b) { return (total[b.code] || 0) - (total[a.code] || 0); });
 
   const tiles = [
-    ["Mails analysés", String(analyses.length), "Depuis la mise en service du classement"],
-    ["Mails signalant un irritant", String(avecIrr) + " / " + analyses.length, "Les autres : information, invitation, newsletter"],
-    ["Mails écartés sans lecture IA", String(ecartes), "Confidentiel, santé, conflit : seul le nombre est gardé"],
-    ["Classements à vérifier", String(aVerifier), "Confiance « basse » donnée par l'IA"],
+    ["Mails analysés", String(analyses.length), "Depuis la mise en service du classement", "mail"],
+    ["Mails signalant un irritant", String(avecIrr) + " / " + analyses.length, "Les autres : information, invitation, newsletter", "drapeau"],
+    ["Mails écartés sans lecture IA", String(ecartes), "Confidentiel, santé, conflit : seul le nombre est gardé", "bouclier"],
+    ["Classements à vérifier", String(aVerifier), "Confiance « basse » donnée par l'IA", "loupe"],
   ];
-  const kpis = '<div class="kpis">' + tiles.map(function (t) {
-    return '<div class="kpi"><div class="spechead">' + esc(t[0]) + '</div><div class="kv">' + esc(t[1]) + '</div><div class="irrdetail" style="margin-top:4px">' + esc(t[2]) + "</div></div>";
-  }).join("") + "</div>";
+  const kpis = '<div class="kpis">' + tiles.map(tendTuile).join("") + "</div>";
 
   const bars = lignes.map(function (t) {
     const v = total[t.code] || 0;
@@ -190,14 +188,14 @@ function viewTendances() {
   }).join("");
 
   const nbInconnus = Object.keys(inconnus).reduce(function (s, k) { return s + inconnus[k]; }, 0);
-  const source = badge("b-emerald", "● Firebase, en direct") +
+  const source = badge("b-emerald", "● En direct") +
     ' <span class="note">' + (derniere ? "Dernier mail classé : " + esc(derniere.toLocaleString("fr-FR")) + " · boîte vérifiée toutes les heures (lun-sam, 8h-20h) ; sans nouveau mail, rien n'est réécrit." : "") + "</span>";
 
   return entete + '<div class="card"><div>' + source + "</div>" + kpis + "</div>" +
-    '<div class="card" style="margin-top:16px"><div class="spechead">Signaux par irritant (irritant principal + secondaire)</div>' +
+    '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("etiquette") + '<div class="spechead">Signaux par irritant (irritant principal + secondaire)</div></div>' +
     (filtreProcActif().length ? '<p class="note" style="margin:2px 0 6px">Filtré par processus. Les compteurs du haut portent sur toute la boîte.</p>' : "") + bars +
     (nbInconnus ? '<p class="note">' + nbInconnus + " code(s) renvoyé(s) par l'IA non reconnu(s), non comptés.</p>" : "") + "</div>" +
-    '<div class="card" style="margin-top:16px"><div class="spechead">Évolution par semaine</div>' +
+    '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("courbe") + '<div class="spechead">Évolution par semaine</div></div>' +
     '<div class="tw" style="margin-top:8px"><table><thead>' + tete + "</thead><tbody>" + corps + "</tbody></table></div>" +
     '<p class="note">Semaines « fictives » : jour du scénario de démo indiqué dans le mail. Les mails réels sont rangés par semaine de réception.</p></div>' +
     '<p class="note">Ce que cet écran ne montre pas, volontairement : aucun mail, aucun expéditeur, aucun objet, aucun nom. La base ne les stocke pas. Classement automatique toutes les heures (lun-sam, 8h-20h) par Claude Haiku via Make ; la confiance est une auto-évaluation de l\'IA, pas une probabilité mesurée.</p>';
@@ -255,3 +253,26 @@ window.addEventListener("scroll", function () {
   const b = document.getElementById("btn-haut");
   if (b) b.classList.toggle("visible", window.scrollY > 500);
 }, { passive: true });
+
+// v28 : petites icônes des indicateurs (Tendances : boîte RH et comptes rendus).
+const TEND_ICONES = {
+  mail:     '<rect x="3.5" y="6" width="17" height="12.5" rx="2"/><path d="M4.5 7.5l7.5 6 7.5-6"/>',
+  drapeau:  '<path d="M6 21V4"/><path d="M6 4.5h10.5l-2 3.5 2 3.5H6"/>',
+  bouclier: '<path d="M12 3.5l7 2.8v5.2c0 4.3-3 7.6-7 9-4-1.4-7-4.7-7-9V6.3z"/><path d="M9.5 12h5"/>',
+  loupe:    '<circle cx="10.5" cy="10.5" r="5.5"/><path d="M15 15l5 5"/>',
+  document: '<path d="M7 3.5h7l4 4v13H7z"/><path d="M14 3.5v4h4M9.5 12h6M9.5 15.5h6"/>',
+  horloge:  '<circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/>',
+  personne: '<circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20c.8-3.6 3.4-5.5 6.5-5.5"/><path d="M16 15l4 4M20 15l-4 4"/>',
+  calendrier:'<rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>',
+  etiquette:'<path d="M3.5 12.5V4.5h8l9 9-8 8z"/><circle cx="8" cy="9" r="1.4"/>',
+  courbe:   '<path d="M4 19.5h16"/><path d="M5 16l4.5-5 3.5 3 6-7"/>',
+  liste:    '<path d="M4.5 7l1.5 1.5 2.5-3M4.5 13l1.5 1.5 2.5-3M4.5 19l1.5 1.5 2.5-3"/><path d="M11.5 7h8M11.5 13h8M11.5 19h8"/>',
+  groupe:   '<circle cx="9" cy="9" r="3"/><circle cx="16.5" cy="10" r="2.5"/><path d="M3.5 19c.6-3 2.7-4.8 5.5-4.8s4.9 1.8 5.5 4.8M15 14.6c2.5-.2 4.6 1.3 5.3 4.4"/>',
+};
+function tendIcone(nom) {
+  return '<span class="tend-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (TEND_ICONES[nom] || "") + "</svg></span>";
+}
+// Tuile d'indicateur : [titre, valeur, détail, icône].
+function tendTuile(t) {
+  return '<div class="kpi"><div class="kpi-h">' + tendIcone(t[3]) + '<div class="spechead">' + esc(t[0]) + '</div></div><div class="kv">' + esc(t[1]) + '</div><div class="irrdetail" style="margin-top:4px">' + esc(t[2]) + "</div></div>";
+}

@@ -131,13 +131,13 @@ function decisionDe(code) {
 function aExaminer(p) { const m = p.semMax; return ((p.parSem[m] || 0) + (p.parSem[m - 1] || 0)) >= 3; }
 
 function messageSansBase(titre, sig) {
-  const msg = window.ACIA_FB.classement_mails.statut === "chargement" ? "Lecture de Firebase en cours…" : "Données indisponibles : " + sig.erreur;
+  const msg = window.ACIA_FB.classement_mails.statut === "chargement" ? "Lecture de la base en cours…" : "Données indisponibles : " + sig.erreur;
   return "<h2>" + titre + '</h2><div class="card"><p class="note" style="margin:0">' + esc(msg) + '</p><p class="note">Aucun chiffre n\'est affiché sans la base.</p></div>';
 }
 function bandeauVersionC() {
   const fb = window.ACIA_FB.decisions_hrbp;
   const etat = !fb || fb.statut === "chargement" ? badge("b-sky", "Décisions : lecture…")
-    : fb.statut === "ok" ? badge("b-emerald", "● Décisions : Firebase, en direct")
+    : fb.statut === "ok" ? badge("b-emerald", "● Décisions : en direct")
     : badge("b-rose", "Décisions indisponibles : " + fb.erreur);
   return '<p class="note" style="margin:0 0 12px">' + etat + " Enregistrement réservé au profil HRBP connecté, vérifié par les règles de la base.</p>";
 }
@@ -186,7 +186,7 @@ function enregistrerDecision(code) {
   if (data.semaine_effet <= semMax && !(avant && avant.semaine_effet === data.semaine_effet)) {
     state.msgPilot = "La semaine d'effet doit être postérieure à la dernière semaine observée (S" + semMax + ") : pas de décision rétroactive."; render(); return;
   }
-  if (typeof window.aciaEcrireDecision !== "function") { state.msgPilot = "Écriture impossible : connexion à Firebase absente."; render(); return; }
+  if (typeof window.aciaEcrireDecision !== "function") { state.msgPilot = "Écriture impossible : connexion à la base absente."; render(); return; }
   state.msgPilot = "Enregistrement…"; render();
   window.aciaEcrireDecision(code, data).then(function () { state.prefillPilot = null; state.msgPilot = "Décision enregistrée dans la base."; render(); })
     .catch(function (e) { state.msgPilot = "Refusé par la base : " + ((e && e.message) || e); render(); });

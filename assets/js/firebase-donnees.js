@@ -33,7 +33,7 @@ function repli(nom, e) {
 
 function ecouter(db, nom, q) {
   let premiere = true;
-  const garde = setTimeout(function () { if (premiere) repli(nom, "Pas de réponse de Firebase en " + DELAI_MAX_MS / 1000 + " s."); }, DELAI_MAX_MS);
+  const garde = setTimeout(function () { if (premiere) repli(nom, "Pas de réponse de la base en " + DELAI_MAX_MS / 1000 + " s."); }, DELAI_MAX_MS);
   onSnapshot(q, function (snap) {
     clearTimeout(garde);
     // Documents ajoutés ou modifiés depuis la dernière lecture (rien à la première).
@@ -52,9 +52,9 @@ window.aciaFbDeconnexion = deconnecter;
 
 const user = app ? await utilisateurInitial() : null;
 if (!app) {
-  replis("Configuration Firebase absente (firebase-config.js).");
+  replis("Configuration de la base absente.");
 } else if (!user) {
-  if (ACIA_AUTH.modeMaquette()) replis("Mode maquette : aucun compte connecté, les données Firebase ne sont pas lues.");
+  if (ACIA_AUTH.modeMaquette()) replis("Mode maquette : aucun compte connecté, les données de la base ne sont pas lues.");
   else ACIA_AUTH.signOut();     // session absente ou expirée : retour à la connexion
 } else {
   try {

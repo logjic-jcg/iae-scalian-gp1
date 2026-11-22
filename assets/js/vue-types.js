@@ -105,7 +105,7 @@ function enregistrerType() {
   if (err) { state.msgType = err; render(); return; }
   const protege = avant ? avant.protege === true : false;
   if (protege && !b.actif) { state.msgType = "« Autre » ne peut pas être désactivé : c'est la case des mails que l'IA ne sait pas ranger."; render(); return; }
-  if (typeof window.aciaEcrireType !== "function") { state.msgType = "Écriture impossible : connexion à Firebase absente."; render(); return; }
+  if (typeof window.aciaEcrireType !== "function") { state.msgType = "Écriture impossible : connexion à la base absente."; render(); return; }
   const data = { titre: b.titre.trim(), definition: b.definition.trim(), exemple: b.exemple.trim(), processus: normaliserProcessus(b.processus), ordre: b.ordre,
     actif: protege ? true : !!b.actif, source: avant ? avant.source : "MAILS", protege: protege };
   state.msgType = "Enregistrement…"; render();
@@ -119,7 +119,7 @@ function viewTypesIrritants() {
   const fb = window.ACIA_FB.types_irritants;
   const titre = "<h2>Types d’irritants</h2>";
   if (!fb || fb.statut !== "ok") {
-    const msg = !fb || fb.statut === "chargement" ? "Lecture de Firebase en cours…" : "Données indisponibles : " + fb.erreur;
+    const msg = !fb || fb.statut === "chargement" ? "Lecture de la base en cours…" : "Données indisponibles : " + fb.erreur;
     return titre + '<div class="card"><p class="note" style="margin:0">' + esc(msg) + '</p><p class="note">La liste des types n\'est affichée que depuis la base.</p></div>';
   }
   const types = typesTable() || [];
@@ -132,7 +132,7 @@ function viewTypesIrritants() {
   if (!state.brType) selTypeSansRendu(state.selType);
 
   const actifs = types.filter(function (d) { return d.actif !== false; }).length;
-  const entete = '<p class="note" style="margin:-4px 0 12px">' + badge("b-emerald", "● Firebase, en direct") + " " + actifs + " type(s) actif(s) sur " + types.length +
+  const entete = '<p class="note" style="margin:-4px 0 12px">' + badge("b-emerald", "● En direct") + " " + actifs + " type(s) actif(s) sur " + types.length +
     ". L'IA du classement relit cette liste à chaque passage (toutes les heures) : une modification vaut pour les <b>prochains</b> mails, pas pour ceux déjà classés.</p>";
 
   const chips = '<div class="chips" style="margin:0 0 10px">' + FILTRES_TYPES.map(function (f) {

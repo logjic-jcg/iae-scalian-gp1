@@ -444,3 +444,8 @@ tr.fb-neuf td { animation: fb-flash 3s ease-out; }
 .tend-relance .chip[disabled]{opacity:.5;cursor:not-allowed}
 .tend-sources a{color:var(--accent);font-weight:600;text-decoration:none}
 .tend-sources a:hover{text-decoration:underline}
+
+/* v28 : icônes des indicateurs (Tendances) */
+.kpi-h{display:flex;align-items:center;gap:8px}
+.tend-ic{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background:#eee8f5;color:#4b2882}
+.kpi-h .spechead{margin:0}

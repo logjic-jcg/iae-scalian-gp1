@@ -105,7 +105,7 @@ function donneesStatiques() {
 // Lecture Firebase (v18). Testée avec une base simulée, à confirmer sur la vraie base.
 function donneesFirebase() {
   const fbm = window.ACIA_FB.classement_mails;
-  if (!fbm || fbm.statut === "chargement") return { erreur: "Lecture de Firebase en cours…", attente: true };
+  if (!fbm || fbm.statut === "chargement") return { erreur: "Lecture de la base en cours…", attente: true };
   const sig = aciaSignaux();
   if (!sig.ok) return { erreur: "Données indisponibles : " + (sig.erreur || "base injoignable") };
   const mails = window.ACIA_FB.classement_mails.docs;
@@ -206,9 +206,9 @@ function tdbSections(titre) {
   const E = D.etat || {};
   const bandeau = D.mode === "statique"
     ? '<div class="tdb-bandeau">' + badge("b-amber", "Instantané de démonstration") +
-      " Construit sur le corrigé du jeu de données (mails 1 à 20, comptes rendus 1 à 8) et sur des <b>décisions d'exemple</b>. Ce n'est pas une lecture de Firebase. " +
+      " Construit sur le corrigé du jeu de données (mails 1 à 20, comptes rendus 1 à 8) et sur des <b>décisions d'exemple</b>. Ce n'est pas une lecture de la base. " +
       '<button class="chip" onclick="tdbBascule(false)">Revenir aux données de la base</button></div>'
-    : '<p class="note" style="margin:0 0 12px">' + badge("b-emerald", "● Firebase, en direct") + " " +
+    : '<p class="note" style="margin:0 0 12px">' + badge("b-emerald", "● En direct") + " " +
       esc(C.mails + " mail(s) traité(s) · " + C.crAnalyses + " compte(s) rendu(s) analysé(s) · " + E.nbDec + " décision(s) du HRBP") +
       (E.crOk ? "" : " · " + badge("b-rose", "Comptes rendus indisponibles")) + (E.decOk ? "" : " · " + badge("b-rose", "Décisions indisponibles")) +
       (E.reels ? " · " + esc(E.reels + " signal(s) de mails réels sans semaine fictive, non placés dans les semaines") : "") + "</p>";

@@ -41,7 +41,7 @@ async function seConnecter(ev) {
   $("lg-form").addEventListener("submit", seConnecter);
   ["lg-id", "lg-mdp"].forEach(function (id) { $(id).addEventListener("input", majBouton); });
   if (!auth) {
-    erreur("Configuration Firebase absente : connexion impossible.");
+    erreur("Configuration de la base absente : connexion impossible.");
     $("lg-attente").hidden = true; return;
   }
   const deja = await utilisateurInitial();

@@ -30,7 +30,7 @@ function expPdf() {
   const tete = document.createElement("div"); tete.id = "exp-tete"; tete.className = "exp-print";
   tete.innerHTML = "<b>ACIA</b> · assistant d'amélioration continue · " + esc(c.titre) + "<span>Exporté le " + esc(new Date().toLocaleString("fr-FR")) + "</span>";
   const pied = document.createElement("div"); pied.id = "exp-pied"; pied.className = "exp-print";
-  pied.textContent = "Source : boîte RH partagée et comptes rendus de réunion (Make + Claude → Firebase), décisions du HRBP. " +
+  pied.textContent = "Source : boîte RH partagée et comptes rendus de réunion (Make + Claude → base), décisions du HRBP. " +
     "Agrégats uniquement : aucun nom, aucun extrait de mail. Données du jeu de démonstration du hackathon.";
   document.body.insertBefore(tete, document.body.firstChild); document.body.appendChild(pied);
   document.body.classList.add("exp-impression");

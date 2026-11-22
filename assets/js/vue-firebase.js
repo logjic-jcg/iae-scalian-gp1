@@ -31,7 +31,7 @@ function aciaFbMisAJour(nom) {
 setTimeout(function () {
   if (window.ACIA_FB_ACTIF) return;
   ["irritants", "arrivees", "classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres", "suggestions_ia"].forEach(function (n) {
-    window.ACIA_FB[n] = { statut: "repli", docs: [], modifies: [], erreur: "Le SDK Firebase n'a pas pu être chargé (réseau ou bloqueur)." };
+    window.ACIA_FB[n] = { statut: "repli", docs: [], modifies: [], erreur: "La base n'a pas pu être chargée (réseau ou bloqueur)." };
   });
   aciaFbMisAJour("irritants"); aciaFbMisAJour("arrivees"); aciaFbMisAJour("classement_mails"); aciaFbMisAJour("decisions_hrbp"); aciaFbMisAJour("comptes_rendus"); aciaFbMisAJour("types_irritants"); aciaFbMisAJour("parametres"); aciaFbMisAJour("suggestions_ia");
 }, 10000);
@@ -41,15 +41,15 @@ function viewFirebase() {
   let lignes, source;
   if (fb.statut === "ok") {
     lignes = fb.docs;
-    source = badge("b-emerald", "● Source : Firebase, en direct") +
+    source = badge("b-emerald", "● Source : en direct") +
       ' <span class="note">Dernière mise à jour à ' + esc(fb.lu.toLocaleTimeString("fr-FR")) + " · " + lignes.length + " document(s)</span>";
   } else if (fb.statut === "chargement") {
     lignes = [];
-    source = badge("b-sky", "Lecture de Firebase en cours…");
+    source = badge("b-sky", "Lecture de la base en cours…");
   } else {
     // Repli : données de la maquette, pour que la démo ne tombe jamais sur une page vide.
     lignes = IRRITANTS.map(function (i, k) { return { id: i.id, titre: i.court, note: i.note, traitement: i.traitement, reponse: i.reponse, ordre: k + 1 }; });
-    source = badge("b-amber", "Source : maquette (Firebase indisponible)") +
+    source = badge("b-amber", "Source : maquette (base indisponible)") +
       '<p class="note">Raison : ' + esc(fb.erreur) + "</p>";
   }
   const corps = lignes.length
@@ -59,7 +59,7 @@ function viewFirebase() {
           esc(r.note != null ? r.note : "") + "</td><td>" + esc(r.traitement || "") + "</td><td>" + esc(r.reponse || "") + "</td></tr>";
       }).join("")
     : '<tr><td colspan="5">' + (fb.statut === "chargement" ? "…" : "La collection est vide.") + "</td></tr>";
-  return "<h2>Données Firebase</h2>" +
+  return "<h2>Données de la base</h2>" +
     '<div class="card"><div>' + source + "</div>" +
     '<div class="tw" style="margin-top:12px"><table><thead><tr><th>Ordre</th><th>Irritant</th><th>Note</th><th>Traitement</th><th>Réponse</th></tr></thead><tbody>' +
     corps + "</tbody></table></div>" +
@@ -87,7 +87,7 @@ function carteArriveesFirebase(toujours) {
         manquants.map(function (m) { return badge("b-rose", "Manque : " + m); }).join(" ") + "</div>" +
       '<p class="note">' + esc([a.source ? "Source : " + a.source : "", a.ecrit_par ? "écrit par " + a.ecrit_par : "", maj ? "le " + maj : ""].filter(Boolean).join(" · ")) + "</p></div>";
   }).join("");
-  return '<div style="margin-bottom:26px"><h2 style="margin-top:22px">Fiches d\'arrivée écrites par l\'agent ' + badge("b-emerald", "● Firebase, en direct") + "</h2>" + cartes + "</div>";
+  return '<div style="margin-bottom:26px"><h2 style="margin-top:22px">Fiches d\'arrivée écrites par l\'agent ' + badge("b-emerald", "● En direct") + "</h2>" + cartes + "</div>";
 }
 
 // Vrai si l'agent a écrit la fiche « id » dans Firebase.

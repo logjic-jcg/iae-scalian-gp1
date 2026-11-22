@@ -97,7 +97,7 @@ function revuePreparer() {
 }
 
 function revueStatut(id, n, statut, motif) {
-  if (typeof window.aciaEcrireSuggestion !== "function") { state.revue.msg = "Écriture impossible : connexion à Firebase absente."; render(); return; }
+  if (typeof window.aciaEcrireSuggestion !== "function") { state.revue.msg = "Écriture impossible : connexion à la base absente."; render(); return; }
   window.aciaEcrireSuggestion(id, n, statut, motif || "").then(function () { state.revue.msg = ""; })
     .catch(function (e) { state.revue.msg = "Refusé par la base : " + ((e && e.message) || e); render(); });
 }

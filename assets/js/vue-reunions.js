@@ -39,7 +39,7 @@ function carteReunions() {
   const titre = '<div class="sec-titre"><h3 id="sec-reunions" style="margin:26px 0 0">Comptes rendus de réunion : actions qui traînent</h3>' +
     '<a href="#" class="lien-haut" onclick="hautDePage();return false">↑ Haut de l\'onglet</a></div>';
   if (!fb || fb.statut !== "ok") {
-    const msg = !fb || fb.statut === "chargement" ? "Lecture de Firebase en cours…" : "Données indisponibles : " + fb.erreur;
+    const msg = !fb || fb.statut === "chargement" ? "Lecture de la base en cours…" : "Données indisponibles : " + fb.erreur;
     return titre + '<div class="card"><p class="note" style="margin:0">' + esc(msg) + "</p>" +
       '<p class="note">Aucun chiffre n\'est affiché sans la base : rien n\'est simulé.</p></div>';
   }
@@ -82,14 +82,12 @@ function carteReunions() {
   const fermees = liste.filter(function (a) { return a.dernier === "FERMEE"; });
 
   const tiles = [
-    ["Comptes rendus analysés", String(analyses.length), ecartes.length + " écarté(s) sans lecture IA (confidentiel)"],
-    ["Actions qui traînent", String(trainent.length), "Évoquées au moins 2 fois sans être fermées"],
-    ["Actions sans responsable", String(sansResp.length), "Au dernier compte rendu où elles apparaissent"],
-    ["Comptes rendus diffusés en retard", String(enRetard) + " / " + analyses.length, RETARD_DIFFUSION_J + " jours ou plus après la réunion"],
+    ["Comptes rendus analysés", String(analyses.length), ecartes.length + " écarté(s) sans lecture IA (confidentiel)", "document"],
+    ["Actions qui traînent", String(trainent.length), "Évoquées au moins 2 fois sans être fermées", "horloge"],
+    ["Actions sans responsable", String(sansResp.length), "Au dernier compte rendu où elles apparaissent", "personne"],
+    ["Comptes rendus diffusés en retard", String(enRetard) + " / " + analyses.length, RETARD_DIFFUSION_J + " jours ou plus après la réunion", "calendrier"],
   ];
-  const kpis = '<div class="kpis">' + tiles.map(function (t) {
-    return '<div class="kpi"><div class="spechead">' + esc(t[0]) + '</div><div class="kv">' + esc(t[1]) + '</div><div class="irrdetail" style="margin-top:4px">' + esc(t[2]) + "</div></div>";
-  }).join("") + "</div>";
+  const kpis = '<div class="kpis">' + tiles.map(tendTuile).join("") + "</div>";
 
   // Tableau : une ligne par action, une colonne par compte rendu (ordre chronologique).
   const lignes = liste.slice().sort(function (a, b) {
@@ -119,12 +117,12 @@ function carteReunions() {
     : '<p class="note">Aucun service signalé absent.</p>';
 
   return titre +
-    '<div class="card"><div>' + badge("b-emerald", "● Firebase, en direct") + ' <span class="note">Source : base Notion des comptes rendus, lue par Make + Claude Haiku</span></div>' + kpis + "</div>" +
-    '<div class="card" style="margin-top:16px"><div class="spechead">Suivi des actions d\'un compte rendu à l\'autre</div>' +
+    '<div class="card"><div>' + badge("b-emerald", "● En direct") + ' <span class="note">Source : base Notion des comptes rendus, lue par Make + Claude Haiku</span></div>' + kpis + "</div>" +
+    '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("liste") + '<div class="spechead">Suivi des actions d\'un compte rendu à l\'autre</div></div>' +
     '<div class="tw" style="margin-top:8px"><table><thead>' + tete + "</thead><tbody>" + corps + "</tbody></table></div>" +
     '<p class="note">Une même action est reconnue à son libellé : l\'IA réutilise le libellé déjà connu. Une action déjà vue n\'est jamais recomptée comme « nouvelle ». ' +
     fermees.length + " action(s) fermée(s) à ce jour.</p></div>" +
-    '<div class="card" style="margin-top:16px"><div class="spechead">Services absents des réunions</div>' + blocAbs +
+    '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("groupe") + '<div class="spechead">Services absents des réunions</div></div>' + blocAbs +
     '<p class="note">Compté par service, jamais par personne.</p></div>' +
     '<p class="note">Ce bloc ne montre aucun nom : ni participant, ni responsable d\'action. Un compte rendu confidentiel est écarté avant toute lecture par l\'IA : seul son nombre est gardé.' +
     (basse ? " " + basse + " analyse(s) en confiance « basse » à vérifier." : "") + "</p>" +

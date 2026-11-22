@@ -52,8 +52,8 @@ export function messageErreur(e) {
     return "Identifiant ou mot de passe incorrect.";
   if (code === "auth/user-disabled") return "Ce compte a été désactivé.";
   if (code === "auth/too-many-requests") return "Trop de tentatives. Réessayez dans quelques minutes.";
-  if (code === "auth/network-request-failed") return "Pas de réseau : Firebase est injoignable.";
-  if (code === "auth/configuration-not-found") return "La connexion n'est pas encore activée sur ce projet Firebase.";
-  if (code === "auth/operation-not-allowed") return "La connexion par mot de passe n'est pas activée dans Firebase.";
+  if (code === "auth/network-request-failed") return "Pas de réseau : la base est injoignable.";
+  if (code === "auth/configuration-not-found") return "La connexion n'est pas encore activée sur ce projet.";
+  if (code === "auth/operation-not-allowed") return "La connexion par mot de passe n'est pas activée sur ce projet.";
   return "Connexion impossible (" + (code || (e && e.message) || "erreur inconnue") + ").";
 }

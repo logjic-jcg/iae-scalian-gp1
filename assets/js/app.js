@@ -451,7 +451,7 @@ function viewSuivre() {
 
 const ROLES = [
   { id: "collab",  nom: "Camille", role: "Administration du personnel", persona: "Collaborateur",
-    tabs: [["arrivees", "Arrivées à préparer"], ["registre", "Ce que l'assistant repère dans mon activité"], ["firebase", "Données Firebase"]] },
+    tabs: [["arrivees", "Arrivées à préparer"], ["registre", "Ce que l'assistant repère dans mon activité"], ["firebase", "Données de la base"]] },
   { id: "manager", nom: "Isabelle", role: "Manager BU Data", persona: "Manager",
     tabs: [["mesarrivees", "Mes arrivées"], ["equipe", "Irritants qui touchent mon équipe"]] },
   // v11 : deux HRBP pour ne pas mélanger les données.
@@ -460,9 +460,9 @@ const ROLES = [
     tabs: [["tendances", "Tendances"], ["b_orienter", "Décisions"], ["b_spec", "Spécifications"], ["b_pilotage", "Tableau de bord"], ["b_revue", "Revue mensuelle"], ["types", "Types d’irritants"]] },
   // HRBP de démo = uniquement les écrans scénarisés de la maquette (données fictives écrites dans le code).
   { id: "hrbp_demo", nom: "HRBP de démo", role: "HRBP", persona: "HRBP",
-    tabs: [["registre", "Registre RH"], ["orienter", "Décisions"], ["spec", "Spécifications"], ["suivre", "Suivi des réponses"], ["firebase", "Données Firebase"]] },
+    tabs: [["registre", "Registre RH"], ["orienter", "Décisions"], ["spec", "Spécifications"], ["suivre", "Suivi des réponses"], ["firebase", "Données de la base"]] },
   { id: "dir",     nom: "Direction", role: "Direction d'agence", persona: "Dirigeants",
-    tabs: [["tableau", "Tableau de bord"], ["firebase", "Données Firebase"]] },
+    tabs: [["tableau", "Tableau de bord"], ["firebase", "Données de la base"]] },
   { id: "futur",   nom: "Lucas", role: "Futur employé", persona: "Futur employé",
     tabs: [["futur", "Ce qu'il reçoit"]] },
 ];
