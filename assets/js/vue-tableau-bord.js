@@ -70,7 +70,7 @@ const TDB_MESURES = {
 const TDB_CIBLE_AGENT = 30;   // % au plus de réponses « Assister (agent IA) » : cible proposée, à valider en comité.
 
 // --- Lecture des données (seul endroit qui dépend du mode) ------------------
-function semaineDe(jour) { const m = /^J(\d+)$/.exec(String(jour || "").trim()); return m ? Math.ceil(Number(m[1]) / 7) : null; }
+function tdbSemaineDe(jour) { const m = /^J(\d+)$/.exec(String(jour || "").trim()); return m ? Math.ceil(Number(m[1]) / 7) : null; }
 
 function donneesStatiques() {
   const I = TDB_INSTANTANE;
@@ -80,7 +80,7 @@ function donneesStatiques() {
   types.forEach(function (t) { parCode[t.code] = { total: 0, parSem: {}, reels: [], semMax: 0 }; });
   I.classement_mails.forEach(function (d) {
     if (d.type === "ECARTE") return;
-    const s = semaineDe(d.jour_fictif); if (s > semMax) semMax = s;
+    const s = tdbSemaineDe(d.jour_fictif); if (s > semMax) semMax = s;
     [d.type, d.type_secondaire].forEach(function (c, i) {
       const p = parCode[c]; if (!p || (i === 1 && c === d.type)) return;
       p.total += 1; p.parSem[s] = (p.parSem[s] || 0) + 1;
