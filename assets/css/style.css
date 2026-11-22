@@ -435,3 +435,12 @@ tr.fb-neuf td { animation: fb-flash 3s ease-out; }
 .um-out[hidden]{display:none}
 .acia-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;background:#290f50;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(41,15,80,.3);max-width:calc(100vw - 32px)}
 .acia-toast.err{background:#9f1239}
+
+/* v27 : en-tête de Tendances (filtre à gauche, relance à droite) */
+.tend-outils{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+.tend-outils .proc-filtre{margin:0 !important}
+.tend-relance{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-left:auto}
+.tend-relance .btn{width:auto}
+.tend-relance .chip[disabled]{opacity:.5;cursor:not-allowed}
+.tend-sources a{color:var(--accent);font-weight:600;text-decoration:none}
+.tend-sources a:hover{text-decoration:underline}

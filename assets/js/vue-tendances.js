@@ -125,11 +125,11 @@ function semaineDe(doc) {
 
 function viewTendances() {
   const fb = window.ACIA_FB.classement_mails;
+  // v27 : en-tête allégé : sources = liens vers leur partie ; filtre à gauche, relance à droite.
   const entete = "<h2>Fil d'observation : boîte RH et comptes rendus</h2>" +
-    '<p class="note" style="margin:-4px 0 8px">Sources : boîte RH partagée (mails) · comptes rendus de réunion (Notion). Les deux sont lues automatiquement par Make + Claude ; rien n\'est saisi à la main.</p>' +
-    blocRelance() +
-    filtreProcessusHtml() +
-    '<p style="margin:0 0 12px;font-size:13px">Aller à : <a href="#" onclick="allerSection(\'sec-mails\');return false">Boîte RH partagée</a> · <a href="#" onclick="allerSection(\'sec-reunions\');return false">Comptes rendus de réunion ↓</a></p>' +
+    '<p class="note tend-sources" style="margin:-4px 0 8px">Sources : <a href="#" onclick="allerSection(\'sec-mails\');return false">Boîte RH partagée (mails)</a> · ' +
+    '<a href="#" onclick="allerSection(\'sec-reunions\');return false">Comptes rendus de réunion (Notion) ↓</a></p>' +
+    '<div class="tend-outils">' + (filtreProcessusHtml() || "<span></span>") + blocRelance() + "</div>" +
     '<h3 id="sec-mails" style="margin-top:4px">Boîte RH partagée</h3>';
   if (!fb || fb.statut !== "ok") {
     const msg = !fb || fb.statut === "chargement" ? "Lecture de Firebase en cours…" : "Données indisponibles : " + fb.erreur;
@@ -211,7 +211,7 @@ function allerSection(id) {
 }
 
 // ---------------------------------------------------------------------------
-// v13 : bouton « Actualiser maintenant ». Affiché seulement si le paramètre
+// v13 : bouton « Actualiser » (v27 : à droite du filtre Processus). Affiché seulement si le paramètre
 // parametres/ihm.refresh_ihm vaut 1 (modifiable uniquement via Claude + Make).
 // Le bouton appelle un webhook Make qui revérifie lui-même le paramètre,
 // refuse s'il y a eu une relance dans les 10 dernières minutes, puis lance la
@@ -236,11 +236,10 @@ function blocRelance() {
   if (attente && !window.__aciaRelanceTimer) {
     window.__aciaRelanceTimer = setTimeout(function () { window.__aciaRelanceTimer = null; if (state.tab === "tendances") render(); }, prochaine - new Date() + 1000);
   }
-  return '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 10px">' +
-    '<button class="btn slim" style="padding:7px 12px;font-size:13px"' + (attente ? " disabled" : "") + ' onclick="relancerTraitement()">⟳ Actualiser maintenant</button>' +
-    '<span class="note" style="margin:0">' + esc(state.msgRelance ||
-      (attente ? "Dernière relance à " + heure(der) + " : prochaine possible à " + heure(prochaine) + "." :
-       der ? "Dernière relance à la demande : " + der.toLocaleString("fr-FR") + "." : "Relance la lecture de la boîte RH et des comptes rendus.")) + "</span></div>";
+  const fmt = function (d) { return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }) + " à " + heure(d); };
+  const info = state.msgRelance || (attente ? "Prochaine relance possible à " + heure(prochaine) : der ? "Dernière relance manuelle : " + fmt(der) : "");
+  return '<div class="tend-relance">' + (info ? '<span class="tdb-sub">' + esc(info) + "</span>" : "") +
+    '<button class="chip" ' + (attente ? "disabled " : "") + 'title="Relance la lecture de la boîte RH et des comptes rendus (une fois toutes les ' + RELANCE_DELAI_MIN + ' minutes au plus)" onclick="relancerTraitement()">⟳ Actualiser</button></div>';
 }
 function relancerTraitement() {
   state.msgRelance = "Relance envoyée : les résultats apparaîtront ici d'eux-mêmes d'ici une à deux minutes.";
