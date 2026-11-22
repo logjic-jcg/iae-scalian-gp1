@@ -18,6 +18,8 @@ window.ACIA_FB = {
 // Appelée par firebase-donnees.js à chaque changement dans la base.
 // v18 : l'onglet « Tableau de bord » (b_pilotage) se met aussi à jour en direct.
 function aciaFbMisAJour(nom) {
+  // v31.1 : Vue d'ensemble (profil Direction, seul onglet) : se met à jour à chaque lecture de la base.
+  if (state.tab === "ensemble" && ["classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "suggestions_ia", "parametres"].indexOf(nom) >= 0) { render(); return; }
   // v13 : les titres des types servent dans tous les onglets HRBP en direct.
   if (nom === "parametres" && state.tab === "tendances") { render(); return; }
   if (nom === "suggestions_ia") { if (state.tab === "b_revue" || state.tab === "b_pilotage" || state.tab === "b_orienter" || state.ficheCode) render(); return; }
