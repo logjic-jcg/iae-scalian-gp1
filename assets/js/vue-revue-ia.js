@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v19 : « Contradicteur de revue » (IA) dans le Tableau de bord du HRBP
+// v19 : « Contradicteur de revue » (IA) ; v21 : déplacé dans l'onglet « Revue mensuelle » du HRBP
 // ---------------------------------------------------------------------------
 // 1. Le HRBP clique sur « Préparer la revue ».
 // 2. Le site envoie au webhook Make UNIQUEMENT les agrégats déjà affichés par le

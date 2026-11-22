@@ -243,7 +243,7 @@ function viewPilotOrienter() {
       '<label class="fl">Réponse retenue<select id="dp-reponse">' + opt(REPONSES_HRBP, pre ? pre.reponse : d ? d.reponse : reco) + "</select></label>" +
       '<label class="fl">Semaine à partir de laquelle la réponse s\'applique<input id="dp-sem" type="number" min="' + (p.semMax + 1) + '" max="53" value="' + esc(semDefaut) + '"></label>' +
       '<label class="fl">Commentaire (280 caractères maximum, sans nom de personne)<input id="dp-comm" maxlength="280" value="' + esc(pre ? pre.commentaire : d && d.commentaire ? d.commentaire : "") + '"></label>' +
-      (pre ? '<p class="note">' + badge("b-violet", "IA") + " Pré-rempli d'après la suggestion acceptée dans le Tableau de bord : relisez, puis enregistrez vous-même.</p>" : "") +
+      (pre ? '<p class="note">' + badge("b-violet", "IA") + " Pré-rempli d'après la suggestion acceptée dans la Revue mensuelle : relisez, puis enregistrez vous-même.</p>" : "") +
       '<div class="btns" style="margin-top:12px"><button class="btn ok" onclick="enregistrerDecision(\'' + c + '\')">Enregistrer la décision</button></div>' +
       (state.msgPilot ? '<p class="note">' + esc(state.msgPilot) + "</p>" : "") +
       '<p class="note">La décision porte sur un processus, jamais sur une personne. Sans décision « validé », aucune fiche n\'est produite.</p></div>';
@@ -300,7 +300,7 @@ function viewPilotSpec() {
       ligne("Workflow", workflow) +
       ligne("Niveau d'autonomie", esc(autonomie)) +
       ligne("Garde-fous", "Aucun mail ni compte rendu confidentiel traité ; aucune donnée sur une personne ; " + (d.reponse === "AUTOMATISER" ? "seule la réponse standard part automatiquement ; tout autre envoi passe par une validation humaine." : "rien n'est envoyé sans validation humaine.")) +
-      ligne("Indicateur de suivi", esc(conf.indicateur) + ", mesuré dans l'onglet « Suivi des réponses ».") +
+      ligne("Indicateur de suivi", esc(conf.indicateur) + ", mesuré dans l'onglet « Revue mensuelle ».") +
       ligne("Décision", "Effet à partir de la semaine " + esc(d.semaine_effet) + (d.commentaire ? " · « " + esc(d.commentaire) + " »" : "")) +
       "</tbody></table></div>";
   }).join("");

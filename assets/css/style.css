@@ -385,3 +385,6 @@ tr.fb-neuf td { animation: fb-flash 3s ease-out; }
   .fi-kv dd { margin-bottom: 6px; }
   .fi-title { font-size: 20px; }
 }
+/* v21 : renvoi du Tableau de bord vers la Revue mensuelle */
+.tdb-renvoi { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; border-color: var(--lav2); }
+.tdb-renvoi .btn { margin-top: 0; }

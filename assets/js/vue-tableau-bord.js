@@ -133,7 +133,7 @@ function donneesTdb() { return state.tdbStatique ? donneesStatiques() : donneesF
 // --- Calculs communs --------------------------------------------------------
 function tdbFr(x, d) { return x === null || x === undefined ? "—" : (Math.round(x * Math.pow(10, d || 0)) / Math.pow(10, d || 0)).toString().replace(".", ","); }
 
-// Même règle que l'onglet « Suivi des réponses » : moyenne par semaine avant / après la semaine d'effet.
+// Même règle que l'ancien onglet « Suivi des réponses » : moyenne par semaine avant / après la semaine d'effet.
 function tdbEffet(p, se) {
   const semaines = []; for (let s = 1; s <= Math.max(p.semMax, se); s++) semaines.push(s);
   const av = semaines.filter(function (s) { return s < se; }), ap = semaines.filter(function (s) { return s >= se && s <= p.semMax; });
@@ -176,9 +176,11 @@ function tdbBarre(lbl, v, max, sous) {
 }
 
 // --- Écran ------------------------------------------------------------------
-function viewTableauBordHrbp() {
+// v21 : calcul commun au « Tableau de bord » (observer) et à la « Revue mensuelle » (décider).
+// Renvoie le HTML d'erreur (texte) si la base n'est pas lisible, sinon les sections.
+function tdbSections(titre) {
   const D = donneesTdb();
-  if (D.erreur) return "<h2>Tableau de bord · pilotage des irritants</h2>" + '<div class="card"><p class="note" style="margin:0">' + esc(D.erreur) + "</p>" +
+  if (D.erreur) return "<h2>" + titre + "</h2>" + '<div class="card"><p class="note" style="margin:0">' + esc(D.erreur) + "</p>" +
     '<p class="note">Aucun chiffre n\'est affiché sans la base.' + (D.attente ? "" : " En secours pour une démonstration :") + "</p>" +
     (D.attente ? "" : '<button class="btn" onclick="tdbBascule(true)">Afficher l\'instantané de démonstration</button>') + "</div>";
   const C = D.compteurs;
@@ -304,13 +306,41 @@ function viewTableauBordHrbp() {
   if (partAgent !== null && partAgent > TDB_CIBLE_AGENT) A.push("Vérifier qu'une réponse plus simple ne suffirait pas pour les irritants confiés à un agent IA.");
   A.push("Valider les cibles proposées et organiser la mesure du temps gagné et de la satisfaction (aujourd'hui non mesurés).");
 
-  const revue = typeof carteRevueIa === "function" ? carteRevueIa({ mode: D.mode, lignes: lignes, C: C, partAgent: partAgent }) : "";
-  return "<h2>Tableau de bord · pilotage des irritants</h2>" + bandeau + tuiles + revue +
-    '<h3 class="tdb-h">Signaux par semaine et par irritant</h3>' + chaleur +
-    '<div class="tdb-duo">' + portefeuille + qualite + "</div>" +
-    '<h3 class="tdb-h">Effet des réponses et revue mensuelle</h3>' + effets +
-    '<h3 class="tdb-h">Indicateurs détaillés</h3>' + detail +
-    '<div class="card" style="margin-top:16px"><h3>Décisions attendues à la prochaine revue</h3><ul class="tdb-list">' + A.map(function (a) { return "<li>" + esc(a) + "</li>"; }).join("") + "</ul></div>";
+  return { D: D, C: C, lignes: lignes, partAgent: partAgent, bandeau: bandeau, tuiles: tuiles, chaleur: chaleur, portefeuille: portefeuille, qualite: qualite, effets: effets, detail: detail, A: A };
+}
+
+// Tableau de bord : observer (signaux, décisions, qualité, indicateurs).
+function viewTableauBordHrbp() {
+  const S = tdbSections("Tableau de bord · pilotage des irritants");
+  if (typeof S === "string") return S;
+  // Renvoi vers la Revue mensuelle : nombre de décisions attendues et de suggestions de l'IA en attente.
+  let attente = 0;
+  if (S.D.mode !== "statique" && typeof revueDerniere === "function") {
+    const der = revueDerniere();
+    if (der) attente = revueLire(der.texte, S.lignes.map(function (l) { return l.code; })).filter(function (x, i) { return (der["s" + (i + 1)] || "PROPOSEE") === "PROPOSEE"; }).length;
+  }
+  const renvoi = '<div class="card tdb-renvoi"><div><b>Revue mensuelle</b> · ' + S.A.length + " décision(s) attendue(s)" +
+    (attente ? " · " + badge("b-rose", attente + " suggestion(s) de l'IA en attente") : "") +
+    '<div class="tdb-sub">Effet des réponses, décisions à prendre et contradicteur de revue (IA).</div></div>' +
+    '<button class="btn slim" onclick="setTab(\'b_revue\')">Ouvrir la revue →</button></div>';
+  return "<h2>Tableau de bord · pilotage des irritants</h2>" + S.bandeau + S.tuiles + renvoi +
+    '<h3 class="tdb-h">Signaux par semaine et par irritant</h3>' + S.chaleur +
+    '<div class="tdb-duo">' + S.portefeuille + S.qualite + "</div>" +
+    '<h3 class="tdb-h">Indicateurs détaillés</h3>' + S.detail;
+}
+
+// v21 : onglet « Revue mensuelle » (remplace « Suivi des réponses ») : décider.
+// Un ancien onglet mémorisé « Suivi des réponses » bascule sur la revue.
+if (state.tab === "b_suivre") state.tab = "b_revue";
+function viewRevueMensuelle() {
+  const S = tdbSections("Revue mensuelle");
+  if (typeof S === "string") return S;
+  const revue = typeof carteRevueIa === "function" ? carteRevueIa({ mode: S.D.mode, lignes: S.lignes, C: S.C, partAgent: S.partAgent }) : "";
+  return "<h2>Revue mensuelle</h2>" + S.bandeau +
+    '<p class="note" style="margin:0 0 4px">Une fois par mois, le HRBP passe en revue l\'effet des réponses en place et décide : conserver, adapter, réorienter ou attendre. Le contradicteur (IA) peut préparer la revue ; il propose, le HRBP décide.</p>' +
+    revue +
+    '<h3 class="tdb-h">Effet des réponses</h3>' + S.effets +
+    '<div class="card" style="margin-top:16px"><h3>Décisions attendues à la prochaine revue</h3><ul class="tdb-list">' + S.A.map(function (a) { return "<li>" + esc(a) + "</li>"; }).join("") + "</ul></div>";
 }
 function tdbQ(titre, valeur, sous, cls, etat) {
   return '<div class="tdb-qi"><div class="tdb-sub">' + esc(titre) + '</div><div class="tdb-qv">' + esc(valeur) + " " + badge(cls, etat) + '</div><div class="tdb-sub">' + esc(sous) + "</div></div>";

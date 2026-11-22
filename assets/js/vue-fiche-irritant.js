@@ -13,7 +13,7 @@
 state.ficheCode = state.ficheCode || null;
 
 // Libellé des onglets d'origine, pour le lien « Retour ».
-const FICHE_ORIGINES = { tendances: "Tendances des irritants", b_orienter: "Valider et orienter", b_spec: "Spécifications", b_suivre: "Suivi des réponses", b_pilotage: "Tableau de bord", types: "Types des irritants" };
+const FICHE_ORIGINES = { tendances: "Tendances des irritants", b_orienter: "Valider et orienter", b_spec: "Spécifications", b_pilotage: "Tableau de bord", b_revue: "Revue mensuelle", types: "Types des irritants" };
 
 function ouvrirFiche(code, statique) {
   state.ficheCode = code;
@@ -42,7 +42,7 @@ function ficheVoirSpec(code) {
 const ficheSetTabOrigine = setTab;
 setTab = function (t) { state.ficheCode = null; ficheSetTabOrigine(t); };
 // Les onglets HRBP affichent la fiche à la place de leur contenu quand elle est ouverte.
-["viewTendances", "viewPilotOrienter", "viewPilotSpec", "viewPilotSuivre", "viewTableauBordHrbp", "viewTypesIrritants"].forEach(function (nom) {
+["viewTendances", "viewPilotOrienter", "viewPilotSpec", "viewTableauBordHrbp", "viewRevueMensuelle", "viewTypesIrritants"].forEach(function (nom) {
   const orig = window[nom];
   if (typeof orig !== "function") return;
   window[nom] = function () { return state.ficheCode ? viewFicheIrritant() : orig(); };
@@ -158,7 +158,7 @@ function viewFicheIrritant() {
   const libSt = { PROPOSEE: ["b-slate", "Proposée"], ACCEPTEE: ["b-emerald", "Acceptée"], REJETEE: ["b-slate", "Rejetée"] };
   const ia = '<div class="card"><div class="fi-h">Suggestions de l\'IA sur cet irritant</div>' +
     (state.ficheStatique ? '<p class="note" style="margin:0">Pas de suggestion sur l\'instantané de démonstration.</p>'
-     : !sugg.length ? '<p class="note" style="margin:0">Aucune suggestion pour l\'instant. Le contradicteur se lance depuis le Tableau de bord.</p>'
+     : !sugg.length ? '<p class="note" style="margin:0">Aucune suggestion pour l\'instant. Le contradicteur se lance depuis la Revue mensuelle.</p>'
      : sugg.slice(0, 4).map(function (x) {
         const ls = libSt[x.statut] || libSt.PROPOSEE;
         return '<div class="fi-sug' + (x.s.genre === "CONTRADICTION" ? " contra" : "") + '">' +
@@ -168,7 +168,7 @@ function viewFicheIrritant() {
           '<div class="a">' + esc(x.s.action) + "</div>" +
           '<div class="tdb-sub">' + (x.s.reponse !== "AUCUNE" && !(d && d.reponse === x.s.reponse) ? "Réponse proposée : " + esc(libReponse(x.s.reponse)) + ". " : "") +
           (x.date ? "Revue du " + esc(x.date.toLocaleDateString("fr-FR")) + "." : "") + "</div></div>";
-      }).join("") + '<p class="note" style="margin-top:8px">Accepter ou rejeter se fait depuis le Tableau de bord ; l\'IA n\'écrit jamais de décision.</p>') + "</div>";
+      }).join("") + '<p class="note" style="margin-top:8px">Accepter ou rejeter se fait depuis la Revue mensuelle ; l\'IA n\'écrit jamais de décision.</p>') + "</div>";
 
   // Historique reconstitué
   const ev = [];
