@@ -73,18 +73,19 @@ function raEvaluer(M, R) {
   const T = [], add = function (n, c, a, src) { T.push({ niv: n, critere: c, action: a, src: src }); };
   const long = R && R.duree === 3;
   const v = function (k) { return R ? raNum(R[k]) : null; };
-  if (R && R.incident) add("suspendre", "Incident : envoi sans validation, pièce lue ou contenu confidentiel analysé", "Arrêter l'agent, revenir au traitement manuel, informer le DPO et analyser l'incident", "SAISI");
-  if (v("erronees") !== null && v("erronees") > 10) add("suspendre", "Sorties erronées : " + v("erronees") + " %, au-delà de 10 %", "Arrêter l'agent : une erreur peut coûter un premier jour", "SAISI");
-  else if (v("erronees") !== null && v("erronees") > 5) add("adapter", "Sorties erronées : " + v("erronees") + " %, au-delà de 5 %", "Revoir l'extraction des informations et la checklist", "SAISI");
-  if (v("ouverts") !== null && v("ouverts") < 50) add(long ? "retirer" : "adapter", "Brouillons ouverts : " + v("ouverts") + " %, sous 50 %" + (long ? " après 3 mois et une adaptation" : ""), long ? "Retirer : la RH travaille sans l'agent" : "Comprendre pourquoi la RH ne s'en sert pas", "SAISI");
-  else if (v("ouverts") !== null && v("ouverts") < 80) add("adapter", "Brouillons ouverts : " + v("ouverts") + " %, sous 80 %", "Demander à la RH dans quels cas elle ne s'en sert pas", "SAISI");
-  if (v("sans_modif") !== null && v("sans_modif") < 60) add(long ? "retirer" : "adapter", "Brouillons envoyés sans modification : " + v("sans_modif") + " %, sous 60 %" + (long ? " après 3 mois et une adaptation" : ""), long ? "Retirer : l'adaptation n'a pas suffi" : "Revoir la rédaction des brouillons", "SAISI");
-  if (v("ignores") !== null && v("ignores") > 25) add("adapter", "Brouillons ignorés : " + v("ignores") + " %, au-delà de 25 %", "Analyser les brouillons ignorés (destinataire inutile, information déjà connue)", "SAISI");
-  if (v("satisfaction") !== null && v("satisfaction") < 3) add("adapter", "Satisfaction de la RH : " + raFr(v("satisfaction")) + " sur 5", "Recueillir les retours détaillés de la RH", "SAISI");
-  if (v("nouveaux_cas") !== null && v("nouveaux_cas") >= 2) add("adapter", v("nouveaux_cas") + " cas non couverts par la spécification", "Compléter la spécification (et le skill)", "SAISI");
-  if (R && R.chg_processus) add("adapter", "Changement de processus signalé", "Mettre à jour la spécification et les délais de l'agent", "SAISI");
+  if (R && R.incident) add("suspendre", "Incident : envoi sans validation, pièce lue ou contenu confidentiel analysé", "Arrêter l'agent, revenir au traitement manuel, informer le DPO et analyser l'incident", R.simule ? "SIMULÉ" : "SAISI");
+  if (v("erronees") !== null && v("erronees") > 10) add("suspendre", "Sorties erronées : " + v("erronees") + " %, au-delà de 10 %", "Arrêter l'agent : une erreur peut coûter un premier jour", R.simule ? "SIMULÉ" : "SAISI");
+  else if (v("erronees") !== null && v("erronees") > 5) add("adapter", "Sorties erronées : " + v("erronees") + " %, au-delà de 5 %", "Revoir l'extraction des informations et la checklist", R.simule ? "SIMULÉ" : "SAISI");
+  if (v("ouverts") !== null && v("ouverts") < 50) add(long ? "retirer" : "adapter", "Brouillons ouverts : " + v("ouverts") + " %, sous 50 %" + (long ? " après 3 mois et une adaptation" : ""), long ? "Retirer : la RH travaille sans l'agent" : "Comprendre pourquoi la RH ne s'en sert pas", R.simule ? "SIMULÉ" : "SAISI");
+  else if (v("ouverts") !== null && v("ouverts") < 80) add("adapter", "Brouillons ouverts : " + v("ouverts") + " %, sous 80 %", "Demander à la RH dans quels cas elle ne s'en sert pas", R.simule ? "SIMULÉ" : "SAISI");
+  if (v("sans_modif") !== null && v("sans_modif") < 60) add(long ? "retirer" : "adapter", "Brouillons envoyés sans modification : " + v("sans_modif") + " %, sous 60 %" + (long ? " après 3 mois et une adaptation" : ""), long ? "Retirer : l'adaptation n'a pas suffi" : "Revoir la rédaction des brouillons", R.simule ? "SIMULÉ" : "SAISI");
+  if (v("ignores") !== null && v("ignores") > 25) add("adapter", "Brouillons ignorés : " + v("ignores") + " %, au-delà de 25 %", "Analyser les brouillons ignorés (destinataire inutile, information déjà connue)", R.simule ? "SIMULÉ" : "SAISI");
+  if (v("satisfaction") !== null && v("satisfaction") < 3) add("adapter", "Satisfaction de la RH : " + raFr(v("satisfaction")) + " sur 5", "Recueillir les retours détaillés de la RH", R.simule ? "SIMULÉ" : "SAISI");
+  if (v("nouveaux_cas") !== null && v("nouveaux_cas") >= 2) add("adapter", v("nouveaux_cas") + " cas non couverts par la spécification", "Compléter la spécification (et le skill)", R.simule ? "SIMULÉ" : "SAISI");
+  if (R && R.chg_processus) add("adapter", "Changement de processus signalé", "Mettre à jour la spécification et les délais de l'agent", R.simule ? "SIMULÉ" : "SAISI");
   if (M.fiches && R && R.duree) {
-    if (M.fiches.mois < 2) add(long ? "retirer" : "adapter", M.fiches.mois + " fiche(s) d'arrivée écrite(s) par l'agent ce mois, moins de 2" + (long ? " depuis 3 mois" : ""), long ? "Retirer : le formulaire d'annonce et la checklist suffisent" : "Surveiller : retrait à envisager si cela dure 3 mois", "MESURÉ");
+    if (R.simule && typeof R.fiches === "number") M = Object.assign({}, M, { fiches: Object.assign({}, M.fiches, { mois: R.fiches }) });
+    if (M.fiches.mois < 2) add(long ? "retirer" : "adapter", M.fiches.mois + " fiche(s) d'arrivée écrite(s) par l'agent ce mois, moins de 2" + (long ? " depuis 3 mois" : ""), long ? "Retirer : le formulaire d'annonce et la checklist suffisent" : "Surveiller : retrait à envisager si cela dure 3 mois", R.simule ? "SIMULÉ" : "MESURÉ");
   }
   if (M.effet && M.effet.verdict === "HAUSSE") add("adapter", "Signaux en hausse depuis la mise en service (" + tdbFr(M.effet.mAv, 1) + " → " + tdbFr(M.effet.mAp, 1) + " par semaine)", "L'agent ne règle pas l'irritant : revoir la réponse retenue", "MESURÉ");
   if (M.jour1 && M.jour1.observe && M.jour1.apres > 0) add("adapter", M.jour1.apres + " premier(s) jour(s) dégradé(s) signalé(s) depuis la mise en service", "Vérifier si les demandes partent à temps mais restent bloquées chez l'informatique", "MESURÉ");
@@ -94,6 +95,45 @@ function raEvaluer(M, R) {
   return { top: top, list: T };
 }
 const RA_RECO = [["CONSERVER", "Conserver l'agent", "b-emerald"], ["ADAPTER", "Adapter l'agent", "b-amber"], ["RETIRER", "Retirer l'agent", "b-rose"], ["SUSPENDRE", "Suspendre l'agent immédiatement", "b-rose"]];
+
+// v44.1 : mode « Simuler » (curseurs de la maquette v12) : recalcule la recommandation en direct,
+// sans rien enregistrer. Part des valeurs saisies du mois, sinon de valeurs neutres.
+state.raSim = state.raSim || {};
+const RA_SIM0 = { duree: 1, ouverts: 100, sans_modif: 70, ignores: 10, erronees: 0, satisfaction: 4, nouveaux_cas: 0, chg_processus: false, incident: false };
+function raSimDebut(code) {
+  const mois = state.raMois[code] || raMoisCourant(), R = raRevue(code, mois), sim = JSON.parse(JSON.stringify(RA_SIM0));
+  if (R) Object.keys(sim).forEach(function (k) { if (typeof R[k] === typeof sim[k] && (typeof R[k] !== "number" || isFinite(R[k]))) sim[k] = R[k]; });
+  const f = RA_INTEGRATION.indexOf(code) >= 0 ? raFiches(mois) : null;
+  if (f) sim.fiches = f.mois;
+  state.raSim[code] = sim; render();
+}
+function raSimFin(code) { delete state.raSim[code]; render(); }
+function raSimSet(code, k, v) {
+  const sim = state.raSim[code]; if (!sim) return;
+  sim[k] = (k === "chg_processus" || k === "incident") ? !!v : k === "duree" ? (+v === 3 ? 3 : 1) : +v;
+  const lbl = document.getElementById("ra-sv-" + code + "-" + k); if (lbl) lbl.textContent = raSimFmt(k, sim[k]);
+  const o = document.getElementById("ra-reco-" + code); if (o) o.outerHTML = raRecoHtml(code, state.raSim[code]);
+}
+function raSimFmt(k, v) { return k === "satisfaction" ? raFr(v) + " / 5" : ["ouverts", "sans_modif", "ignores", "erronees"].indexOf(k) >= 0 ? v + " %" : String(v); }
+function raSimCurseur(code, k, label, min, max, pas) {
+  const v = state.raSim[code][k];
+  return '<label class="fl">' + esc(label) + '<span style="display:flex;gap:10px;align-items:center;margin-top:4px"><input type="range" style="flex:1;padding:0;border:0" min="' + min + '" max="' + max + '" step="' + (pas || 1) + '" value="' + v + '" oninput="raSimSet(\'' + code + "', '" + k + '\', this.value)"><b id="ra-sv-' + code + "-" + k + '" style="min-width:52px;text-align:right">' + esc(raSimFmt(k, v)) + "</b></span></label>";
+}
+function raSimPanneau(code) {
+  const sim = state.raSim[code];
+  return '<div class="ra-form">' +
+    '<label class="fl">Situation observée depuis<select onchange="raSimSet(\'' + code + '\', \'duree\', this.value)"><option value="1"' + (sim.duree === 3 ? "" : " selected") + '>1 mois</option><option value="3"' + (sim.duree === 3 ? " selected" : "") + ">3 mois, après une adaptation</option></select></label>" +
+    (typeof sim.fiches === "number" ? raSimCurseur(code, "fiches", "Fiches d'arrivée écrites par l'agent dans le mois", 0, 12) : "") +
+    raSimCurseur(code, "ouverts", "Brouillons ouverts par la RH", 0, 100) +
+    raSimCurseur(code, "sans_modif", "Brouillons envoyés sans modification", 0, 100) +
+    raSimCurseur(code, "ignores", "Brouillons ignorés", 0, 100) +
+    raSimCurseur(code, "erronees", "Sorties erronées", 0, 40) +
+    raSimCurseur(code, "satisfaction", "Satisfaction de la RH", 1, 5, 0.1) +
+    raSimCurseur(code, "nouveaux_cas", "Cas non couverts par la spécification", 0, 6) +
+    '<label style="display:block;margin-top:10px;font-size:13px"><input type="checkbox"' + (sim.chg_processus ? " checked" : "") + ' onchange="raSimSet(\'' + code + '\', \'chg_processus\', this.checked)"> Changement de processus</label>' +
+    '<label style="display:block;margin-top:6px;font-size:13px"><input type="checkbox"' + (sim.incident ? " checked" : "") + ' onchange="raSimSet(\'' + code + '\', \'incident\', this.checked)"> Incident : envoi sans validation, pièce lue ou contenu confidentiel analysé</label>' +
+    '<div class="btns" style="margin-top:12px"><button class="btn ghost" onclick="raSimDebut(\'' + code + '\')">Revenir au départ</button><button class="btn" onclick="raSimFin(\'' + code + '\')">Quitter la simulation</button></div></div>';
+}
 
 function raChoisirMois(code, m) { state.raMois[code] = m; render(); }
 function raEnregistrer(code) {
@@ -114,6 +154,21 @@ function raEnregistrer(code) {
   window.aciaEcrireRevueAgent(code + "__" + mois, data)
     .then(function () { state.raMsg[code] = "Revue de " + raMoisLib(mois) + " enregistrée dans la base."; render(); })
     .catch(function (e) { state.raMsg[code] = "Refusé par la base : " + ((e && e.message) || e) + " (règles Firestore v44 publiées ?)"; render(); });
+}
+
+// Recommandation (saisie du mois, ou simulation si sim est fourni).
+function raRecoHtml(code, sim) {
+  const sig = aciaSignaux(), mois = state.raMois[code] || raMoisCourant();
+  const Rs = raRevue(code, mois), R = sim ? Object.assign({ simule: true }, sim) : Rs, M = raMesures(code, mois, sig), E = raEvaluer(M, R), reco = RA_RECO[E.top];
+  const L = { suspendre: ["Suspendre", "b-rose"], retirer: ["Retirer", "b-rose"], adapter: ["Adapter", "b-amber"] };
+  const dec = function (id) { return RA_DECISIONS.find(function (x) { return x.id === id; }) || {}; };
+  return '<div class="ra-reco" id="ra-reco-' + code + '"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><div class="spechead">Recommandation de l\'assistant · ' + (sim ? "simulation" : esc(raMoisLib(mois))) + "</div>" + badge(reco[2], reco[1]) + "</div>" +
+    (E.list.length
+      ? '<div class="tw" style="margin-top:8px"><table><thead><tr><th>Niveau</th><th>Critère déclenché</th><th>Action proposée</th></tr></thead><tbody>' +
+        E.list.map(function (t) { return "<tr><td>" + badge(L[t.niv][1], L[t.niv][0]) + ' <small class="tdb-sub">' + t.src.toLowerCase() + "</small></td><td>" + esc(t.critere) + "</td><td>" + esc(t.action) + "</td></tr>"; }).join("") + "</tbody></table></div>"
+      : '<p style="margin-top:8px;font-size:14px">' + (R ? "Aucun critère d'évolution atteint : l'agent reste pertinent" + (sim ? " dans cette simulation." : " ce mois-ci.") : "Aucun critère atteint sur les mesures de la base. Les valeurs à saisir ne le sont pas encore : recommandation provisoire.") + "</p>") +
+    (!sim && Rs && Rs.decision ? '<p class="note">Décision du HRBP : ' + badge(dec(Rs.decision).cls || "b-slate", dec(Rs.decision).label || Rs.decision) + (Rs.decision !== reco[0] ? " · différente de la recommandation" : "") + "</p>" : "") +
+    '<p class="note">Règle : une suspension prime sur tout ; un seul critère « retirer » suffit ; sinon un seul critère « adapter » suffit. L\'assistant propose, le HRBP décide.</p></div>';
 }
 
 function raCarte(code, sig) {
@@ -151,15 +206,7 @@ function raCarte(code, sig) {
     '<div class="btns" style="margin-top:12px"><button class="btn ok" onclick="raEnregistrer(\'' + code + '\')">Enregistrer la revue du mois</button></div>' +
     (state.raMsg[code] ? '<p class="note">' + esc(state.raMsg[code]) + "</p>" : "") +
     (R && R.maj && R.maj.toDate ? '<p class="note">Saisie enregistrée le ' + esc(R.maj.toDate().toLocaleString("fr-FR")) + ".</p>" : "") + "</div>";
-  // Recommandation
-  const L = { suspendre: ["Suspendre", "b-rose"], retirer: ["Retirer", "b-rose"], adapter: ["Adapter", "b-amber"] };
-  const recoHtml = '<div class="ra-reco"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><div class="spechead">Recommandation de l\'assistant · ' + esc(raMoisLib(mois)) + "</div>" + badge(reco[2], reco[1]) + "</div>" +
-    (E.list.length
-      ? '<div class="tw" style="margin-top:8px"><table><thead><tr><th>Niveau</th><th>Critère déclenché</th><th>Action proposée</th></tr></thead><tbody>' +
-        E.list.map(function (t) { return "<tr><td>" + badge(L[t.niv][1], L[t.niv][0]) + ' <small class="tdb-sub">' + t.src.toLowerCase() + "</small></td><td>" + esc(t.critere) + "</td><td>" + esc(t.action) + "</td></tr>"; }).join("") + "</tbody></table></div>"
-      : '<p style="margin-top:8px;font-size:14px">' + (saisi ? "Aucun critère d'évolution atteint : l'agent reste pertinent ce mois-ci." : "Aucun critère atteint sur les mesures de la base. Les valeurs à saisir ne le sont pas encore : recommandation provisoire.") + "</p>") +
-    (R && R.decision ? '<p class="note">Décision du HRBP : ' + badge((RA_DECISIONS.find(function (x) { return x.id === R.decision; }) || {}).cls || "b-slate", (RA_DECISIONS.find(function (x) { return x.id === R.decision; }) || {}).label || R.decision) +
-      (R.decision !== reco[0] ? " · différente de la recommandation" : "") + "</p>" : "") + "</div>";
+  const recoHtml = raRecoHtml(code, state.raSim[code]);
   // Historique
   const hist = raRevues(code);
   const histHtml = hist.length > 1 || (hist.length === 1 && hist[0].mois !== mois)
@@ -168,7 +215,12 @@ function raCarte(code, sig) {
     '<div class="kpi-h">' + (typeof specIcone === "function" ? specIcone("ASSISTER") : "") + '<div class="spechead">Agent en service depuis la semaine ' + esc(d.semaine_effet) + "</div></div>" +
     '<div class="spech3">' + esc(libelleType(code)) + "</div>" +
     (typeof allerSpec === "function" ? '<a href="#" class="pick-fiche" onclick="allerSpec(\'' + code + '\');return false">Voir la spécification →</a>' : "") +
-    '<div class="row c-2-3" style="margin-top:12px"><div><div class="spechead" style="margin-bottom:4px">Saisie du mois ' + badge("b-slate", "saisi par le HRBP") + "</div>" + form + "</div>" +
+    (state.raSim[code]
+      ? '<div class="tdb-bandeau" style="margin-top:10px">' + badge("b-amber", "Simulation, non enregistrée") + " Faites varier la situation pour voir la recommandation changer. Rien n'est écrit dans la base ; les mesures réelles restent affichées à droite.</div>"
+      : '<div style="margin-top:8px"><button class="btn slim ghost" onclick="raSimDebut(\'' + code + '\')">Simuler</button> <span class="note" style="margin:0">Curseurs pour la démonstration, sans enregistrement.</span></div>') +
+    '<div class="row c-2-3" style="margin-top:12px"><div>' + (state.raSim[code]
+      ? '<div class="spechead" style="margin-bottom:4px">Situation simulée ' + badge("b-amber", "simulation") + "</div>" + raSimPanneau(code)
+      : '<div class="spechead" style="margin-bottom:4px">Saisie du mois ' + badge("b-slate", "saisi par le HRBP") + "</div>" + form) + "</div>" +
     '<div><div class="spechead" style="margin-bottom:4px">Mesuré dans la base ' + badge("b-emerald", "● En direct") + "</div>" + tabMes + recoHtml + histHtml + "</div></div></div>";
 }
 
