@@ -319,8 +319,8 @@ function viewTableauBordHrbp() {
   // v38 : le renvoi vers la Revue mensuelle compte toujours sur tous les irritants (la revue n'est pas filtrée).
   const filtre = filtreProcActif().length > 0 || !!state.masquerVides;
   const T = filtre ? tdbSections("Revue mensuelle") : S;
-  const ligneFiltre = '<div class="filtres-ligne">' + filtreProcessusHtml() + '<span style="margin:0 0 10px">' + boutonSansSignal() + "</span></div>" +
-    (filtre ? '<p class="note" style="margin:-4px 0 10px">Filtre appliqué aux irritants (tuiles, carte de chaleur, décisions et réponses). Les compteurs de mails et de comptes rendus et la qualité de l\'assistant restent globaux.' +
+  const ligneFiltre = '<div class="tdb-outils" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px">' + filtreProcessusHtml().replace("margin:0 0 10px", "margin:0") + boutonSansSignal() + "</div>" +
+    (filtre ? '<p class="note" style="margin:0 0 10px">Filtre appliqué aux irritants (tuiles, carte de chaleur, décisions et réponses). Les compteurs de mails et de comptes rendus et la qualité de l\'assistant restent globaux.' +
       (S.lignes.length ? "" : " Aucun irritant à afficher avec ce filtre.") + "</p>" : "");
   // Renvoi vers la Revue mensuelle : nombre de décisions attendues et de suggestions de l'IA en attente.
   let attente = 0;
