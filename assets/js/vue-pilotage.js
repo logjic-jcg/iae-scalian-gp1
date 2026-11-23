@@ -270,18 +270,21 @@ function aideSpec() {
 function viewPilotSpec() {
   const sig = aciaSignaux();
   if (!sig.ok) return messageSansBase("Spécifications", sig);
-  const valides = typesPilotage().map(function (t) { return t.code; }).filter(function (c) { const d = decisionDe(c); return d && d.statut === "VALIDE"; });
+  let valides = typesPilotage().map(function (t) { return t.code; }).filter(function (c) { const d = decisionDe(c); return d && d.statut === "VALIDE"; });
   if (!valides.length) {
     return "<h2>Spécifications</h2>" + bandeauVersionC() + aideSpec() + '<div class="card"><p style="font-size:14px;margin:0">Aucun irritant validé pour l\'instant.</p><p class="note">Une fiche n\'est produite qu\'après une décision « validé » du HRBP, dans l\'onglet « Décisions ».</p></div>';
   }
-  // v13 : filtre par réponse retenue.
+  // v13 : filtre par réponse retenue. v39 : filtre « Processus » (le même que dans Décisions) appliqué d'abord ;
+  // les compteurs des puces en tiennent compte.
+  const tousValides = valides;
+  valides = tousValides.filter(function (c) { return passeProcessus(c); });
   const fRep = state.filtreSpec || "TOUS";
   const visibles = valides.filter(function (c) { return fRep === "TOUS" || decisionDe(c).reponse === fRep; });
-  const chips = '<div class="chips" style="margin:0 0 4px">' + [{ id: "TOUS", label: "Toutes" }].concat(REPONSES_HRBP).map(function (r) {
+  const chips = '<div class="filtres-ligne">' + filtreProcessusHtml() + '<div class="chips" style="margin:0 0 4px">' + [{ id: "TOUS", label: "Toutes" }].concat(REPONSES_HRBP).map(function (r) {
     const n = r.id === "TOUS" ? valides.length : valides.filter(function (c) { return decisionDe(c).reponse === r.id; }).length;
     return '<button class="chip' + (r.id === fRep ? " active" : "") + '" onclick="filtreSpec(\'' + r.id + '\')">' + esc(r.label) + " (" + n + ")</button>";
-  }).join("") + "</div>";
-  const fiches = (visibles.length ? "" : '<div class="card" style="margin-top:12px"><p class="note" style="margin:0">Aucune spécification validée avec cette réponse.</p></div>') + visibles.map(function (c) {
+  }).join("") + "</div></div>";
+  const fiches = (visibles.length ? "" : '<div class="card" style="margin-top:12px"><p class="note" style="margin:0">Aucune spécification validée avec cette réponse' + (filtreProcActif().length ? " et ce processus" : "") + '.</p></div>') + visibles.map(function (c) {
     const d = decisionDe(c), p = sig.parCode[c], conf = confDe(c);
     const semaines = Object.keys(p.parSem).map(Number).sort(function (a, b) { return a - b; });
     if (d.reponse === "SIMPLIFIER") {
