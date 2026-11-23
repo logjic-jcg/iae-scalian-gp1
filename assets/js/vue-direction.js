@@ -144,7 +144,15 @@ function viewVueEnsemble() {
     tuile("drapeau", "Irritants signalés", String(L.length), "Boîte RH et comptes rendus, hors « Autre » et écartés") +
     tuile("loupe", "À examiner sans décision", String(aExam), aExam ? badge("b-rose", "À traiter par le HRBP") : badge("b-emerald", "Aucun en attente")) +
     tuile("liste", "Réponses en place", String(enPlace), "Décisions validées par le HRBP") +
-    tuile("courbe", "Réponses efficaces", n("EFFICACE") + " / " + mesures, mesures ? "Parmi les réponses déjà mesurables (baisse de 20 % ou plus)" : "Aucune réponse encore mesurable") + "</div>";
+    tuile("courbe", "Réponses efficaces", n("EFFICACE") + " / " + mesures, mesures ? "Parmi les réponses déjà mesurables (baisse de 20 % ou plus)" : "Aucune réponse encore mesurable") +
+    // v43 : répartition des réponses retenues par le HRBP (base decisions_hrbp, hors écartées) : agent IA (Assister) ou sans IA (Simplifier, Automatiser).
+    (function () {
+      const fbD = window.ACIA_FB.decisions_hrbp;
+      const rep = fbD && fbD.statut === "ok" ? fbD.docs.filter(function (x) { return x.statut !== "ECARTE" && x.reponse; }) : [];
+      const ag = rep.filter(function (x) { return x.reponse === "ASSISTER"; }).length, sans = rep.length - ag;
+      return tuile("bouclier", "Réponses retenues", rep.length ? ag + " agent" + (ag > 1 ? "s" : "") + " · " + sans + " sans IA" : "—",
+        rep.length ? "La réponse la plus simple qui suffit" : "Aucune réponse retenue par le HRBP");
+    })() + "</div>";
   const totMail = L.filter(function (l) { return l.code !== CODE_CR; }).reduce(function (t, l) { return t + l.p.total; }, 0);
   const totCR = L.filter(function (l) { return l.code === CODE_CR; }).reduce(function (t, l) { return t + l.p.total; }, 0);
   const tot = Math.max(1, totMail + totCR), pM = Math.round(100 * totMail / tot), pC = 100 - pM;
@@ -166,7 +174,17 @@ function viewVueEnsemble() {
     kpis +
     '<div class="card ve-carte" style="margin-top:16px"><div class="kpi-h">' + tendIcone("courbe") + '<div class="spechead">Carte des irritants</div></div>' +
     '<p class="note" style="margin:4px 0 6px">Plus une bulle est à droite, plus l\'irritant progresse ; plus elle est haute, plus il revient souvent. Clic sur une bulle ou sur un nom : fiche de l\'irritant.</p>' + veCarte(L) + "</div>" +
-    '<div class="ve-duo"><div class="ve-col">' + table + sources + "</div>" + vedCarte(L) + "</div>";
+    // v43 : « Répartition par source » avant « Irritants à suivre », pleine largeur ; « Pour en parler avec l'équipe » a son propre onglet.
+    sources + '<div style="margin-top:16px">' + table + "</div>";
+}
+
+// v43 : onglet dédié « Pour en parler avec l'équipe » (profil Direction), à droite de la Vue d'ensemble.
+function viewVedOnglet() {
+  const sig = aciaSignaux();
+  if (!sig.ok) return messageSansBase("Pour en parler avec l’équipe", sig);
+  return "<h2>Pour en parler avec l’équipe</h2>" +
+    '<p class="note" style="margin:-4px 0 12px">' + badge("b-emerald", "● En direct") + " L’IA ne reçoit que les agrégats de la Vue d’ensemble (par type d’irritant), jamais de mail, de nom ni de donnée sur une équipe.</p>" +
+    vedCarte(veLignes(sig));
 }
 
 // ---------------------------------------------------------------------------
