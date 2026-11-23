@@ -122,7 +122,10 @@ function viewTypesIrritants() {
     const msg = !fb || fb.statut === "chargement" ? "Lecture de la base en cours…" : "Données indisponibles : " + fb.erreur;
     return titre + '<div class="card"><p class="note" style="margin:0">' + esc(msg) + '</p><p class="note">La liste des types n\'est affichée que depuis la base.</p></div>';
   }
-  const types = typesTable() || [];
+  const tousTypes = typesTable() || [];
+  // v37 : filtre « Processus » (le même que dans Décisions) appliqué avant le filtre actif / désactivé ;
+  // les compteurs des puces en tiennent compte.
+  const types = tousTypes.filter(function (d) { return passeProcessus(d.id); });
   // Filtre actif / désactivé.
   const filtre = FILTRES_TYPES.find(function (f) { return f.id === state.filtreType; }) || FILTRES_TYPES[0];
   const visibles = types.filter(filtre.test);
@@ -131,15 +134,15 @@ function viewTypesIrritants() {
   }
   if (!state.brType) selTypeSansRendu(state.selType);
 
-  const actifs = types.filter(function (d) { return d.actif !== false; }).length;
-  const entete = '<p class="note" style="margin:-4px 0 12px">' + badge("b-emerald", "● En direct") + " " + actifs + " type(s) actif(s) sur " + types.length +
+  const actifs = tousTypes.filter(function (d) { return d.actif !== false; }).length;
+  const entete = '<p class="note" style="margin:-4px 0 12px">' + badge("b-emerald", "● En direct") + " " + actifs + " type(s) actif(s) sur " + tousTypes.length +
     ". L'IA du classement relit cette liste à chaque passage (toutes les heures) : une modification vaut pour les <b>prochains</b> mails, pas pour ceux déjà classés.</p>" +
     '<p class="note" style="margin:-6px 0 12px">Conservation : les classements, décisions et réponses de l\'IA sont gardés 24 mois (effacement à automatiser avant tout usage réel). <a href="notice.html" target="_blank" style="color:var(--accent)">Notice d\'information</a></p>';
 
-  const chips = '<div class="chips" style="margin:0 0 10px">' + FILTRES_TYPES.map(function (f) {
+  const chips = '<div class="filtres-ligne">' + filtreProcessusHtml() + '<div class="chips">' + FILTRES_TYPES.map(function (f) {
     return '<button class="chip' + (f.id === filtre.id ? " active" : "") + '" onclick="filtreType(\'' + f.id + '\')">' + esc(f.label) + " (" + types.filter(f.test).length + ")</button>";
-  }).join("") + "</div>";
-  const picks = (visibles.length ? "" : '<div class="card" style="margin-bottom:8px"><p class="note" style="margin:0">Aucun type dans ce filtre.</p></div>') + visibles.map(function (d) {
+  }).join("") + "</div></div>";
+  const picks = (visibles.length ? "" : '<div class="card" style="margin-bottom:8px"><p class="note" style="margin:0">Aucun type dans ce filtre' + (filtreProcActif().length ? " et ce processus" : "") + '.</p></div>') + visibles.map(function (d) {
     const etat = d.actif === false ? "désactivé" : "actif";
     return '<button class="pick' + (state.selType === d.id ? " selected" : "") + '" onclick="selType(\'' + esc(d.id) + '\')">' +
       '<div style="font-weight:700;font-size:14px">' + esc(d.titre || d.id) + (d.actif === false ? " (désactivé)" : "") + "</div>" +
@@ -148,7 +151,7 @@ function viewTypesIrritants() {
     '<button class="pick' + (state.selType === "_nouveau" ? " selected" : "") + '" onclick="selType(\'_nouveau\')"><div style="font-weight:700;font-size:14px">+ Nouveau type</div><div class="psub">Titre, définition, exemple</div></button>';
 
   const nouveau = state.selType === "_nouveau";
-  const d = nouveau ? null : types.find(function (x) { return x.id === state.selType; });
+  const d = nouveau ? null : tousTypes.find(function (x) { return x.id === state.selType; });
   const b = state.brType;
   const ta = 'style="display:block;width:100%;margin-top:4px;font:inherit;font-size:14px;font-weight:400;padding:8px 10px;border:1px solid var(--lav2);border-radius:4px;color:var(--ink);background:#fff;resize:vertical"';
   const compteur = function (champ) { return ' <small id="ty-n-' + champ + '" style="font-weight:400;color:#64748b">' + String((b[champ] || "").length) + " / " + TYPE_LIMITES[champ] + "</small>"; };
