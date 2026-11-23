@@ -280,7 +280,7 @@ function viewPilotSpec() {
   valides = tousValides.filter(function (c) { return passeProcessus(c); });
   const fRep = state.filtreSpec || "TOUS";
   const visibles = valides.filter(function (c) { return fRep === "TOUS" || decisionDe(c).reponse === fRep; });
-  const chips = '<div class="filtres-ligne">' + filtreProcessusHtml() + '<div class="chips" style="margin:0 0 4px">' + [{ id: "TOUS", label: "Toutes" }].concat(REPONSES_HRBP).map(function (r) {
+  const chips = '<div class="filtres-ligne" style="align-items:flex-start">' + filtreProcessusHtml() + '<span class="note" style="margin:0 0 10px;line-height:30px"><b>Réponse retenue :</b></span><div class="chips" style="margin:0 0 10px">' + [{ id: "TOUS", label: "Toutes" }].concat(REPONSES_HRBP).map(function (r) {
     const n = r.id === "TOUS" ? valides.length : valides.filter(function (c) { return decisionDe(c).reponse === r.id; }).length;
     return '<button class="chip' + (r.id === fRep ? " active" : "") + '" onclick="filtreSpec(\'' + r.id + '\')">' + esc(r.label) + " (" + n + ")</button>";
   }).join("") + "</div></div>";
@@ -309,7 +309,7 @@ function viewPilotSpec() {
       ligne("Décision", "Effet à partir de la semaine " + esc(d.semaine_effet) + (d.commentaire ? " · « " + esc(d.commentaire) + " »" : "")) +
       "</tbody></table></div>";
   }).join("");
-  return "<h2>Spécifications</h2>" + bandeauVersionC() + aideSpec() + '<p class="note" style="margin:0 0 6px"><b>Réponse retenue</b></p>' + chips + fiches +
+  return "<h2>Spécifications</h2>" + bandeauVersionC() + aideSpec() + chips + fiches +
     '<p class="note">Fiches remplies automatiquement avec les données de la base et la grille du livrable 01. Elles ne se mettent pas à jour seules en texte libre : une rédaction plus riche se fait avec Claude, à partir de cette fiche.</p>';
 }
 
