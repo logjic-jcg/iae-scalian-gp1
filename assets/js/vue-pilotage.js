@@ -325,7 +325,7 @@ function viewPilotSpec() {
       ligne("Garde-fous", "Aucun mail ni compte rendu confidentiel traité ; aucune donnée sur une personne ; " + (d.reponse === "AUTOMATISER" ? "seule la réponse standard part automatiquement ; tout autre envoi passe par une validation humaine." : "rien n'est envoyé sans validation humaine.")) +
       ligne("Indicateur de suivi", esc(conf.indicateur) + ", mesuré dans l'onglet « Revue mensuelle ».") +
       ligne("Décision", "Effet à partir de la semaine " + esc(d.semaine_effet) + (d.commentaire ? " · « " + esc(d.commentaire) + " »" : "")) +
-      "</tbody></table></div>";
+      "</tbody></table>" + (d.reponse === "ASSISTER" && typeof skillBloc === "function" ? skillBloc(c) : "") + "</div>";
   }).join("");
   return "<h2>Spécifications</h2>" + bandeauVersionC() + aideSpec() + chips + fiches +
     '<p class="note">Fiches remplies automatiquement avec les données de la base et la grille du livrable 01. Elles ne se mettent pas à jour seules en texte libre : une rédaction plus riche se fait avec Claude, à partir de cette fiche.</p>';
