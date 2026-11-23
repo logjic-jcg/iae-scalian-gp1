@@ -178,13 +178,15 @@ function tdbBarre(lbl, v, max, sous) {
 // --- Écran ------------------------------------------------------------------
 // v21 : calcul commun au « Tableau de bord » (observer) et à la « Revue mensuelle » (décider).
 // Renvoie le HTML d'erreur (texte) si la base n'est pas lisible, sinon les sections.
-function tdbSections(titre) {
+// v38 : filtrerProcessus = true (Tableau de bord seulement) restreint les irritants au filtre « Processus »
+// (le même que dans Décisions et Types d'irritants). La Revue mensuelle et le partage restent sur tous les irritants.
+function tdbSections(titre, filtrerProcessus) {
   const D = donneesTdb();
   if (D.erreur) return "<h2>" + titre + "</h2>" + '<div class="card"><p class="note" style="margin:0">' + esc(D.erreur) + "</p>" +
     '<p class="note">Aucun chiffre n\'est affiché sans la base.' + (D.attente ? "" : " En secours pour une démonstration :") + "</p>" +
     (D.attente ? "" : '<button class="btn" onclick="tdbBascule(true)">Afficher l\'instantané de démonstration</button>') + "</div>";
   const C = D.compteurs;
-  const lignes = D.types.map(function (t) {
+  const lignes = D.types.filter(function (t) { return !filtrerProcessus || passeProcessus(t.code); }).map(function (t) {
     const p = D.parCode[t.code] || { total: 0, parSem: {}, semMax: 0 };
     const d = D.decision(t.code);
     return { code: t.code, label: t.label, p: p, d: d, examiner: tdbAExaminer(p), effet: d && d.statut !== "ECARTE" ? tdbEffet(p, Number(d.semaine_effet) || 0) : null };
@@ -311,19 +313,25 @@ function tdbSections(titre) {
 
 // Tableau de bord : observer (signaux, décisions, qualité, indicateurs).
 function viewTableauBordHrbp() {
-  const S = tdbSections("Tableau de bord · pilotage des irritants");
+  const S = tdbSections("Tableau de bord · pilotage des irritants", true);
   if (typeof S === "string") return S;
+  // v38 : le renvoi vers la Revue mensuelle compte toujours sur tous les irritants (la revue n'est pas filtrée).
+  const filtre = filtreProcActif().length > 0;
+  const T = filtre ? tdbSections("Revue mensuelle") : S;
+  const ligneFiltre = '<div class="filtres-ligne">' + filtreProcessusHtml() + "</div>" +
+    (filtre ? '<p class="note" style="margin:-4px 0 10px">Filtre appliqué aux irritants (tuiles, carte de chaleur, décisions et réponses). Les compteurs de mails et de comptes rendus et la qualité de l\'assistant restent globaux.' +
+      (S.lignes.length ? "" : " Aucun irritant dans ce processus.") + "</p>" : "");
   // Renvoi vers la Revue mensuelle : nombre de décisions attendues et de suggestions de l'IA en attente.
   let attente = 0;
   if (S.D.mode !== "statique" && typeof revueDerniere === "function") {
     const der = revueDerniere();
-    if (der) attente = revueLire(der.texte, S.lignes.map(function (l) { return l.code; })).filter(function (x, i) { return (der["s" + (i + 1)] || "PROPOSEE") === "PROPOSEE"; }).length;
+    if (der) attente = revueLire(der.texte, T.lignes.map(function (l) { return l.code; })).filter(function (x, i) { return (der["s" + (i + 1)] || "PROPOSEE") === "PROPOSEE"; }).length;
   }
-  const renvoi = '<div class="card tdb-renvoi"><div><b>Revue mensuelle</b> · ' + S.A.length + " décision(s) attendue(s)" +
+  const renvoi = '<div class="card tdb-renvoi"><div><b>Revue mensuelle</b> · ' + T.A.length + " décision(s) attendue(s)" +
     (attente ? " · " + badge("b-rose", attente + " suggestion(s) de l'IA en attente") : "") +
     '<div class="tdb-sub">Effet des réponses, décisions à prendre et contradicteur de revue (IA).</div></div>' +
     '<button class="btn slim" onclick="setTab(\'b_revue\')">Ouvrir la revue →</button></div>';
-  return "<h2>Tableau de bord · pilotage des irritants</h2>" + S.bandeau + S.tuiles + renvoi +
+  return "<h2>Tableau de bord · pilotage des irritants</h2>" + S.bandeau + ligneFiltre + S.tuiles + renvoi +
     '<h3 class="tdb-h">Signaux par semaine et par irritant</h3>' + S.chaleur +
     '<div class="tdb-duo">' + S.portefeuille + S.qualite + "</div>" +
     '<h3 class="tdb-h">Indicateurs détaillés</h3>' + S.detail;
