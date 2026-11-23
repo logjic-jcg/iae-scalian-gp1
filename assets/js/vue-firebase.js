@@ -22,7 +22,7 @@ function aciaFbMisAJour(nom) {
   // v44 : « Revue des agents IA » se met à jour avec les décisions, les signaux, les fiches d'arrivée et les saisies.
   if (state.tab === "b_agents" && ["classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "arrivees", "revues_agents"].indexOf(nom) >= 0) { render(); return; }
   // v31.1 : Vue d'ensemble (profil Direction, seul onglet) : se met à jour à chaque lecture de la base.
-  if ((state.tab === "ensemble" || state.tab === "dir_equipe") && ["classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "suggestions_ia", "parametres"].indexOf(nom) >= 0) { render(); return; }
+  if ((state.tab === "ensemble" || state.tab === "dir_equipe" || state.tab === "dir_roi") && ["classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "suggestions_ia", "parametres", "revues_agents"].indexOf(nom) >= 0) { render(); return; }
   // v13 : les titres des types servent dans tous les onglets HRBP en direct.
   if (nom === "parametres" && state.tab === "tendances") { render(); return; }
   if (nom === "suggestions_ia") { if (state.tab === "b_revue" || state.tab === "b_pilotage" || state.tab === "b_orienter" || state.ficheCode) render(); return; }
