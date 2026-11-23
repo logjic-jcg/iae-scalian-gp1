@@ -457,7 +457,7 @@ const ROLES = [
   // v11 : deux HRBP pour ne pas mélanger les données.
   // Julien = uniquement ce qui vient des sources réelles (boîte RH partagée, comptes rendus Notion) via Firebase.
   { id: "hrbp",    nom: "Julien", role: "HRBP", persona: "HRBP",
-    tabs: [["tendances", "Tendances"], ["b_orienter", "Décisions"], ["b_spec", "Spécifications"], ["b_pilotage", "Tableau de bord"], ["b_revue", "Revue mensuelle"], ["types", "Types d’irritants"]] },
+    tabs: [["tendances", "Tendances"], ["b_orienter", "Décisions"], ["b_spec", "Spécifications"], ["b_pilotage", "Tableau de bord"], ["b_revue", "Revue mensuelle"], ["b_agents", "Revue des agents IA"], ["types", "Types d’irritants"]] },
   // HRBP de démo = uniquement les écrans scénarisés de la maquette (données fictives écrites dans le code).
   { id: "hrbp_demo", nom: "HRBP de démo", role: "HRBP", persona: "HRBP",
     tabs: [["registre", "Registre RH"], ["orienter", "Décisions"], ["spec", "Spécifications"], ["suivre", "Suivi des réponses"], ["firebase", "Données de la base"]] },
@@ -716,7 +716,7 @@ function render() {
   if (!role().tabs.some(function (t) { return t[0] === state.tab; })) state.tab = role().tabs[0][0];
   renderTabs();
   renderWho();
-  const views = { arrivees: viewArrivees, registre: viewObserver, orienter: viewOrienter, spec: viewSpec, suivre: viewSuivre, mesarrivees: viewMesArrivees, equipe: viewEquipe, tableau: viewTableau, futur: viewFutur, firebase: viewFirebase, tendances: viewTendances, b_orienter: viewPilotOrienter, b_spec: viewPilotSpec, b_suivre: viewPilotSuivre, b_pilotage: viewTableauBordHrbp, b_revue: function () { return viewRevueMensuelle(); }, types: viewTypesIrritants, ensemble: function () { return viewVueEnsemble(); }, dir_equipe: function () { return viewVedOnglet(); } };
+  const views = { arrivees: viewArrivees, registre: viewObserver, orienter: viewOrienter, spec: viewSpec, suivre: viewSuivre, mesarrivees: viewMesArrivees, equipe: viewEquipe, tableau: viewTableau, futur: viewFutur, firebase: viewFirebase, tendances: viewTendances, b_orienter: viewPilotOrienter, b_spec: viewPilotSpec, b_suivre: viewPilotSuivre, b_pilotage: viewTableauBordHrbp, b_revue: function () { return viewRevueMensuelle(); }, types: viewTypesIrritants, ensemble: function () { return viewVueEnsemble(); }, dir_equipe: function () { return viewVedOnglet(); }, b_agents: function () { return viewRevueAgents(); } };
   document.getElementById("main").innerHTML = views[state.tab]();
   state.justAdded = false; state.fresh = null;
 }

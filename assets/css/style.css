@@ -507,3 +507,11 @@ tr.fb-neuf td { animation: fb-flash 3s ease-out; }
 .ved-q{display:block;margin-top:4px;padding:6px 10px;border-left:3px solid #7c5cc4;background:#f4effb;border-radius:0 6px 6px 0;font-style:italic;color:#2d1650}
 @media (max-width:760px){.ve-duo{grid-template-columns:1fr}}
 .ve-table td:nth-child(3) .tdb-sub{display:block;white-space:nowrap}
+
+/* v44 : Revue des agents IA */
+.ra-t{width:100%;font-size:13px;border-collapse:collapse}
+.ra-t td{padding:6px 8px 6px 0;border-bottom:1px solid #eee8f5;vertical-align:top}
+.ra-t td:first-child{color:#64748b;width:45%}
+.ra-champs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+.ra-reco{margin-top:14px;padding-top:12px;border-top:1px solid #eee8f5}
+@media (max-width:760px){.ra-champs{grid-template-columns:1fr}}

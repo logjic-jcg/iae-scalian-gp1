@@ -45,7 +45,7 @@ function ecouter(db, nom, q) {
 }
 
 window.ACIA_FB_ACTIF = true;   // le module s'est chargé (sinon vue-firebase.js bascule en repli)
-const COLLECTIONS = ["irritants", "arrivees", "classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres", "suggestions_ia"];
+const COLLECTIONS = ["irritants", "arrivees", "classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres", "suggestions_ia", "revues_agents"];
 function replis(msg) { COLLECTIONS.forEach(function (c) { repli(c, msg); }); }
 // Déconnexion complète, appelée par le menu du compte (app.html).
 window.aciaFbDeconnexion = deconnecter;
@@ -67,6 +67,7 @@ if (!app) {
     ecouter(db, "types_irritants", query(collection(db, "types_irritants"), orderBy("ordre")));
     ecouter(db, "parametres", query(collection(db, "parametres")));
     ecouter(db, "suggestions_ia", query(collection(db, "suggestions_ia")));
+    ecouter(db, "revues_agents", query(collection(db, "revues_agents")));   // v44
     // v13 : création ou modification d'un type d'irritant (v15 : réservé au HRBP connecté,
     // encadrée par les règles Firestore : champs, longueurs, code figé, pas de suppression).
     window.aciaEcrireType = function (code, t) {
@@ -80,6 +81,14 @@ if (!app) {
       return setDoc(doc(db, "decisions_hrbp", code), {
         statut: d.statut, reponse: d.reponse, commentaire: d.commentaire, semaine_effet: d.semaine_effet, maj: serverTimestamp()
       });
+    };
+    // v44 : revue mensuelle d'un agent IA (saisie du HRBP), document « CODE__AAAA-MM ».
+    // Les valeurs non saisies sont absentes du document (jamais de valeur par défaut).
+    window.aciaEcrireRevueAgent = function (id, r) {
+      const d = { code: r.code, mois: r.mois, duree: r.duree, chg_processus: r.chg_processus, incident: r.incident,
+        decision: r.decision, commentaire: r.commentaire, maj: serverTimestamp() };
+      ["ouverts", "sans_modif", "ignores", "erronees", "satisfaction", "nouveaux_cas"].forEach(function (k) { if (typeof r[k] === "number") d[k] = r[k]; });
+      return setDoc(doc(db, "revues_agents", id), d);
     };
     // v19 : le HRBP accepte ou rejette une suggestion de l'IA (seuls s1..s3, m1..m3 et maj_hrbp changent).
     window.aciaEcrireSuggestion = function (id, n, statut, motif) {

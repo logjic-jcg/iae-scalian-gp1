@@ -13,11 +13,14 @@ window.ACIA_FB = {
   types_irritants: { statut: "chargement", docs: [], modifies: [], erreur: "" },
   parametres: { statut: "chargement", docs: [], modifies: [], erreur: "" },
   suggestions_ia: { statut: "chargement", docs: [], modifies: [], erreur: "" },
+  revues_agents: { statut: "chargement", docs: [], modifies: [], erreur: "" },   // v44
 };
 
 // Appelée par firebase-donnees.js à chaque changement dans la base.
 // v18 : l'onglet « Tableau de bord » (b_pilotage) se met aussi à jour en direct.
 function aciaFbMisAJour(nom) {
+  // v44 : « Revue des agents IA » se met à jour avec les décisions, les signaux, les fiches d'arrivée et les saisies.
+  if (state.tab === "b_agents" && ["classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "arrivees", "revues_agents"].indexOf(nom) >= 0) { render(); return; }
   // v31.1 : Vue d'ensemble (profil Direction, seul onglet) : se met à jour à chaque lecture de la base.
   if ((state.tab === "ensemble" || state.tab === "dir_equipe") && ["classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "suggestions_ia", "parametres"].indexOf(nom) >= 0) { render(); return; }
   // v13 : les titres des types servent dans tous les onglets HRBP en direct.
@@ -32,10 +35,10 @@ function aciaFbMisAJour(nom) {
 // le module ne s'exécute jamais : on bascule nous-mêmes sur le repli.
 setTimeout(function () {
   if (window.ACIA_FB_ACTIF) return;
-  ["irritants", "arrivees", "classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres", "suggestions_ia"].forEach(function (n) {
+  ["irritants", "arrivees", "classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres", "suggestions_ia", "revues_agents"].forEach(function (n) {
     window.ACIA_FB[n] = { statut: "repli", docs: [], modifies: [], erreur: "La base n'a pas pu être chargée (réseau ou bloqueur)." };
   });
-  aciaFbMisAJour("irritants"); aciaFbMisAJour("arrivees"); aciaFbMisAJour("classement_mails"); aciaFbMisAJour("decisions_hrbp"); aciaFbMisAJour("comptes_rendus"); aciaFbMisAJour("types_irritants"); aciaFbMisAJour("parametres"); aciaFbMisAJour("suggestions_ia");
+  aciaFbMisAJour("irritants"); aciaFbMisAJour("arrivees"); aciaFbMisAJour("classement_mails"); aciaFbMisAJour("decisions_hrbp"); aciaFbMisAJour("comptes_rendus"); aciaFbMisAJour("types_irritants"); aciaFbMisAJour("parametres"); aciaFbMisAJour("suggestions_ia"); aciaFbMisAJour("revues_agents");
 }, 10000);
 
 function viewFirebase() {
