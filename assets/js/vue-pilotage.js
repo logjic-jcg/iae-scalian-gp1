@@ -238,9 +238,11 @@ function viewPilotOrienter() {
     '<p style="margin-top:10px;font-size:14px"><b>Proposition de l\'assistant :</b> ' + esc(libReponse(reco)) + (conf.action ? " : " + esc(conf.action) : "") + "</p>" +
     '<p class="note">Grille du livrable 01 : la réponse la plus simple qui suffit. Un agent seulement si la tâche demande du jugement ou de la rédaction.</p></div>' +
     (typeof avdCarte === "function" ? avdCarte(c) : "") +
-    '<div class="card" style="margin-top:16px;border-color:#fde68a;background:#fffbeb"><div class="spechead" style="color:#b45309">Décision du HRBP</div>' +
+    '<div class="card" id="decision-hrbp" style="margin-top:16px;border-color:#fde68a;background:#fffbeb;scroll-margin-top:130px"><div class="spechead" style="color:#b45309">Décision du HRBP</div>' +
       (d ? '<p style="font-size:13px;margin-top:6px">Décision actuelle : ' + badge(libStatut(d.statut).cls, libStatut(d.statut).label) + " " + esc(libReponse(d.reponse)) +
-        " · effet en semaine " + esc(d.semaine_effet) + (d.maj && d.maj.toDate ? " · enregistrée le " + esc(d.maj.toDate().toLocaleString("fr-FR")) : "") + "</p>" : '<p class="note">Aucune décision enregistrée pour cet irritant.</p>') +
+        " · effet en semaine " + esc(d.semaine_effet) + (d.maj && d.maj.toDate ? " · enregistrée le " + esc(d.maj.toDate().toLocaleString("fr-FR")) : "") + "</p>" +
+        (d.statut === "VALIDE" ? '<a href="#" class="pick-fiche" style="display:inline-flex;gap:8px;align-items:center" onclick="allerSpec(\'' + c + '\');return false">' + specIcone(d.reponse, 24) + "Voir la spécification →</a>" : "")
+        : '<p class="note">Aucune décision enregistrée pour cet irritant.</p>') +
       '<label class="fl">Statut<select id="dp-statut">' + opt(STATUTS_HRBP, pre ? "VALIDE" : d ? d.statut : "VALIDE") + "</select></label>" +
       '<label class="fl">Réponse retenue<select id="dp-reponse">' + opt(REPONSES_HRBP, pre ? pre.reponse : d ? d.reponse : reco) + "</select></label>" +
       '<label class="fl">Semaine à partir de laquelle la réponse s\'applique<input id="dp-sem" type="number" min="' + (p.semMax + 1) + '" max="53" value="' + esc(semDefaut) + '"></label>' +
@@ -260,6 +262,21 @@ function viewPilotOrienter() {
 // ------------------------------ SPÉCIFICATIONS -----------------------------
 
 function filtreSpec(id) { state.filtreSpec = id; render(); }
+// v40 : picto par réponse retenue (même style que les icônes des indicateurs de Tendances), couleur par réponse.
+const SPEC_REP = {
+  SIMPLIFIER:  { fond: "#dcfce7", encre: "#047857", svg: '<path d="M7 3.5h7l4 4v13H7z"/><path d="M14 3.5v4h4M9.5 12h6M9.5 15.5h6"/>' },
+  AUTOMATISER: { fond: "#e0f2fe", encre: "#0369a1", svg: '<circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.5M12 18v2.5M3.5 12H6M18 12h2.5M6 6l1.8 1.8M16.2 16.2L18 18M6 18l1.8-1.8M16.2 7.8L18 6"/>' },
+  ASSISTER:    { fond: "#eee8f5", encre: "#4b2882", svg: '<rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V4.5M10 4.5h4"/><circle cx="9.5" cy="13" r="1.2"/><circle cx="14.5" cy="13" r="1.2"/><path d="M3 12.5v2M21 12.5v2"/>' },
+};
+function specIcone(rep, taille) {
+  const r = SPEC_REP[rep]; if (!r) return "";
+  const t = taille || 30;
+  return '<span class="tend-ic" aria-hidden="true" style="background:' + r.fond + ";color:" + r.encre + ";width:" + t + "px;height:" + t + 'px"><svg viewBox="0 0 24 24" width="' + Math.round(t * 0.6) + '" height="' + Math.round(t * 0.6) + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + r.svg + "</svg></span>";
+}
+// v40 : liens croisés Spécification ↔ Décision du HRBP (le filtre « Processus » est conservé : l'irritant y passe déjà).
+function allerVers(id) { setTimeout(function () { const el = document.getElementById(id); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 0); }
+function allerDecision(code) { state.selPilot = code; state.filtrePilot = "TOUS"; state.msgPilot = ""; setTab("b_orienter"); allerVers("decision-hrbp"); }
+function allerSpec(code) { state.filtreSpec = "TOUS"; setTab("b_spec"); allerVers("spec-" + code); }
 // v13 : rappel en tête de page de ce qui est affiché.
 function aideSpec() {
   return '<p class="note" style="margin:0 0 12px"><b>Ce qui apparaît ici :</b> les irritants au statut « Validé » dans « Décisions ». ' +
@@ -282,13 +299,14 @@ function viewPilotSpec() {
   const visibles = valides.filter(function (c) { return fRep === "TOUS" || decisionDe(c).reponse === fRep; });
   const chips = '<div class="filtres-ligne" style="align-items:flex-start">' + filtreProcessusHtml() + '<span class="note" style="margin:0 0 10px;line-height:30px"><b>Réponse retenue :</b></span><div class="chips" style="margin:0 0 10px">' + [{ id: "TOUS", label: "Toutes" }].concat(REPONSES_HRBP).map(function (r) {
     const n = r.id === "TOUS" ? valides.length : valides.filter(function (c) { return decisionDe(c).reponse === r.id; }).length;
-    return '<button class="chip' + (r.id === fRep ? " active" : "") + '" onclick="filtreSpec(\'' + r.id + '\')">' + esc(r.label) + " (" + n + ")</button>";
+    return '<button class="chip' + (r.id === fRep ? " active" : "") + '" onclick="filtreSpec(\'' + r.id + '\')">' + (r.id === "TOUS" ? "" : specIcone(r.id, 18) + " ") + esc(r.label) + " (" + n + ")</button>";
   }).join("") + "</div></div>";
   const fiches = (visibles.length ? "" : '<div class="card" style="margin-top:12px"><p class="note" style="margin:0">Aucune spécification validée avec cette réponse' + (filtreProcActif().length ? " et ce processus" : "") + '.</p></div>') + visibles.map(function (c) {
     const d = decisionDe(c), p = sig.parCode[c], conf = confDe(c);
     const semaines = Object.keys(p.parSem).map(Number).sort(function (a, b) { return a - b; });
+    const lienDec = '<a href="#" class="pick-fiche" onclick="allerDecision(\'' + c + '\');return false">Voir la décision du HRBP →</a>';
     if (d.reponse === "SIMPLIFIER") {
-      return '<div class="card" id="spec-' + c + '" style="margin-top:12px"><div class="spechead">Réponse sans IA : pas de spécification d\'outil</div><div class="spech3">' + esc(libelleType(c)) + "</div>" +
+      return '<div class="card" id="spec-' + c + '" style="margin-top:12px;scroll-margin-top:130px"><div class="kpi-h">' + specIcone(d.reponse) + '<div class="spechead">Réponse sans IA : pas de spécification d\'outil</div></div><div class="spech3">' + esc(libelleType(c)) + "</div>" + lienDec +
         '<p style="font-size:14px;margin-top:6px"><b>Action :</b> ' + esc(conf.action || "À définir par le HRBP.") + "</p>" +
         '<p class="note">Signal observé : ' + p.total + " signal(s). Indicateur de suivi : " + esc(conf.indicateur) + ".</p></div>";
     }
@@ -296,7 +314,7 @@ function viewPilotSpec() {
     const autonomie = d.reponse === "ASSISTER" ? "Préparer : l'agent prépare, un humain relit et envoie." : "Agir sur les cas standard, sans jugement ; tout cas hors règle revient à un humain.";
     const ligne = function (k, v) { return "<tr><td style='padding:6px 10px 6px 0;color:#64748b;vertical-align:top;white-space:nowrap'>" + esc(k) + "</td><td style='padding:6px 0'>" + v + "</td></tr>"; };
     const workflow = (conf.workflow || ["À définir"]).map(function (s, k) { return (k + 1) + ". " + esc(s); }).join("<br>");
-    return '<div class="card" id="spec-' + c + '" style="margin-top:12px"><div class="spechead">Fiche générée à partir de la base · ' + esc(libReponse(d.reponse)) + '</div><div class="spech3">' + esc(libelleType(c)) + "</div>" +
+    return '<div class="card" id="spec-' + c + '" style="margin-top:12px;scroll-margin-top:130px"><div class="kpi-h">' + specIcone(d.reponse) + '<div class="spechead">Fiche générée à partir de la base · ' + esc(libReponse(d.reponse)) + '</div></div><div class="spech3">' + esc(libelleType(c)) + "</div>" + lienDec +
       '<table style="margin-top:8px;font-size:13px"><tbody>' +
       ligne("Besoin métier", esc(besoin)) +
       ligne("Signal observé", p.total + " signal(s) " + sourceDe(c) + (semaines.length ? " (semaines " + semaines.join(", ") + ")" : "") + ".") +
