@@ -186,7 +186,8 @@ function tdbSections(titre, filtrerProcessus) {
     '<p class="note">Aucun chiffre n\'est affiché sans la base.' + (D.attente ? "" : " En secours pour une démonstration :") + "</p>" +
     (D.attente ? "" : '<button class="btn" onclick="tdbBascule(true)">Afficher l\'instantané de démonstration</button>') + "</div>";
   const C = D.compteurs;
-  const lignes = D.types.filter(function (t) { return !filtrerProcessus || passeProcessus(t.code); }).map(function (t) {
+  // v41 : option « Masquer les irritants sans signal » (Tableau de bord seulement, comme le filtre Processus).
+  const lignes = D.types.filter(function (t) { return !filtrerProcessus || (passeProcessus(t.code) && (!state.masquerVides || (D.parCode[t.code] && D.parCode[t.code].total))); }).map(function (t) {
     const p = D.parCode[t.code] || { total: 0, parSem: {}, semMax: 0 };
     const d = D.decision(t.code);
     return { code: t.code, label: t.label, p: p, d: d, examiner: tdbAExaminer(p), effet: d && d.statut !== "ECARTE" ? tdbEffet(p, Number(d.semaine_effet) || 0) : null };
@@ -316,11 +317,11 @@ function viewTableauBordHrbp() {
   const S = tdbSections("Tableau de bord · pilotage des irritants", true);
   if (typeof S === "string") return S;
   // v38 : le renvoi vers la Revue mensuelle compte toujours sur tous les irritants (la revue n'est pas filtrée).
-  const filtre = filtreProcActif().length > 0;
+  const filtre = filtreProcActif().length > 0 || !!state.masquerVides;
   const T = filtre ? tdbSections("Revue mensuelle") : S;
-  const ligneFiltre = '<div class="filtres-ligne">' + filtreProcessusHtml() + "</div>" +
+  const ligneFiltre = '<div class="filtres-ligne">' + filtreProcessusHtml() + '<span style="margin:0 0 10px">' + boutonSansSignal() + "</span></div>" +
     (filtre ? '<p class="note" style="margin:-4px 0 10px">Filtre appliqué aux irritants (tuiles, carte de chaleur, décisions et réponses). Les compteurs de mails et de comptes rendus et la qualité de l\'assistant restent globaux.' +
-      (S.lignes.length ? "" : " Aucun irritant dans ce processus.") + "</p>" : "");
+      (S.lignes.length ? "" : " Aucun irritant à afficher avec ce filtre.") + "</p>" : "");
   // Renvoi vers la Revue mensuelle : nombre de décisions attendues et de suggestions de l'IA en attente.
   let attente = 0;
   if (S.D.mode !== "statique" && typeof revueDerniere === "function") {

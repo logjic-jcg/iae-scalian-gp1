@@ -105,6 +105,12 @@ function filtreProcessusHtml() {
     cases + '<div style="border-top:1px solid #e2e8f0;margin-top:4px;padding-top:6px;display:flex;justify-content:space-between;gap:8px">' +
     '<button class="chip" onclick="viderProc()">Tout afficher</button><button class="chip" onclick="state.procOuvert=false;render()">Fermer</button></div></div></details>';
 }
+// v41 : option « Masquer les irritants sans signal » (Tendances et Tableau de bord), partagée entre les deux onglets.
+function basculerVides() { state.masquerVides = !state.masquerVides; render(); }
+function boutonSansSignal() {
+  return '<button class="chip' + (state.masquerVides ? " active" : "") + '" style="margin:0" aria-pressed="' + (state.masquerVides ? "true" : "false") + '" onclick="basculerVides()">' +
+    (state.masquerVides ? "✓ " : "") + "Masquer les irritants sans signal</button>";
+}
 // Ferme la liste quand on clique ailleurs.
 document.addEventListener("click", function (e) {
   if (!state.procOuvert) return;
@@ -129,7 +135,7 @@ function viewTendances() {
   const entete = "<h2>Fil d'observation : boîte RH et comptes rendus</h2>" +
     '<p class="note tend-sources" style="margin:-4px 0 8px">Sources : <a href="#" onclick="allerSection(\'sec-mails\');return false">Boîte RH partagée (mails)</a> · ' +
     '<a href="#" onclick="allerSection(\'sec-reunions\');return false">Comptes rendus de réunion (Notion) ↓</a></p>' +
-    '<div class="tend-outils">' + (filtreProcessusHtml() || "<span></span>") + blocRelance() + "</div>" +
+    '<div class="tend-outils"><span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">' + filtreProcessusHtml() + boutonSansSignal() + "</span>" + blocRelance() + "</div>" +
     '<h3 id="sec-mails" style="margin-top:4px">Boîte RH partagée</h3>';
   if (!fb || fb.statut !== "ok") {
     const msg = !fb || fb.statut === "chargement" ? "Lecture de la base en cours…" : "Données indisponibles : " + fb.erreur;
@@ -163,7 +169,7 @@ function viewTendances() {
   const maxTot = Math.max(1, Math.max.apply(null, Object.keys(total).map(function (k) { return total[k]; }).concat([0])));
   // Un type désactivé reste affiché tant qu'il a des signaux (historique conservé).
   // v14 : filtre « Processus » appliqué aux irritants affichés (les compteurs du haut restent globaux).
-  const lignes = types.filter(function (t) { return (t.actif || total[t.code]) && passeProcessus(t.code); }).sort(function (a, b) { return (total[b.code] || 0) - (total[a.code] || 0); });
+  const lignes = types.filter(function (t) { return (t.actif || total[t.code]) && passeProcessus(t.code) && (!state.masquerVides || total[t.code]); }).sort(function (a, b) { return (total[b.code] || 0) - (total[a.code] || 0); });
 
   const tiles = [
     ["Mails analysés", String(analyses.length), "Depuis la mise en service du classement", "mail"],
@@ -176,7 +182,7 @@ function viewTendances() {
   const bars = lignes.map(function (t) {
     const v = total[t.code] || 0;
     return '<div class="bar"><span class="lbl">' + lienFiche(t.code, esc(t.label)) + (t.actif ? "" : " (désactivé)") + '</span><span class="track"><span class="fill" style="display:block;width:' + Math.round(v / maxTot * 100) + '%"></span></span><span class="val">' + v + "</span></div>";
-  }).join("") || '<p class="note">Aucun irritant pour ce processus.</p>';
+  }).join("") || '<p class="note">Aucun irritant ' + (state.masquerVides ? "avec signal " : "") + "pour ce processus.</p>";
 
   const tete = "<tr><th>Irritant</th>" + cols.map(function (c) { return "<th>" + esc(c.label) + "</th>"; }).join("") + "<th>Réponse la plus simple qui suffit</th></tr>";
   const corps = lignes.map(function (t) {
@@ -193,7 +199,7 @@ function viewTendances() {
 
   return entete + '<div class="card"><div>' + source + "</div>" + kpis + "</div>" +
     '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("etiquette") + '<div class="spechead">Signaux par irritant (irritant principal + secondaire)</div></div>' +
-    (filtreProcActif().length ? '<p class="note" style="margin:2px 0 6px">Filtré par processus. Les compteurs du haut portent sur toute la boîte.</p>' : "") + bars +
+    (filtreProcActif().length || state.masquerVides ? '<p class="note" style="margin:2px 0 6px">' + (filtreProcActif().length ? "Filtré par processus. " : "") + (state.masquerVides ? "Irritants sans signal masqués. " : "") + "Les compteurs du haut portent sur toute la boîte.</p>" : "") + bars +
     (nbInconnus ? '<p class="note">' + nbInconnus + " code(s) renvoyé(s) par l'IA non reconnu(s), non comptés.</p>" : "") + "</div>" +
     '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("courbe") + '<div class="spechead">Évolution par semaine</div></div>' +
     '<div class="tw" style="margin-top:8px"><table><thead>' + tete + "</thead><tbody>" + corps + "</tbody></table></div>" +
