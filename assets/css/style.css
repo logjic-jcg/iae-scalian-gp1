@@ -539,3 +539,20 @@ tr.fb-neuf td { animation: fb-flash 3s ease-out; }
 .pick.selected:hover{background:var(--dark)}
 .spec-seg button{white-space:nowrap}
 @media (max-width:640px){.spec-seg button{font-size:12px;padding:6px 8px}}
+
+/* v53 : nouveaux types proposés à partir de « Autre » (onglet Types d'irritants) */
+.nty-pick{border-color:#4b2882}
+.nty-pick-l{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.nty-card{margin-top:12px}
+.nty-card.nty-close{opacity:.72}
+.nty-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.nty-k{font-size:12px;font-weight:700;color:#6b6280;text-transform:uppercase;letter-spacing:.03em}
+.nty-n{text-align:center;flex:none;background:#f4f0fa;border-radius:10px;padding:6px 12px}
+.nty-n b{display:block;font-size:22px;color:#4b2882}
+.nty-n span{font-size:11px;color:#6b6280}
+.nty-meta{margin:8px 0 0;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.nty-alerte{margin:8px 0 0;font-size:13px}
+.nty-phr{color:#5f5873;font-size:13px}
+.nty-reprise{margin-bottom:12px;border-color:#d9cdea;background:#faf8fd}
+.lnk{background:none;border:0;padding:0;font:inherit;color:var(--accent);text-decoration:underline;cursor:pointer}
+.btn[disabled]{opacity:.5;cursor:not-allowed}

@@ -27,7 +27,8 @@ function aciaFbMisAJour(nom) {
   // v13 : les titres des types servent dans tous les onglets HRBP en direct.
   if (nom === "parametres" && state.tab === "tendances") { render(); return; }
   if (nom === "fiches_specs") { if (state.tab === "b_spec") render(); return; }
-  if (nom === "suggestions_ia") { if (state.tab === "b_spec" || state.tab === "b_revue" || state.tab === "b_pilotage" || state.tab === "b_orienter" || state.ficheCode) render(); return; }
+  if (nom === "suggestions_ia") { ntyVerifierArrivee(); if (state.tab === "types" || state.tab === "b_spec" || state.tab === "b_revue" || state.tab === "b_pilotage" || state.tab === "b_orienter" || state.ficheCode) render(); return; }
+  if (nom === "classement_mails" && state.tab === "types" && state.selType === NTY_SEL) { render(); return; }   // v53
   if (nom === "types_irritants" && ["types", "tendances", "b_orienter", "b_spec", "b_revue", "b_pilotage"].indexOf(state.tab) >= 0) { render(); return; }
   if (state.tab === "firebase" || (nom === "arrivees" && state.tab === "arrivees") || ((nom === "classement_mails" || nom === "comptes_rendus") && state.tab === "tendances") ||
       ((nom === "classement_mails" || nom === "decisions_hrbp" || nom === "comptes_rendus") && ["b_orienter", "b_spec", "b_revue", "b_pilotage"].indexOf(state.tab) >= 0)) render();

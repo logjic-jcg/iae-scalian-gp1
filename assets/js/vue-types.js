@@ -14,6 +14,7 @@
 //   - « Autre » ne peut être ni supprimé ni désactivé ;
 //   - la source (mails ou comptes rendus) ne se change pas.
 // v15 : écriture réservée au HRBP connecté (table « utilisateurs »), encadrée par les règles.
+// v53 : entrée « ✦ Nouveaux types proposés » (vue-nouveaux-types.js) en tête de liste.
 // ---------------------------------------------------------------------------
 
 const TYPE_LIMITES = { titre: 80, definition: 400, exemple: 300, processus: 60 };
@@ -57,7 +58,7 @@ function codeDepuisTitre(titre) {
 function libSource(s) { return s === "COMPTES_RENDUS" ? "Comptes rendus de réunion" : "Boîte RH partagée (mails)"; }
 
 function selType(code) {
-  state.selType = code; state.msgType = "";
+  state.selType = code; state.msgType = ""; state.ntySource = null;   // v53 : un clic dans la liste annule une reprise en cours
   const d = code === "_nouveau" ? null : (typesTable() || []).find(function (x) { return x.id === code; });
   state.brType = d ? { titre: d.titre || "", definition: d.definition || "", exemple: d.exemple || "", processus: d.processus || "", ordre: Number(d.ordre) || 1, actif: d.actif !== false }
                    : { titre: "", definition: "", exemple: "", processus: "", ordre: prochainOrdre(), actif: true };
@@ -110,6 +111,7 @@ function enregistrerType() {
     actif: protege ? true : !!b.actif, source: avant ? avant.source : "MAILS", protege: protege };
   state.msgType = "Enregistrement…"; render();
   window.aciaEcrireType(code, data).then(function () {
+    ntyApresEnregistrement(code, nouveau);   // v53 : proposition de l'IA marquée « reprise »
     state.selType = code; state.msgType = nouveau ? "Type créé (code " + code + "). Il sera proposé à l'IA dès le prochain passage du classement." : "Modifications enregistrées dans la base.";
     render();
   }).catch(function (e) { state.msgType = "Refusé par la base : " + ((e && e.message) || e); render(); });
@@ -129,7 +131,7 @@ function viewTypesIrritants() {
   // Filtre actif / désactivé.
   const filtre = FILTRES_TYPES.find(function (f) { return f.id === state.filtreType; }) || FILTRES_TYPES[0];
   const visibles = types.filter(filtre.test);
-  if (!state.selType || (state.selType !== "_nouveau" && !visibles.some(function (d) { return d.id === state.selType; }))) {
+  if (!state.selType || (state.selType !== "_nouveau" && state.selType !== NTY_SEL && !visibles.some(function (d) { return d.id === state.selType; }))) {
     if (!visibles.length) { selTypeSansRendu("_nouveau"); } else { selTypeSansRendu(visibles[0].id); }
   }
   if (!state.brType) selTypeSansRendu(state.selType);
@@ -142,13 +144,19 @@ function viewTypesIrritants() {
   const chips = '<div class="filtres-ligne">' + filtreProcessusHtml() + '<div class="chips">' + FILTRES_TYPES.map(function (f) {
     return '<button class="chip' + (f.id === filtre.id ? " active" : "") + '" onclick="filtreType(\'' + f.id + '\')">' + esc(f.label) + " (" + types.filter(f.test).length + ")</button>";
   }).join("") + "</div></div>";
-  const picks = (visibles.length ? "" : '<div class="card" style="margin-bottom:8px"><p class="note" style="margin:0">Aucun type dans ce filtre' + (filtreProcActif().length ? " et ce processus" : "") + '.</p></div>') + visibles.map(function (d) {
+  const picks = ntyPick() + (visibles.length ? "" : '<div class="card" style="margin-bottom:8px"><p class="note" style="margin:0">Aucun type dans ce filtre' + (filtreProcActif().length ? " et ce processus" : "") + '.</p></div>') + visibles.map(function (d) {
     const etat = d.actif === false ? "désactivé" : "actif";
     return '<button class="pick' + (state.selType === d.id ? " selected" : "") + '" onclick="selType(\'' + esc(d.id) + '\')">' +
       '<div style="font-weight:700;font-size:14px">' + esc(d.titre || d.id) + (d.actif === false ? " (désactivé)" : "") + "</div>" +
       '<div class="psub">' + esc(d.id) + " · " + esc(etat) + (d.processus ? " · " + esc(d.processus) : "") + " · " + esc(libSource(d.source)) + (d.protege ? " · protégé" : "") + "</div></button>";
   }).join("") +
     '<button class="pick' + (state.selType === "_nouveau" ? " selected" : "") + '" onclick="selType(\'_nouveau\')"><div style="font-weight:700;font-size:14px">+ Nouveau type</div><div class="psub">Titre, définition, exemple</div></button>';
+
+  const pied = function (droite) {
+    return titre + entete + '<p class="note" style="margin:0 0 12px">Enregistrement réservé au profil HRBP connecté. Les règles de la base vérifient aussi les champs, les longueurs, le code figé et l\'absence de suppression.</p>' + chips + '<div class="row c-1-2"><div>' + picks + "</div><div>" + droite + "</div></div>" +
+      '<p class="note">Un type décrit une étape du processus, jamais une personne ni une équipe.</p>';
+  };
+  if (state.selType === NTY_SEL) return pied(ntyPanneau());   // v53 : panneau des propositions de l'IA
 
   const nouveau = state.selType === "_nouveau";
   const d = nouveau ? null : tousTypes.find(function (x) { return x.id === state.selType; });
@@ -174,8 +182,7 @@ function viewTypesIrritants() {
     (d && d.source === "COMPTES_RENDUS" ? "Ce type est détecté dans les comptes rendus Notion par un autre scénario : sa définition sert de référence, elle n'est pas donnée à l'IA du classement des mails." :
       "Un mail que l'IA ne sait pas ranger va dans « Autre ».") + "</p></div>";
 
-  return titre + entete + '<p class="note" style="margin:0 0 12px">Enregistrement réservé au profil HRBP connecté. Les règles de la base vérifient aussi les champs, les longueurs, le code figé et l\'absence de suppression.</p>' + chips + '<div class="row c-1-2"><div>' + picks + "</div><div>" + right + "</div></div>" +
-    '<p class="note">Un type décrit une étape du processus, jamais une personne ni une équipe.</p>';
+  return pied(ntyBandeauReprise() + right);   // v53 : bandeau pendant la reprise d'une proposition
 }
 // Sélection sans redessiner (appelée pendant le rendu).
 function selTypeSansRendu(code) {
