@@ -354,6 +354,13 @@ function viewPilotSpec() {
     const autonomie = d.reponse === "ASSISTER" ? "Préparer : l'agent prépare, un humain relit et envoie." : "Agir sur les cas standard, sans jugement ; tout cas hors règle revient à un humain.";
     const ligne = function (k, v) { return "<tr><td style='padding:6px 10px 6px 0;color:#64748b;vertical-align:top;white-space:nowrap'>" + esc(k) + "</td><td style='padding:6px 0'>" + v + "</td></tr>"; };
     const workflow = (conf.workflow || ["À définir"]).map(function (s, k) { return (k + 1) + ". " + esc(s); }).join("<br>");
+    // v51 : une fiche rédigée par l'IA puis relue et validée par le HRBP remplace la fiche de la base.
+    const fiv = typeof fiaValidee === "function" ? fiaValidee(c) : null;
+    const blocIA = typeof fiaBloc === "function" ? fiaBloc(c) : "";
+    if (fiv) {
+      return '<div class="card" id="spec-' + c + '" style="margin-top:12px;scroll-margin-top:130px"><div class="kpi-h">' + specIcone(d.reponse) + '<div class="spechead">Fiche rédigée par l\'IA, relue par le HRBP · ' + esc(libReponse(d.reponse)) + '</div></div><div class="spech3">' + esc(libelleType(c)) + "</div>" + lienDec +
+        fiaFicheValidee(c, fiv) + (d.reponse === "ASSISTER" && typeof skillBloc === "function" ? skillBloc(c) : "") + "</div>" + blocIA;
+    }
     return '<div class="card" id="spec-' + c + '" style="margin-top:12px;scroll-margin-top:130px"><div class="kpi-h">' + specIcone(d.reponse) + '<div class="spechead">Fiche générée à partir de la base · ' + esc(libReponse(d.reponse)) + '</div></div><div class="spech3">' + esc(libelleType(c)) + "</div>" + lienDec +
       '<table style="margin-top:8px;font-size:13px"><tbody>' +
       ligne("Besoin métier", esc(besoin)) +
@@ -365,10 +372,10 @@ function viewPilotSpec() {
       ligne("Garde-fous", "Aucun mail ni compte rendu confidentiel traité ; aucune donnée sur une personne ; " + (d.reponse === "AUTOMATISER" ? "seule la réponse standard part automatiquement ; tout autre envoi passe par une validation humaine." : "rien n'est envoyé sans validation humaine.")) +
       ligne("Indicateur de suivi", esc(conf.indicateur) + ", mesuré dans l'onglet « Revue mensuelle ».") +
       ligne("Décision", "Effet à partir de la semaine " + esc(d.semaine_effet) + (d.commentaire ? " · « " + esc(d.commentaire) + " »" : "")) +
-      "</tbody></table>" + (d.reponse === "ASSISTER" && typeof skillBloc === "function" ? skillBloc(c) : "") + "</div>";
+      "</tbody></table>" + (d.reponse === "ASSISTER" && typeof skillBloc === "function" ? skillBloc(c) : "") + "</div>" + blocIA;
   }).join("");
   return "<h2>Spécifications</h2>" + bandeauVersionC() + aideSpec() + chips + fiches +
-    '<p class="note">Fiches remplies automatiquement avec les données de la base et la grille du livrable 01. Elles ne se mettent pas à jour seules en texte libre : une rédaction plus riche se fait avec Claude, à partir de cette fiche.</p>';
+    '<p class="note">Fiches remplies automatiquement avec les données de la base et la grille du livrable 01. Pour une réponse Automatiser ou Assister, « Rédiger la fiche avec l\'IA » propose une rédaction complète en 11 rubriques, que le HRBP relit, corrige et valide.</p>';
 }
 
 // ------------------------------ SUIVI DES RÉPONSES -------------------------

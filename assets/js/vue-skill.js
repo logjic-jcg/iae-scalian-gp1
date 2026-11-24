@@ -16,7 +16,7 @@ function skillNom(code) {
 function skillLigne(t) { return String(t || "").replace(/[<>]/g, "").replace(/\s+/g, " ").trim(); }
 
 function skillMarkdown(code) {
-  const conf = confDe(code), d = decisionDe(code) || {};
+  const conf = (typeof fiaConf === "function" ? fiaConf(code) : confDe(code)), d = decisionDe(code) || {};
   const t = (typesTable() || []).find(function (x) { return x.id === code; }) || {};
   const titre = libelleType(code), nom = skillNom(code);
   const source = code === CODE_CR ? "un compte rendu de réunion (Notion)" : "un mail de la boîte RH partagée";
@@ -92,7 +92,7 @@ function skillZip(fichiers) {
 }
 
 function genererSkill(code) {
-  const conf = confDe(code), d = decisionDe(code);
+  const conf = (typeof fiaConf === "function" ? fiaConf(code) : confDe(code)), d = decisionDe(code);
   if (!d || d.statut !== "VALIDE" || d.reponse !== "ASSISTER" || !skillFicheComplete(conf)) return;
   const nom = skillNom(code);
   const blob = skillZip([{ nom: nom + "/SKILL.md", texte: skillMarkdown(code) }]);
@@ -104,7 +104,7 @@ function genererSkill(code) {
 
 // Bloc affiché en bas d'une fiche « Assister ».
 function skillBloc(code) {
-  const conf = confDe(code);
+  const conf = (typeof fiaConf === "function" ? fiaConf(code) : confDe(code));
   if (!skillFicheComplete(conf)) {
     return '<p class="note" style="margin-top:10px">' + badge("b-slate", "Skill indisponible") +
       " Fiche incomplète : besoin, entrées, sorties et workflow doivent être définis avant de générer un skill.</p>";

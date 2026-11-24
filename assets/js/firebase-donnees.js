@@ -19,7 +19,7 @@
 // présents dans la table « utilisateurs » : on attend donc la session Firebase
 // avant d'écouter. Sans session : retour à la connexion (sauf mode maquette).
 import { app, utilisateurInitial, deconnecter } from "./firebase-session.js";
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, setDoc, updateDoc, serverTimestamp, writeBatch, Timestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, Timestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const DELAI_MAX_MS = 8000;
 
@@ -45,7 +45,7 @@ function ecouter(db, nom, q) {
 }
 
 window.ACIA_FB_ACTIF = true;   // le module s'est chargé (sinon vue-firebase.js bascule en repli)
-const COLLECTIONS = ["irritants", "arrivees", "classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres", "suggestions_ia", "revues_agents"];
+const COLLECTIONS = ["irritants", "arrivees", "classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres", "suggestions_ia", "revues_agents", "fiches_specs"];
 function replis(msg) { COLLECTIONS.forEach(function (c) { repli(c, msg); }); }
 // Déconnexion complète, appelée par le menu du compte (app.html).
 window.aciaFbDeconnexion = deconnecter;
@@ -68,6 +68,7 @@ if (!app) {
     ecouter(db, "parametres", query(collection(db, "parametres")));
     ecouter(db, "suggestions_ia", query(collection(db, "suggestions_ia")));
     ecouter(db, "revues_agents", query(collection(db, "revues_agents")));   // v44
+    ecouter(db, "fiches_specs", query(collection(db, "fiches_specs")));     // v51
     // v13 : création ou modification d'un type d'irritant (v15 : réservé au HRBP connecté,
     // encadrée par les règles Firestore : champs, longueurs, code figé, pas de suppression).
     window.aciaEcrireType = function (code, t) {
@@ -90,6 +91,13 @@ if (!app) {
       ["ouverts", "sans_modif", "ignores", "erronees", "satisfaction", "nouveaux_cas"].forEach(function (k) { if (typeof r[k] === "number") d[k] = r[k]; });
       return setDoc(doc(db, "revues_agents", id), d);
     };
+    // v51 : fiche de spécification rédigée par l'IA puis relue et validée par le HRBP (11 rubriques).
+    window.aciaEcrireFicheSpec = function (code, f) {
+      const d = { reponse: f.reponse, origine: f.origine, brouillon_ia: f.brouillon_ia, maj: serverTimestamp() };
+      ["IRRITANT", "BESOIN", "UTILISATEURS", "ENTREES", "SORTIES", "WORKFLOW", "AUTONOMIE", "RISQUES", "AGENT", "ACCEPTATION", "INDICATEUR"].forEach(function (k) { d[k] = f[k]; });
+      return setDoc(doc(db, "fiches_specs", code), d);
+    };
+    window.aciaEffacerFicheSpec = function (code) { return deleteDoc(doc(db, "fiches_specs", code)); };
     // v19 : le HRBP accepte ou rejette une suggestion de l'IA (seuls s1..s3, m1..m3 et maj_hrbp changent).
     window.aciaEcrireSuggestion = function (id, n, statut, motif) {
       const maj = { maj_hrbp: serverTimestamp() };

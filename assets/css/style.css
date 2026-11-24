@@ -515,3 +515,10 @@ tr.fb-neuf td { animation: fb-flash 3s ease-out; }
 .ra-champs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
 .ra-reco{margin-top:14px;padding-top:12px;border-top:1px solid #eee8f5}
 @media (max-width:760px){.ra-champs{grid-template-columns:1fr}}
+
+/* v51 : Rédiger la fiche avec l'IA */
+.fia-form{display:grid;gap:10px;margin-top:10px}
+.fia-l{display:grid;grid-template-columns:170px 1fr;gap:10px;align-items:start}
+.fia-l textarea{width:100%;box-sizing:border-box;font:inherit;font-size:14px;padding:6px 8px;border:1px solid #d9cdea;border-radius:8px;resize:vertical}
+.fia-ac{background:#fef3c7;color:#92400e;border-radius:4px;padding:0 3px}
+@media (max-width:640px){.fia-l{grid-template-columns:1fr;gap:2px}}

@@ -71,7 +71,7 @@ function revueDerniere() {
   const fb = window.ACIA_FB.suggestions_ia;
   if (!fb || fb.statut !== "ok") return null;
   // Les documents « test… » viennent du scénario de test Make : jamais affichés.
-  const docs = fb.docs.filter(function (d) { return String(d.id).indexOf("test") !== 0 && d.type !== "AVANT_DECISION"; });
+  const docs = fb.docs.filter(function (d) { return String(d.id).indexOf("test") !== 0 && !d.type; });
   if (!docs.length) return null;
   const t = function (d) { return d.demande && d.demande.toDate ? d.demande.toDate().getTime() : 0; };
   return docs.slice().sort(function (a, b) { return t(b) - t(a); })[0];

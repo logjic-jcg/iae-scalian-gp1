@@ -14,6 +14,7 @@ window.ACIA_FB = {
   parametres: { statut: "chargement", docs: [], modifies: [], erreur: "" },
   suggestions_ia: { statut: "chargement", docs: [], modifies: [], erreur: "" },
   revues_agents: { statut: "chargement", docs: [], modifies: [], erreur: "" },   // v44
+  fiches_specs: { statut: "chargement", docs: [], modifies: [], erreur: "" },   // v51
 };
 
 // Appelée par firebase-donnees.js à chaque changement dans la base.
@@ -25,7 +26,8 @@ function aciaFbMisAJour(nom) {
   if ((state.tab === "ensemble" || state.tab === "dir_equipe" || state.tab === "dir_roi") && ["classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "suggestions_ia", "parametres", "revues_agents"].indexOf(nom) >= 0) { render(); return; }
   // v13 : les titres des types servent dans tous les onglets HRBP en direct.
   if (nom === "parametres" && state.tab === "tendances") { render(); return; }
-  if (nom === "suggestions_ia") { if (state.tab === "b_revue" || state.tab === "b_pilotage" || state.tab === "b_orienter" || state.ficheCode) render(); return; }
+  if (nom === "fiches_specs") { if (state.tab === "b_spec") render(); return; }
+  if (nom === "suggestions_ia") { if (state.tab === "b_spec" || state.tab === "b_revue" || state.tab === "b_pilotage" || state.tab === "b_orienter" || state.ficheCode) render(); return; }
   if (nom === "types_irritants" && ["types", "tendances", "b_orienter", "b_spec", "b_revue", "b_pilotage"].indexOf(state.tab) >= 0) { render(); return; }
   if (state.tab === "firebase" || (nom === "arrivees" && state.tab === "arrivees") || ((nom === "classement_mails" || nom === "comptes_rendus") && state.tab === "tendances") ||
       ((nom === "classement_mails" || nom === "decisions_hrbp" || nom === "comptes_rendus") && ["b_orienter", "b_spec", "b_revue", "b_pilotage"].indexOf(state.tab) >= 0)) render();
@@ -35,10 +37,10 @@ function aciaFbMisAJour(nom) {
 // le module ne s'exécute jamais : on bascule nous-mêmes sur le repli.
 setTimeout(function () {
   if (window.ACIA_FB_ACTIF) return;
-  ["irritants", "arrivees", "classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres", "suggestions_ia", "revues_agents"].forEach(function (n) {
+  ["irritants", "arrivees", "classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres", "suggestions_ia", "revues_agents", "fiches_specs"].forEach(function (n) {
     window.ACIA_FB[n] = { statut: "repli", docs: [], modifies: [], erreur: "La base n'a pas pu être chargée (réseau ou bloqueur)." };
   });
-  aciaFbMisAJour("irritants"); aciaFbMisAJour("arrivees"); aciaFbMisAJour("classement_mails"); aciaFbMisAJour("decisions_hrbp"); aciaFbMisAJour("comptes_rendus"); aciaFbMisAJour("types_irritants"); aciaFbMisAJour("parametres"); aciaFbMisAJour("suggestions_ia"); aciaFbMisAJour("revues_agents");
+  aciaFbMisAJour("irritants"); aciaFbMisAJour("arrivees"); aciaFbMisAJour("classement_mails"); aciaFbMisAJour("decisions_hrbp"); aciaFbMisAJour("comptes_rendus"); aciaFbMisAJour("types_irritants"); aciaFbMisAJour("parametres"); aciaFbMisAJour("suggestions_ia"); aciaFbMisAJour("revues_agents"); aciaFbMisAJour("fiches_specs");
 }, 10000);
 
 function viewFirebase() {

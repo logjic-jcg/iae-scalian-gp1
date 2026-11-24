@@ -54,7 +54,7 @@ function ficheSuggestions(code, codes) {
   if (!fb || fb.statut !== "ok" || typeof revueLire !== "function") return [];
   const t = function (d) { return d.demande && d.demande.toDate ? d.demande.toDate() : null; };
   const res = [];
-  fb.docs.filter(function (d) { return String(d.id).indexOf("test") !== 0 && d.type !== "AVANT_DECISION"; })
+  fb.docs.filter(function (d) { return String(d.id).indexOf("test") !== 0 && !d.type; })
     .sort(function (a, b) { return (t(b) || 0) - (t(a) || 0); })
     .forEach(function (doc) {
       revueLire(doc.texte, codes).forEach(function (s, i) {
