@@ -26,6 +26,12 @@ const FIA_CADRE = "CADRE|sources autorisées par Scalian : boîte RH partagée, 
   "|outils disponibles : Claude (avec compétences), Make (scénarios), Notion, Thunderbird (boîte RH), base du site ACIA" +
   "|garde-fous : aucun message envoyé sans un humain ; aucun nom ni jugement sur une personne ; contenus confidentiels, de santé ou de conflit écartés ; le HRBP revoit chaque agent chaque mois";
 
+// v56 : ce que l'IA rédige selon la réponse retenue (repris de la consigne du scénario Make 8778955).
+const FIA_SELON = {
+  AUTOMATISER: "Pour Automatiser, elle décrit une règle simple, sans IA si possible ; tout cas hors règle revient à un humain.",
+  ASSISTER: "Pour Assister, elle décrit un agent qui prépare (brouillons, fiche, liste) sans jamais rien envoyer ; un humain relit et envoie.",
+};
+
 state.fia = state.fia || { code: "", envoi: "", msg: "", depuis: 0, edit: "", brouillon: null };
 
 function fiaActif(d) { return !!d && d.statut === "VALIDE" && (d.reponse === "ASSISTER" || d.reponse === "AUTOMATISER"); }
@@ -203,6 +209,6 @@ function fiaBloc(code) {
       '<div class="rv-actions"><button class="btn ok slim" onclick="fiaRelire(\'' + code + '\', false)">Relire et valider ce brouillon</button></div>';
   }
   return '<div class="card avd-card fia-card" id="fia-' + code + '" style="margin-top:12px;scroll-margin-top:130px"><div class="rv-top"><div><div class="spechead" style="color:#4b2882">Rédiger la fiche avec l\'IA ' + badge("b-violet", "IA") + "</div>" +
-    '<p class="tdb-sub" style="margin-top:4px">L\'IA reçoit la définition du type, les signaux agrégés, votre décision et le cadre (sources autorisées, outils, garde-fous) : jamais un mail. Elle propose un brouillon ; vous le corrigez et le validez.</p></div>' +
+    '<p class="tdb-sub" style="margin-top:4px">L\'IA reçoit la définition du type, les signaux agrégés, votre décision et le cadre (sources autorisées, outils, garde-fous) : jamais un mail. Elle propose un brouillon ; vous le corrigez et le validez.' + (FIA_SELON[d.reponse] ? " " + FIA_SELON[d.reponse] : "") + "</p></div>" +
     '<div class="rv-btn">' + bouton + "</div></div>" + msg + corps + "</div>";
 }
