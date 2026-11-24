@@ -19,15 +19,20 @@ function skillMarkdown(code) {
   const conf = (typeof fiaConf === "function" ? fiaConf(code) : confDe(code)), d = decisionDe(code) || {};
   const t = (typesTable() || []).find(function (x) { return x.id === code; }) || {};
   const titre = libelleType(code), nom = skillNom(code);
+  // v59 : rubrique « Relecture humaine » de la fiche validée (Oui par défaut).
+  const sansRelecture = typeof fiaValidee === "function" && typeof fiaRelecture === "function" && fiaRelecture(fiaValidee(code)) === "NON";
   const source = code === CODE_CR ? "un compte rendu de réunion (Notion)" : "un mail de la boîte RH partagée";
-  const desc = skillLigne("Prépare, sans rien envoyer, la réponse à l'irritant RH « " + titre + " » : " + conf.besoin +
+  const desc = skillLigne((sansRelecture ? "Traite l'irritant RH « " + titre + " » et envoie seul la réponse dans les cas conformes au workflow : " : "Prépare, sans rien envoyer, la réponse à l'irritant RH « " + titre + " » : ") + conf.besoin +
     " À utiliser quand " + source + " relève de cet irritant et que le HRBP a autorisé l'agent (décision Validé, réponse Assister).").slice(0, 1000);
   const auj = new Date().toLocaleDateString("fr-FR");
   const L = [];
   L.push("---", "name: " + nom, "description: " + desc, "---", "");
   L.push("# " + titre, "");
   L.push("> Brouillon généré le " + auj + " depuis la spécification ACIA (onglet Spécifications). Décision du HRBP : Validé, réponse « Assister (agent IA) », effet à partir de la semaine " + (d.semaine_effet || "?") + ".");
-  L.push("> À relire et compléter avant import. Ce skill prépare ; un humain valide et envoie.", "");
+  L.push("> Relecture humaine (rubrique de la fiche validée par le HRBP) : " + (sansRelecture ? "**Non**. Ce skill envoie lui-même les réponses conformes au workflow ; tout autre cas revient à un humain." : "**Oui**. Ce skill prépare ; un humain valide et envoie."));
+  if (sansRelecture && conf.workflow.some(function (x) { return /humain|relit|relecture|valid/i.test(x); }))
+    L.push("> **Attention :** les étapes mentionnent encore une relecture ou une validation humaine, alors que la fiche indique « Relecture humaine : Non ». À mettre en cohérence dans la fiche avant import.");
+  L.push("> À relire et compléter avant import.", "");
   L.push("## Quand l'utiliser", "");
   L.push("Quand " + source + " relève de l'irritant « " + titre + " » (code `" + code + "`)." + (t.processus ? " Processus : " + skillLigne(t.processus) + "." : ""));
   if (t.definition) L.push("", "Définition du type : " + skillLigne(t.definition));
@@ -41,13 +46,20 @@ function skillMarkdown(code) {
   conf.workflow.forEach(function (s, i) { L.push((i + 1) + ". " + skillLigne(s)); });
   L.push("", "## Sorties attendues", "", skillLigne(conf.sorties));
   L.push("", "## Garde-fous (non négociables)", "");
-  L.push("- Préparer seulement : produire des brouillons, ne jamais envoyer de mail ni publier quoi que ce soit. Un humain relit et envoie.");
+  if (sansRelecture) {
+    L.push("- Relecture humaine : Non (choix du HRBP dans la fiche). Envoyer soi-même la réponse SEULEMENT si toutes ces conditions sont réunies : la décision du HRBP est toujours « Validé · Assister » ; le cas suit exactement les étapes ci-dessus ; aucune information n'est manquante ; aucun doute sur le destinataire ou le contenu.");
+    L.push("- Dans tous les autres cas : préparer un brouillon, ne rien envoyer, et le signaler pour relecture humaine.");
+    L.push("- Ne jamais publier ni modifier de document de référence ; ne jamais envoyer en dehors des destinataires prévus par le workflow.");
+  } else {
+    L.push("- Préparer seulement : produire des brouillons, ne jamais envoyer de mail ni publier quoi que ce soit. Un humain relit et envoie.");
+  }
   L.push("- Contenu confidentiel, de santé ou de conflit : ne pas l'analyser, s'arrêter et le signaler.");
   L.push("- Aucun jugement sur une personne, aucune donnée nominative recopiée au-delà de ce que la tâche exige.");
   L.push("- Ne jamais inventer une information manquante (date, nom, pièce) : la lister comme manquante.");
   L.push("- En cas de doute sur le classement ou la tâche : demander à l'utilisateur plutôt que deviner.");
   L.push("", "## Pour terminer", "");
-  L.push("Donner un résumé court : ce qui a été préparé, ce qui manque, ce que l'humain doit relire avant d'envoyer.");
+  L.push(sansRelecture ? "Donner un résumé court : ce qui a été envoyé (à qui, sans recopier de contenu sensible), ce qui a été seulement préparé et pourquoi, ce qui manque." :
+    "Donner un résumé court : ce qui a été préparé, ce qui manque, ce que l'humain doit relire avant d'envoyer.");
   L.push("", "## Suivi", "", "Indicateur : " + skillLigne(conf.indicateur) + ", mesuré dans l'onglet « Revue mensuelle » du site ACIA.");
   if (d.commentaire) L.push("", "Commentaire du HRBP : « " + skillLigne(d.commentaire) + " »");
   return L.join("\n") + "\n";
@@ -111,5 +123,6 @@ function skillBloc(code) {
   }
   return '<div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
     '<button class="btn slim" onclick="genererSkill(\'' + code + '\')">Générer le skill (.zip)</button>' +
-    '<span class="note" style="margin:0">' + badge("b-violet", "IA") + " Brouillon à relire avant import dans Claude (paramètres, rubrique Skills). Rien n'est installé ni envoyé automatiquement.</span></div>";
+    '<span class="note" style="margin:0">' + badge("b-violet", "IA") + " Brouillon à relire avant import dans Claude (paramètres, rubrique Skills). Rien n'est installé ni envoyé automatiquement.</span>" +
+    (typeof fiaValidee === "function" && typeof fiaRelecture === "function" && fiaRelecture(fiaValidee(code)) === "NON" ? '<span class="note" style="margin:0">' + badge("b-rose", "Sans relecture humaine") + " Le skill pourra envoyer lui-même les cas conformes au workflow.</span>" : "") + "</div>";
 }
