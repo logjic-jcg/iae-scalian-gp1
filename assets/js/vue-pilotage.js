@@ -412,6 +412,7 @@ function viewPilotSpec() {
         ligneSpec("Garde-fous", "Aucun mail ni compte rendu confidentiel traité ; aucune donnée sur une personne ; " + (d.reponse === "AUTOMATISER" ? "seule la réponse standard part automatiquement ; tout autre envoi passe par une validation humaine." : "rien n'est envoyé sans validation humaine.")) +
         ligneSpec("Indicateur de suivi", esc(conf.indicateur) + ", mesuré dans l'onglet « Revue mensuelle ».") +
         ligneSpec("Décision", "Effet à partir de la semaine " + esc(d.semaine_effet) + (d.commentaire ? " · « " + esc(d.commentaire) + " »" : "")) +
+        (d.reponse === "ASSISTER" ? ligneSpec("Relecture humaine", "Oui") : "") +
         "</tbody></table>";
     }
     const skill = vue === "fiche" && d.reponse === "ASSISTER" && typeof skillBloc === "function" ? skillBloc(c) : "";

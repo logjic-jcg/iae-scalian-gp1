@@ -95,6 +95,7 @@ if (!app) {
     window.aciaEcrireFicheSpec = function (code, f) {
       const d = { reponse: f.reponse, origine: f.origine, brouillon_ia: f.brouillon_ia, maj: serverTimestamp() };
       ["IRRITANT", "BESOIN", "UTILISATEURS", "ENTREES", "SORTIES", "WORKFLOW", "AUTONOMIE", "RISQUES", "AGENT", "ACCEPTATION", "INDICATEUR"].forEach(function (k) { d[k] = f[k]; });
+      if (f.RELECTURE === "OUI" || f.RELECTURE === "NON") d.RELECTURE = f.RELECTURE;   // v58 : Assister seulement
       return setDoc(doc(db, "fiches_specs", code), d);
     };
     window.aciaEffacerFicheSpec = function (code) { return deleteDoc(doc(db, "fiches_specs", code)); };
