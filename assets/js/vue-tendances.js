@@ -198,9 +198,10 @@ function viewTendances() {
     return '<div class="bar"><span class="lbl">' + lienFiche(t.code, esc(t.label)) + (t.actif ? "" : " (désactivé)") + '</span><span class="track"><span class="fill" style="display:block;width:' + Math.round(v / maxTot * 100) + '%"></span></span><span class="val">' + v + "</span></div>";
   }).join("") || '<p class="note">Aucun irritant ' + (state.masquerVides ? "avec signal " : "") + "pour ce processus.</p>";
 
-  const tete = '<tr><th style="min-width:210px">Irritant</th>' + cols.map(function (c) { return '<th style="text-align:center;white-space:nowrap;min-width:44px">' + esc(c.label) + '<br><small style="font-weight:500">' + esc(c.sous) + "</small></th>"; }).join("") + '<th style="min-width:260px">Réponse la plus simple qui suffit</th></tr>';
+  const tete = '<tr><th class="per-fixe" style="min-width:210px">Irritant</th><th style="text-align:center" title="Total sur la période choisie, toutes colonnes comprises">Total</th>' + cols.map(function (c) { return '<th style="text-align:center;white-space:nowrap;min-width:44px">' + esc(c.label) + '<br><small style="font-weight:500">' + esc(c.sous) + "</small></th>"; }).join("") + '<th style="min-width:260px">Réponse la plus simple qui suffit</th></tr>';
   const corps = lignes.map(function (t) {
-    return "<tr><td><b>" + lienFiche(t.code, esc(t.label)) + "</b>" + (t.actif ? "" : " <small>(désactivé)</small>") + "</td>" + cols.map(function (c) {
+    return '<tr><td class="per-fixe"><b>' + lienFiche(t.code, esc(t.label)) + "</b>" + (t.actif ? "" : " <small>(désactivé)</small>") + "</td>" +
+      '<td style="text-align:center;font-weight:700">' + (total[t.code] || 0) + "</td>" + cols.map(function (c) {
       const v = parSem[t.code + "|" + c.cle] || 0;
       const a = v ? (0.12 + 0.6 * v / max).toFixed(2) : 0;
       return '<td style="text-align:center;font-weight:700;background:rgba(228,0,91,' + a + ')">' + (v || "") + "</td>";
@@ -217,7 +218,7 @@ function viewTendances() {
     (nbInconnus ? '<p class="note">' + nbInconnus + " code(s) renvoyé(s) par l'IA non reconnu(s), non comptés.</p>" : "") + "</div>" +
     '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("courbe") + '<div class="spechead">Évolution par ' + grain + "</div></div>" +
     '<div class="tw" style="margin-top:8px"><table><thead>' + tete + "</thead><tbody>" + corps + "</tbody></table></div>" +
-    '<p class="note">Dates de démonstration : le jour fictif J1 du scénario correspond au lundi ' + esc(PER_J1.toLocaleDateString("fr-FR")) + ' (S1 = semaine 1 du scénario). Un mail sans jour fictif est daté de sa réception.</p></div>' +
+    '<p class="note">Dates de démonstration : le jour fictif J1 du scénario correspond au lundi ' + esc(PER_J1.toLocaleDateString("fr-FR")) + ' (S1 = semaine 1 du scénario). Un mail sans jour fictif est daté de sa réception. La colonne « Total » couvre toute la période : si le tableau est plus large que l\'écran, faites-le défiler vers la droite.</p></div>' +
     '<p class="note">Ce que cet écran ne montre pas, volontairement : aucun mail, aucun expéditeur, aucun objet, aucun nom. La base ne les stocke pas. Classement automatique toutes les heures (lun-sam, 8h-20h) par Claude Haiku via Make ; la confiance est une auto-évaluation de l\'IA, pas une probabilité mesurée.</p>';
 }
 
