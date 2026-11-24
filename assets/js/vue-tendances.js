@@ -142,7 +142,10 @@ function viewTendances() {
     return entete + '<div class="card"><p class="note" style="margin:0">' + esc(msg) + "</p>" +
       '<p class="note">Aucun chiffre n\'est affiché sans la base : rien n\'est simulé sur cet écran.</p></div>';
   }
-  const docs = fb.docs;
+  const docsTous = fb.docs;
+  // v55 : période d'analyse (vue-periode.js) : toute la page suit la période choisie.
+  const perB = perBornes(docsTous), grain = perEtat().grain;
+  const docs = docsTous.filter(function (d) { return perDans(d, perB); });
   const ecartes = docs.filter(function (d) { return d.type === "ECARTE"; }).length;
   const analyses = docs.filter(function (d) { return d.type !== "ECARTE"; });
   const avecIrr = analyses.filter(function (d) { return CODES_HORS_IRRITANT.indexOf(d.type) < 0; }).length;
@@ -152,9 +155,9 @@ function viewTendances() {
 
   const types = typesMail();
   // Comptage des signaux (irritant principal + secondaire) par type et par semaine.
-  const semaines = {}, total = {}, parSem = {}, inconnus = {};
+  const total = {}, parSem = {}, inconnus = {};
   analyses.forEach(function (d) {
-    const s = semaineDe(d); semaines[s.cle] = s;
+    const s = { cle: perCle(d, grain) };
     [d.type, d.type_secondaire].forEach(function (c, i) {
       c = String(c || "").trim();
       if (!c || CODES_HORS_IRRITANT.indexOf(c) >= 0) return;
@@ -164,7 +167,18 @@ function viewTendances() {
       parSem[c + "|" + s.cle] = (parSem[c + "|" + s.cle] || 0) + 1;
     });
   });
-  const cols = Object.keys(semaines).map(function (k) { return semaines[k]; }).sort(function (a, b) { return a.ordre - b.ordre; });
+  const cols = perColonnes(perB, grain);
+  // Frise et comparaison : signaux par jour sur toute la boîte, période précédente de même durée.
+  const sigJour = {};
+  docsTous.forEach(function (d) {
+    if (d.type === "ECARTE") return; const j = perJour(d); if (!j) return;
+    [d.type, d.type_secondaire].forEach(function (c, i) { c = String(c || "").trim(); if (!c || CODES_HORS_IRRITANT.indexOf(c) >= 0 || (i === 1 && c === d.type)) return; sigJour[perIso(j)] = (sigJour[perIso(j)] || 0) + 1; });
+  });
+  const nbJ = perNbJours(perB), avant = { du: perAjoute(perB.du, -nbJ), au: perAjoute(perB.du, -1) };
+  const docsAvant = docsTous.filter(function (d) { return d.type !== "ECARTE" && perDans(d, avant); });
+  const comparable = perEtat().preset !== "tout" && docsTous.some(function (d) { const j = perJour(d); return j && j <= avant.au; });
+  const ecart = function (v, w) { if (!comparable) return ""; const e = v - w; return " · " + (e > 0 ? "+" : "") + e + " vs période précédente"; };
+  const avecIrrAvant = docsAvant.filter(function (d) { return CODES_HORS_IRRITANT.indexOf(d.type) < 0; }).length;
   const max = Math.max(1, Math.max.apply(null, Object.keys(parSem).map(function (k) { return parSem[k]; }).concat([0])));
   const maxTot = Math.max(1, Math.max.apply(null, Object.keys(total).map(function (k) { return total[k]; }).concat([0])));
   // Un type désactivé reste affiché tant qu'il a des signaux (historique conservé).
@@ -172,8 +186,8 @@ function viewTendances() {
   const lignes = types.filter(function (t) { return (t.actif || total[t.code]) && passeProcessus(t.code) && (!state.masquerVides || total[t.code]); }).sort(function (a, b) { return (total[b.code] || 0) - (total[a.code] || 0); });
 
   const tiles = [
-    ["Mails analysés", String(analyses.length), "Depuis la mise en service du classement", "mail"],
-    ["Mails signalant un irritant", String(avecIrr) + " / " + analyses.length, "Les autres : information, invitation, newsletter", "drapeau"],
+    ["Mails analysés", String(analyses.length), "Sur la période" + ecart(analyses.length, docsAvant.length), "mail"],
+    ["Mails signalant un irritant", String(avecIrr) + " / " + analyses.length, "Sur la période" + ecart(avecIrr, avecIrrAvant), "drapeau"],
     ["Mails écartés sans lecture IA", String(ecartes), "Confidentiel, santé, conflit : seul le nombre est gardé", "bouclier"],
     ["Classements à vérifier", String(aVerifier), "Confiance « basse » donnée par l'IA", "loupe"],
   ];
@@ -184,7 +198,7 @@ function viewTendances() {
     return '<div class="bar"><span class="lbl">' + lienFiche(t.code, esc(t.label)) + (t.actif ? "" : " (désactivé)") + '</span><span class="track"><span class="fill" style="display:block;width:' + Math.round(v / maxTot * 100) + '%"></span></span><span class="val">' + v + "</span></div>";
   }).join("") || '<p class="note">Aucun irritant ' + (state.masquerVides ? "avec signal " : "") + "pour ce processus.</p>";
 
-  const tete = "<tr><th>Irritant</th>" + cols.map(function (c) { return "<th>" + esc(c.label) + "</th>"; }).join("") + "<th>Réponse la plus simple qui suffit</th></tr>";
+  const tete = '<tr><th style="min-width:210px">Irritant</th>' + cols.map(function (c) { return '<th style="text-align:center;white-space:nowrap;min-width:44px">' + esc(c.label) + '<br><small style="font-weight:500">' + esc(c.sous) + "</small></th>"; }).join("") + '<th style="min-width:260px">Réponse la plus simple qui suffit</th></tr>';
   const corps = lignes.map(function (t) {
     return "<tr><td><b>" + lienFiche(t.code, esc(t.label)) + "</b>" + (t.actif ? "" : " <small>(désactivé)</small>") + "</td>" + cols.map(function (c) {
       const v = parSem[t.code + "|" + c.cle] || 0;
@@ -197,13 +211,13 @@ function viewTendances() {
   const source = badge("b-emerald", "● En direct") +
     ' <span class="note">' + (derniere ? "Dernier mail classé : " + esc(derniere.toLocaleString("fr-FR")) + " · boîte vérifiée toutes les heures (lun-sam, 8h-20h) ; sans nouveau mail, rien n'est réécrit." : "") + "</span>";
 
-  return entete + '<div class="card"><div>' + source + "</div>" + kpis + "</div>" +
-    '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("etiquette") + '<div class="spechead">Signaux par irritant (irritant principal + secondaire)</div></div>' +
-    (filtreProcActif().length || state.masquerVides ? '<p class="note" style="margin:2px 0 6px">' + (filtreProcActif().length ? "Filtré par processus. " : "") + (state.masquerVides ? "Irritants sans signal masqués. " : "") + "Les compteurs du haut portent sur toute la boîte.</p>" : "") + bars +
+  return entete.replace('<h3 id="sec-mails"', perBarre(docsTous, sigJour) + '<h3 id="sec-mails"') + '<div class="card"><div>' + source + "</div>" + kpis + "</div>" +
+    '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("etiquette") + '<div class="spechead">Signaux par irritant (irritant principal + secondaire) · ' + esc(perCourt(perB.du)) + " – " + esc(perCourt(perB.au)) + '</div></div>' +
+    (filtreProcActif().length || state.masquerVides ? '<p class="note" style="margin:2px 0 6px">' + (filtreProcActif().length ? "Filtré par processus. " : "") + (state.masquerVides ? "Irritants sans signal masqués. " : "") + "Les compteurs du haut portent sur toute la boîte (pour la période choisie).</p>" : "") + bars +
     (nbInconnus ? '<p class="note">' + nbInconnus + " code(s) renvoyé(s) par l'IA non reconnu(s), non comptés.</p>" : "") + "</div>" +
-    '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("courbe") + '<div class="spechead">Évolution par semaine</div></div>' +
+    '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("courbe") + '<div class="spechead">Évolution par ' + grain + "</div></div>" +
     '<div class="tw" style="margin-top:8px"><table><thead>' + tete + "</thead><tbody>" + corps + "</tbody></table></div>" +
-    '<p class="note">Semaines « fictives » : jour du scénario de démo indiqué dans le mail. Les mails réels sont rangés par semaine de réception.</p></div>' +
+    '<p class="note">Dates de démonstration : le jour fictif J1 du scénario correspond au lundi ' + esc(PER_J1.toLocaleDateString("fr-FR")) + ' (S1 = semaine 1 du scénario). Un mail sans jour fictif est daté de sa réception.</p></div>' +
     '<p class="note">Ce que cet écran ne montre pas, volontairement : aucun mail, aucun expéditeur, aucun objet, aucun nom. La base ne les stocke pas. Classement automatique toutes les heures (lun-sam, 8h-20h) par Claude Haiku via Make ; la confiance est une auto-évaluation de l\'IA, pas une probabilité mesurée.</p>';
 }
 

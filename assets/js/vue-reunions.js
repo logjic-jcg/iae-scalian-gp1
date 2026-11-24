@@ -48,24 +48,38 @@ function carteReunions() {
     const pr = processusDe("ACTIONS_NON_FERMEES");
     return titre + '<div class="card"><p class="note" style="margin:0">Masqué par le filtre « Processus » (processus de cet irritant : ' + esc(pr || "non renseigné") + ").</p></div>";
   }
-  const crs = fb.docs.filter(function (d) { return d.statut === "ANALYSE" || d.statut === "ECARTE"; })
+  const tous = fb.docs.filter(function (d) { return d.statut === "ANALYSE" || d.statut === "ECARTE"; })
     .sort(function (a, b) { return (Number(a.jour_reunion) || 0) - (Number(b.jour_reunion) || 0) || String(a.ref).localeCompare(String(b.ref)); });
+  // v55 : période d'analyse. Les comptes rendus de la période sont affichés ; ceux d'avant
+  // servent seulement à l'historique des actions (une action qui traîne depuis avant reste « qui traîne »).
+  const perB = perBornes(perDocs());
+  const dansPer = function (cr) { const j = perJourCR(cr); return !!j && j >= perB.du && j <= perB.au; };
+  const avantPer = function (cr) { const j = perJourCR(cr); return !!j && j < perB.du; };
+  const nonDates = tous.filter(function (d) { return !perJourCR(d); }).length;
+  const crs = tous.filter(dansPer);
   const ecartes = crs.filter(function (d) { return d.statut === "ECARTE"; });
   const analyses = crs.filter(function (d) { return d.statut === "ANALYSE"; });
-  if (!crs.length) return titre + '<div class="card"><p class="note" style="margin:0">Aucun compte rendu analysé pour l\'instant.</p></div>';
+  const historique = tous.filter(function (d) { return d.statut === "ANALYSE" && avantPer(d); });
+  const perTxt = perCourt(perB.du) + " – " + perCourt(perB.au);
+  if (!tous.length) return titre + '<div class="card"><p class="note" style="margin:0">Aucun compte rendu analysé pour l\'instant.</p></div>';
+  if (!crs.length) return titre + '<div class="card"><p class="note" style="margin:0">Aucun compte rendu sur la période choisie (' + esc(perTxt) + "). " + tous.length + " compte(s) rendu(s) en base, hors de cette période.</p></div>";
 
   // Suivi de chaque action d'un compte rendu à l'autre (même libellé = même action).
   const actions = {}, absents = {};
   let enRetard = 0, basse = 0;
-  analyses.forEach(function (cr) {
+  historique.concat(analyses).forEach(function (cr) {
     const a = lireAnalyseCR(cr.analyse);
-    if (a.confiance === "BASSE") basse++;
-    const delai = (Number(cr.jour_diffusion) || 0) - (Number(cr.jour_reunion) || 0);
-    if (delai >= RETARD_DIFFUSION_J) enRetard++;
-    a.absents.forEach(function (s) { absents[s] = (absents[s] || 0) + 1; });
+    const dedans = dansPer(cr);
+    if (dedans) {
+      if (a.confiance === "BASSE") basse++;
+      const delai = (Number(cr.jour_diffusion) || 0) - (Number(cr.jour_reunion) || 0);
+      if (delai >= RETARD_DIFFUSION_J) enRetard++;
+      a.absents.forEach(function (s) { absents[s] = (absents[s] || 0) + 1; });
+    }
     a.actions.forEach(function (x) {
       const k = x.libelle;
-      if (!actions[k]) actions[k] = { libelle: k, passages: {}, ouvertes: 0, fermee: null, resp: false };
+      if (!actions[k]) actions[k] = { libelle: k, passages: {}, ouvertes: 0, avant: 0, fermee: null, resp: false, vue: false };
+      if (dedans) actions[k].vue = true; else if (x.statut !== "FERMEE") actions[k].avant++;
       const act = actions[k];
       // Une action déjà vue n'est plus « nouvelle », quoi qu'en dise l'IA.
       let st = x.statut;
@@ -76,14 +90,15 @@ function carteReunions() {
       act.dernier = st;
     });
   });
-  const liste = Object.keys(actions).map(function (k) { return actions[k]; });
+  // Seules les actions évoquées dans un compte rendu de la période sont affichées.
+  const liste = Object.keys(actions).map(function (k) { return actions[k]; }).filter(function (a) { return a.vue; });
   const trainent = liste.filter(function (a) { return a.dernier !== "FERMEE" && a.ouvertes >= 2; });
   const sansResp = liste.filter(function (a) { return a.dernier !== "FERMEE" && !a.resp; });
   const fermees = liste.filter(function (a) { return a.dernier === "FERMEE"; });
 
   const tiles = [
     ["Comptes rendus analysés", String(analyses.length), ecartes.length + " écarté(s) sans lecture IA (confidentiel)", "document"],
-    ["Actions qui traînent", String(trainent.length), "Évoquées au moins 2 fois sans être fermées", "horloge"],
+    ["Actions qui traînent", String(trainent.length), "Évoquées au moins 2 fois sans être fermées (passages antérieurs compris)", "horloge"],
     ["Actions sans responsable", String(sansResp.length), "Au dernier compte rendu où elles apparaissent", "personne"],
     ["Comptes rendus diffusés en retard", String(enRetard) + " / " + analyses.length, RETARD_DIFFUSION_J + " jours ou plus après la réunion", "calendrier"],
   ];
@@ -95,7 +110,7 @@ function carteReunions() {
     return ra - rb || b.ouvertes - a.ouvertes || a.libelle.localeCompare(b.libelle);
   });
   const tete = "<tr><th>Action</th>" + analyses.map(function (cr) {
-    return '<th style="text-align:center">' + esc(cr.ref) + "<br><small>J" + esc(cr.jour_reunion) + "</small></th>";
+    return '<th style="text-align:center">' + esc(cr.ref) + "<br><small>" + esc(perCourt(perJourCR(cr))) + " · J" + esc(cr.jour_reunion) + "</small></th>";
   }).join("") + "<th>Bilan</th></tr>";
   const corps = lignes.map(function (a) {
     const cells = analyses.map(function (cr) {
@@ -107,6 +122,7 @@ function carteReunions() {
     const bilan = a.dernier === "FERMEE"
       ? badge("b-emerald", "Fermée en " + a.fermee) + ' <small class="note">après ' + a.ouvertes + " passage(s) ouvert(s)</small>"
       : (a.ouvertes >= 2 ? badge("b-rose", "Traîne : " + a.ouvertes + " passages") : badge("b-slate", a.ouvertes + " passage")) +
+        (a.avant ? ' <small class="note">dont ' + a.avant + " avant la période</small>" : "") +
         (a.resp ? "" : " " + badge("b-amber", "Sans responsable"));
     return "<tr><td><b>" + esc(a.libelle) + "</b></td>" + cells + "<td>" + bilan + "</td></tr>";
   }).join("");
@@ -117,11 +133,12 @@ function carteReunions() {
     : '<p class="note">Aucun service signalé absent.</p>';
 
   return titre +
-    '<div class="card"><div>' + badge("b-emerald", "● En direct") + ' <span class="note">Source : base Notion des comptes rendus, lue par Make + Claude Haiku</span></div>' + kpis + "</div>" +
+    '<div class="card"><div>' + badge("b-emerald", "● En direct") + ' <span class="note">Source : base Notion des comptes rendus, lue par Make + Claude Haiku · réunions du ' + esc(perTxt) + "</span></div>" + kpis +
+    (nonDates ? '<p class="note">' + nonDates + " compte(s) rendu(s) sans jour de réunion : hors période, non comptés.</p>" : "") + "</div>" +
     '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("liste") + '<div class="spechead">Suivi des actions d\'un compte rendu à l\'autre</div></div>' +
     '<div class="tw" style="margin-top:8px"><table><thead>' + tete + "</thead><tbody>" + corps + "</tbody></table></div>" +
     '<p class="note">Une même action est reconnue à son libellé : l\'IA réutilise le libellé déjà connu. Une action déjà vue n\'est jamais recomptée comme « nouvelle ». ' +
-    fermees.length + " action(s) fermée(s) à ce jour.</p></div>" +
+    fermees.length + " action(s) fermée(s) sur la période." + (historique.length ? " Les " + historique.length + " compte(s) rendu(s) antérieur(s) à la période comptent dans l\'historique des actions, sans colonne." : "") + "</p></div>" +
     '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("groupe") + '<div class="spechead">Services absents des réunions</div></div>' + blocAbs +
     '<p class="note">Compté par service, jamais par personne.</p></div>' +
     '<p class="note">Ce bloc ne montre aucun nom : ni participant, ni responsable d\'action. Un compte rendu confidentiel est écarté avant toute lecture par l\'IA : seul son nombre est gardé.' +
