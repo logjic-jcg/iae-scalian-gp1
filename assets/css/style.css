@@ -522,3 +522,20 @@ tr.fb-neuf td { animation: fb-flash 3s ease-out; }
 .fia-l textarea{width:100%;box-sizing:border-box;font:inherit;font-size:14px;padding:6px 8px;border:1px solid #d9cdea;border-radius:8px;resize:vertical}
 .fia-ac{background:#fef3c7;color:#92400e;border-radius:4px;padding:0 3px}
 @media (max-width:640px){.fia-l{grid-template-columns:1fr;gap:2px}}
+/* v52 : Spécifications en liste + détail */
+.spec-aide{margin:0 0 12px}
+.spec-aide summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--accent);list-style:none;display:inline-block}
+.spec-aide summary::-webkit-details-marker{display:none}
+.spec-aide[open] summary{margin-bottom:8px}
+.spec-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.spec-seg{display:inline-flex;border:1px solid #d9cdea;border-radius:999px;padding:3px;background:#faf8fd;flex:none}
+.spec-seg button{border:0;background:none;font:inherit;font-size:13px;font-weight:700;color:#5f5873;padding:6px 14px;border-radius:999px;cursor:pointer}
+.spec-seg button.on{background:#4b2882;color:#fff}
+.spec-pastille{color:#be123c;font-size:10px;vertical-align:2px}
+.spec-seg button.on .spec-pastille{color:#fecdd3}
+.spec-detail .fia-card{border:0;background:none;box-shadow:none;padding:0;margin-top:14px}
+.pick .badge{white-space:nowrap}
+@media (max-width:640px){.spec-seg{width:100%}.spec-seg button{flex:1}}
+.pick.selected:hover{background:var(--dark)}
+.spec-seg button{white-space:nowrap}
+@media (max-width:640px){.spec-seg button{font-size:12px;padding:6px 8px}}

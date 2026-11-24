@@ -316,7 +316,7 @@ function specIcone(rep, taille) {
 // v40 : liens croisés Spécification ↔ Décision du HRBP (le filtre « Processus » est conservé : l'irritant y passe déjà).
 function allerVers(id) { setTimeout(function () { const el = document.getElementById(id); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 0); }
 function allerDecision(code) { state.selPilot = code; state.filtrePilot = "TOUS"; state.msgPilot = ""; setTab("b_orienter"); allerVers("decision-hrbp"); }
-function allerSpec(code) { state.filtreSpec = "TOUS"; setTab("b_spec"); allerVers("spec-" + code); }
+function allerSpec(code) { state.filtreSpec = "TOUS"; state.specSel = code; state.specVue = "fiche"; setTab("b_spec"); }
 // v13 : rappel en tête de page de ce qui est affiché.
 function aideSpec() {
   return '<p class="note" style="margin:0 0 12px"><b>Ce qui apparaît ici :</b> les irritants au statut « Validé » dans « Décisions ». ' +
@@ -324,15 +324,30 @@ function aideSpec() {
     "<b>Simplifier</b> donne une fiche courte, sans outil à construire.</p>";
 }
 
+// v52 : liste à gauche (une ligne par spécification, avec son état), une seule fiche à droite.
+function selSpec(code) { state.specSel = code; state.specVue = "fiche"; if (state.fia && state.fia.edit && state.fia.edit !== code) { state.fia.edit = ""; state.fia.brouillon = null; } render(); }
+function vueSpec(v) { state.specVue = v; render(); }
+// État d'une spécification, pour la liste : [classe du badge, libellé].
+function etatSpec(c) {
+  const d = decisionDe(c);
+  if (d.reponse === "SIMPLIFIER") return ["b-slate", "Sans outil"];
+  if (typeof fiaValidee === "function" && fiaValidee(c)) return ["b-emerald", "Validée par le HRBP"];
+  if (state.fia && state.fia.edit === c) return ["b-amber", "Relecture en cours"];
+  const der = typeof fiaDerniere === "function" ? fiaDerniere(c) : null;
+  if (der && fiaLire(der.texte)) return ["b-violet", "Brouillon IA à relire"];
+  return ["b-sky", "Fiche de la base"];
+}
+function ligneSpec(k, v) { return "<tr><td style='padding:6px 10px 6px 0;color:#64748b;vertical-align:top;white-space:nowrap'>" + esc(k) + "</td><td style='padding:6px 0'>" + v + "</td></tr>"; }
+
 function viewPilotSpec() {
   const sig = aciaSignaux();
   if (!sig.ok) return messageSansBase("Spécifications", sig);
   let valides = typesPilotage().map(function (t) { return t.code; }).filter(function (c) { const d = decisionDe(c); return d && d.statut === "VALIDE"; });
+  const aide = '<details class="spec-aide"><summary title="Comment lire cet onglet">ⓘ Comment lire cet onglet</summary>' + aideSpec() +
+    '<p class="note" style="margin:0">Fiches remplies automatiquement avec les données de la base et la grille du livrable 01. Pour une réponse Automatiser ou Assister, « Rédiger avec l\'IA » propose une rédaction complète en 11 rubriques, que le HRBP relit, corrige et valide.</p></details>';
   if (!valides.length) {
-    return "<h2>Spécifications</h2>" + bandeauVersionC() + aideSpec() + '<div class="card"><p style="font-size:14px;margin:0">Aucun irritant validé pour l\'instant.</p><p class="note">Une fiche n\'est produite qu\'après une décision « validé » du HRBP, dans l\'onglet « Décisions ».</p></div>';
+    return "<h2>Spécifications</h2>" + bandeauVersionC() + aide + '<div class="card"><p style="font-size:14px;margin:0">Aucun irritant validé pour l\'instant.</p><p class="note">Une fiche n\'est produite qu\'après une décision « validé » du HRBP, dans l\'onglet « Décisions ».</p></div>';
   }
-  // v13 : filtre par réponse retenue. v39 : filtre « Processus » (le même que dans Décisions) appliqué d'abord ;
-  // les compteurs des puces en tiennent compte.
   const tousValides = valides;
   valides = tousValides.filter(function (c) { return passeProcessus(c); });
   const fRep = state.filtreSpec || "TOUS";
@@ -341,41 +356,71 @@ function viewPilotSpec() {
     const n = r.id === "TOUS" ? valides.length : valides.filter(function (c) { return decisionDe(c).reponse === r.id; }).length;
     return '<button class="chip' + (r.id === fRep ? " active" : "") + '" onclick="filtreSpec(\'' + r.id + '\')">' + (r.id === "TOUS" ? "" : specIcone(r.id, 18) + " ") + esc(r.label) + " (" + n + ")</button>";
   }).join("") + "</div></div>";
-  const fiches = (visibles.length ? "" : '<div class="card" style="margin-top:12px"><p class="note" style="margin:0">Aucune spécification validée avec cette réponse' + (filtreProcActif().length ? " et ce processus" : "") + '.</p></div>') + visibles.map(function (c) {
-    const d = decisionDe(c), p = sig.parCode[c], conf = confDe(c);
-    const semaines = Object.keys(p.parSem).map(Number).sort(function (a, b) { return a - b; });
-    const lienDec = '<a href="#" class="pick-fiche" onclick="allerDecision(\'' + c + '\');return false">Voir la décision du HRBP →</a>';
-    if (d.reponse === "SIMPLIFIER") {
-      return '<div class="card" id="spec-' + c + '" style="margin-top:12px;scroll-margin-top:130px"><div class="kpi-h">' + specIcone(d.reponse) + '<div class="spechead">Réponse sans IA : pas de spécification d\'outil</div></div><div class="spech3">' + esc(libelleType(c)) + "</div>" + lienDec +
-        '<p style="font-size:14px;margin-top:6px"><b>Action :</b> ' + esc(conf.action || "À définir par le HRBP.") + "</p>" +
-        '<p class="note">Signal observé : ' + p.total + " signal(s). Indicateur de suivi : " + esc(conf.indicateur) + ".</p></div>";
-    }
-    const besoin = conf.besoin || conf.action || "";
-    const autonomie = d.reponse === "ASSISTER" ? "Préparer : l'agent prépare, un humain relit et envoie." : "Agir sur les cas standard, sans jugement ; tout cas hors règle revient à un humain.";
-    const ligne = function (k, v) { return "<tr><td style='padding:6px 10px 6px 0;color:#64748b;vertical-align:top;white-space:nowrap'>" + esc(k) + "</td><td style='padding:6px 0'>" + v + "</td></tr>"; };
-    const workflow = (conf.workflow || ["À définir"]).map(function (s, k) { return (k + 1) + ". " + esc(s); }).join("<br>");
-    // v51 : une fiche rédigée par l'IA puis relue et validée par le HRBP remplace la fiche de la base.
-    const fiv = typeof fiaValidee === "function" ? fiaValidee(c) : null;
-    const blocIA = typeof fiaBloc === "function" ? fiaBloc(c) : "";
-    if (fiv) {
-      return '<div class="card" id="spec-' + c + '" style="margin-top:12px;scroll-margin-top:130px"><div class="kpi-h">' + specIcone(d.reponse) + '<div class="spechead">Fiche rédigée par l\'IA, relue par le HRBP · ' + esc(libReponse(d.reponse)) + '</div></div><div class="spech3">' + esc(libelleType(c)) + "</div>" + lienDec +
-        fiaFicheValidee(c, fiv) + (d.reponse === "ASSISTER" && typeof skillBloc === "function" ? skillBloc(c) : "") + "</div>" + blocIA;
-    }
-    return '<div class="card" id="spec-' + c + '" style="margin-top:12px;scroll-margin-top:130px"><div class="kpi-h">' + specIcone(d.reponse) + '<div class="spechead">Fiche générée à partir de la base · ' + esc(libReponse(d.reponse)) + '</div></div><div class="spech3">' + esc(libelleType(c)) + "</div>" + lienDec +
-      '<table style="margin-top:8px;font-size:13px"><tbody>' +
-      ligne("Besoin métier", esc(besoin)) +
-      ligne("Signal observé", p.total + " signal(s) " + sourceDe(c) + (semaines.length ? " (semaines " + semaines.join(", ") + ")" : "") + ".") +
-      ligne("Entrées", esc(conf.entrees || "À définir")) +
-      ligne("Sorties", esc(conf.sorties || "À définir")) +
-      ligne("Workflow", workflow) +
-      ligne("Niveau d'autonomie", esc(autonomie)) +
-      ligne("Garde-fous", "Aucun mail ni compte rendu confidentiel traité ; aucune donnée sur une personne ; " + (d.reponse === "AUTOMATISER" ? "seule la réponse standard part automatiquement ; tout autre envoi passe par une validation humaine." : "rien n'est envoyé sans validation humaine.")) +
-      ligne("Indicateur de suivi", esc(conf.indicateur) + ", mesuré dans l'onglet « Revue mensuelle ».") +
-      ligne("Décision", "Effet à partir de la semaine " + esc(d.semaine_effet) + (d.commentaire ? " · « " + esc(d.commentaire) + " »" : "")) +
-      "</tbody></table>" + (d.reponse === "ASSISTER" && typeof skillBloc === "function" ? skillBloc(c) : "") + "</div>" + blocIA;
+  if (!visibles.length) {
+    return "<h2>Spécifications</h2>" + bandeauVersionC() + aide + chips + '<div class="card"><p class="note" style="margin:0">Aucune spécification validée avec cette réponse' + (filtreProcActif().length ? " et ce processus" : "") + '.</p></div>';
+  }
+  // Ordre de la liste : d'abord ce qui attend le HRBP (brouillon à relire), puis les fiches de la base, puis les validées, puis « sans outil ».
+  const rang = { "Relecture en cours": 0, "Brouillon IA à relire": 1, "Fiche de la base": 2, "Validée par le HRBP": 3, "Sans outil": 4 };
+  visibles.sort(function (a, b) { return (rang[etatSpec(a)[1]] - rang[etatSpec(b)[1]]) || libelleType(a).localeCompare(libelleType(b), "fr"); });
+  if (visibles.indexOf(state.specSel) < 0) state.specSel = visibles[0];
+  const c = state.specSel;
+
+  const picks = visibles.map(function (x) {
+    const d = decisionDe(x), et = etatSpec(x);
+    return '<button class="pick' + (x === c ? " selected" : "") + '" id="spec-' + x + '" onclick="selSpec(\'' + x + '\')" style="display:flex;gap:12px;align-items:center;scroll-margin-top:130px">' +
+      specIcone(d.reponse, 30) + '<div style="min-width:0"><div style="font-weight:700;font-size:14px">' + esc(libelleType(x)) + "</div>" +
+      '<div class="psub">' + esc(libReponse(d.reponse).split(" (")[0].split(",")[0]) + (processusDe(x) ? " · " + esc(processusDe(x)) : "") + "</div></div>" +
+      '<span style="margin-left:auto;flex:none">' + badge(et[0], et[1]) + "</span></button>";
   }).join("");
-  return "<h2>Spécifications</h2>" + bandeauVersionC() + aideSpec() + chips + fiches +
-    '<p class="note">Fiches remplies automatiquement avec les données de la base et la grille du livrable 01. Pour une réponse Automatiser ou Assister, « Rédiger la fiche avec l\'IA » propose une rédaction complète en 11 rubriques, que le HRBP relit, corrige et valide.</p>';
+
+  // Détail : une seule fiche.
+  const d = decisionDe(c), p = sig.parCode[c], conf = confDe(c);
+  const semaines = Object.keys(p.parSem).map(Number).sort(function (a, b) { return a - b; });
+  const lienDec = '<a href="#" class="pick-fiche" onclick="allerDecision(\'' + c + '\');return false">Voir la décision du HRBP →</a>';
+  const tete = function (titre) {
+    return '<div class="kpi-h">' + specIcone(d.reponse) + '<div class="spechead">' + titre + "</div></div><div class='spech3'>" + esc(libelleType(c)) + "</div>" + lienDec;
+  };
+  let detail;
+  if (d.reponse === "SIMPLIFIER") {
+    detail = '<div class="card spec-detail">' + tete("Réponse sans IA : pas de spécification d'outil") +
+      '<p style="font-size:14px;margin-top:6px"><b>Action :</b> ' + esc(conf.action || "À définir par le HRBP.") + "</p>" +
+      '<p class="note">Signal observé : ' + p.total + " signal(s). Indicateur de suivi : " + esc(conf.indicateur) + ".</p></div>";
+  } else {
+    const fiv = typeof fiaValidee === "function" ? fiaValidee(c) : null;
+    const ia = typeof fiaBloc === "function";
+    const enRelecture = state.fia && state.fia.edit === c;
+    const vue = enRelecture ? "ia" : (state.specVue === "ia" && ia ? "ia" : "fiche");
+    const et = etatSpec(c);
+    const onglets = ia ? '<div class="spec-seg" role="tablist">' +
+      '<button role="tab" class="' + (vue === "fiche" ? "on" : "") + '" onclick="vueSpec(\'fiche\')">Fiche</button>' +
+      '<button role="tab" class="' + (vue === "ia" ? "on" : "") + '" onclick="vueSpec(\'ia\')">' + (enRelecture ? "Relecture" : "Rédaction avec l'IA") +
+        (et[1] === "Brouillon IA à relire" ? ' <span class="spec-pastille" title="Brouillon à relire">●</span>' : "") + "</button></div>" : "";
+    let corps;
+    if (vue === "ia") corps = fiaBloc(c);
+    else if (fiv) corps = fiaFicheValidee(c, fiv);
+    else {
+      const besoin = conf.besoin || conf.action || "";
+      const autonomie = d.reponse === "ASSISTER" ? "Préparer : l'agent prépare, un humain relit et envoie." : "Agir sur les cas standard, sans jugement ; tout cas hors règle revient à un humain.";
+      const workflow = (conf.workflow || ["À définir"]).map(function (s, k) { return (k + 1) + ". " + esc(s); }).join("<br>");
+      corps = '<table style="margin-top:8px;font-size:13px"><tbody>' +
+        ligneSpec("Besoin métier", esc(besoin)) +
+        ligneSpec("Signal observé", p.total + " signal(s) " + sourceDe(c) + (semaines.length ? " (semaines " + semaines.join(", ") + ")" : "") + ".") +
+        ligneSpec("Entrées", esc(conf.entrees || "À définir")) +
+        ligneSpec("Sorties", esc(conf.sorties || "À définir")) +
+        ligneSpec("Workflow", workflow) +
+        ligneSpec("Niveau d'autonomie", esc(autonomie)) +
+        ligneSpec("Garde-fous", "Aucun mail ni compte rendu confidentiel traité ; aucune donnée sur une personne ; " + (d.reponse === "AUTOMATISER" ? "seule la réponse standard part automatiquement ; tout autre envoi passe par une validation humaine." : "rien n'est envoyé sans validation humaine.")) +
+        ligneSpec("Indicateur de suivi", esc(conf.indicateur) + ", mesuré dans l'onglet « Revue mensuelle ».") +
+        ligneSpec("Décision", "Effet à partir de la semaine " + esc(d.semaine_effet) + (d.commentaire ? " · « " + esc(d.commentaire) + " »" : "")) +
+        "</tbody></table>";
+    }
+    const skill = vue === "fiche" && d.reponse === "ASSISTER" && typeof skillBloc === "function" ? skillBloc(c) : "";
+    detail = '<div class="card spec-detail">' +
+      '<div class="spec-top"><div>' + tete(fiv ? "Fiche rédigée par l'IA, relue par le HRBP · " + esc(libReponse(d.reponse)) : "Fiche générée à partir de la base · " + esc(libReponse(d.reponse))) + "</div>" + onglets + "</div>" +
+      corps + skill + "</div>";
+  }
+  return "<h2>Spécifications</h2>" + bandeauVersionC() + aide + chips +
+    '<div class="row c-1-2"><div>' + picks + "</div><div>" + detail + "</div></div>";
 }
 
 // ------------------------------ SUIVI DES RÉPONSES -------------------------

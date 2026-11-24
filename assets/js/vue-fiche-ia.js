@@ -97,6 +97,7 @@ function fiaLancer(code) {
   }
   const dossier = fiaDossier(code), d = decisionDe(code);
   if (!dossier) { state.fia = Object.assign({}, state.fia, { code: code, envoi: "", msg: "Dossier impossible à constituer : décision ou données de la base indisponibles." }); render(); return; }
+  state.specVue = "ia";
   state.fia = { code: code, envoi: "attente", msg: "Demande envoyée. Le brouillon s'affichera ici dans une trentaine de secondes.", depuis: Date.now(), edit: "", brouillon: null }; render();
   // Formulaire encodé + no-cors, comme les contradicteurs : pas de requête préalable CORS.
   fetch(FIA_WEBHOOK, { method: "POST", mode: "no-cors", body: new URLSearchParams({ dossier: dossier, code: code, reponse: d.reponse, origine: "site ACIA" }) })
@@ -114,6 +115,7 @@ function fiaRelire(code, depuisValidee) {
   const b = {}; FIA_RUBRIQUES.forEach(function (x) { b[x[0]] = String(src[x[0]] || "").slice(0, FIA_MAX); });
   b._origine = depuisValidee ? (src.origine || "IA_RELUE") : "IA_RELUE";
   b._ia = depuisValidee ? (src.brouillon_ia || "") : (fiaDerniere(code) || {}).id || "";
+  state.specSel = code; state.specVue = "ia";
   state.fia = Object.assign({}, state.fia, { code: code, edit: code, brouillon: b, msg: "" }); render();
   allerVers("fia-" + code);
 }
@@ -129,6 +131,7 @@ function fiaValider(code) {
   const data = { reponse: d.reponse, origine: b._origine || "IA_RELUE", brouillon_ia: String(b._ia || "").slice(0, 80) };
   FIA_RUBRIQUES.forEach(function (x) { data[x[0]] = String(b[x[0]]).trim().slice(0, FIA_MAX); });
   window.aciaEcrireFicheSpec(code, data).then(function () {
+    state.specVue = "fiche";
     state.fia = { code: code, envoi: "", msg: "Fiche validée et enregistrée dans la base.", depuis: state.fia.depuis, edit: "", brouillon: null }; render();
   }).catch(function (e) { state.fia.msg = "Refusé par la base : " + ((e && e.message) || e); render(); });
 }

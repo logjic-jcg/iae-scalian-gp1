@@ -30,7 +30,7 @@ function ficheDecider(code) {
   setTab("b_orienter");
 }
 function ficheVoirSpec(code) {
-  state.filtreSpec = "TOUS";
+  state.filtreSpec = "TOUS"; state.specSel = code; state.specVue = "fiche";
   setTab("b_spec");
   setTimeout(function () {
     const el = document.getElementById("spec-" + code), h = document.querySelector("header");
