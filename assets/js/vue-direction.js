@@ -41,6 +41,27 @@ function veLignes(sig) {
     }).filter(function (l) { return l.etat && l.etat !== "ECARTE"; });
 }
 
+// v48 : seuil d'affichage sur la carte (lisibilité avec 80 types). Les irritants sous le seuil restent dans le
+// tableau « Irritants à suivre » et dans le dossier envoyé à l'IA ; la carte dit combien ne sont pas dessinés.
+const VE_SEUIL_CARTE = 4;
+function veCarteFiltree(L) {
+  const Lc = L.filter(function (l) { return l.p.total >= VE_SEUIL_CARTE; }), n = L.length - Lc.length;
+  const note = n ? '<p class="note" style="margin:6px 0 0">' + n + " irritant" + (n > 1 ? "s" : "") + " à moins de " + VE_SEUIL_CARTE + " signaux " + (n > 1 ? "ne sont pas dessinés" : "n'est pas dessiné") + " : voir le tableau « Irritants à suivre ».</p>" : "";
+  if (!Lc.length) return '<p class="note" style="margin:10px 0">Aucun irritant n\'atteint ' + VE_SEUIL_CARTE + " signaux pour l'instant.</p>" + note;
+  return veCarte(Lc) + note;
+}
+
+// v48 : largeur réelle d'un nom (police du site, en unités de la carte) ; repli sur une estimation.
+let veCanvas = null;
+function veLargeurNom(t, fs) {
+  try {
+    veCanvas = veCanvas || document.createElement("canvas");
+    const cx = veCanvas.getContext("2d");
+    cx.font = "600 " + fs + "px " + getComputedStyle(document.body).fontFamily;
+    const m = cx.measureText(t).width; if (m > 0) return m;
+  } catch (e) { /* estimation ci-dessous */ }
+  return t.length * 6.4;
+}
 function veCarte(L) {
   // v31 : carte pleine largeur (plus large sur ordinateur, plus haute en proportion sur mobile).
   const etroit = window.innerWidth < 760;
@@ -86,8 +107,8 @@ function veCarte(L) {
     return B2.some(function (o) { const cx = Math.max(b.x0, Math.min(o.x, b.x1)), cy = Math.max(b.y0, Math.min(o.y, b.y1)); return (cx - o.x) * (cx - o.x) + (cy - o.y) * (cy - o.y) < o.r * o.r; });
   };
   B2.forEach(function (o) {
-    const nom = veNomCourt(o.l), w = nom.length * 6.1 + 4, d = o.r + 3;
-    const essais = [[0, -d - lh / 2], [0, d + lh / 2], [d + w / 2, 0], [-d - w / 2, 0], [d * 0.75 + w / 2, -d * 0.75 - lh / 2], [-d * 0.75 - w / 2, -d * 0.75 - lh / 2], [d * 0.75 + w / 2, d * 0.75 + lh / 2], [-d * 0.75 - w / 2, d * 0.75 + lh / 2], [0, -d - lh * 1.6], [0, d + lh * 1.6]];
+    const nom = veNomCourt(o.l), w = veLargeurNom(nom, fs) + 8, d = o.r + 3;   // v48 : largeur mesurée (noms plus longs)
+    const essais = [[0, -d - lh / 2], [0, d + lh / 2], [d + w / 2, 0], [-d - w / 2, 0], [d * 0.75 + w / 2, -d * 0.75 - lh / 2], [-d * 0.75 - w / 2, -d * 0.75 - lh / 2], [d * 0.75 + w / 2, d * 0.75 + lh / 2], [-d * 0.75 - w / 2, d * 0.75 + lh / 2], [0, -d - lh * 1.6], [0, d + lh * 1.6], [0, -d - lh * 2.8], [0, d + lh * 2.8], [d + w / 2, -lh * 1.4], [-d - w / 2, -lh * 1.4], [d + w / 2, lh * 1.4], [-d - w / 2, lh * 1.4]];
     // Petites bulles (souvent en rang serré) : d'abord à droite / à gauche, puis dessus / dessous.
     if (o.l.p.total < 3) essais.unshift(essais[2], essais[3]);
     let bx = null;
@@ -95,7 +116,14 @@ function veCarte(L) {
       const cx = o.x + essais[k][0], cy = o.y + essais[k][1], b = { x0: cx - w / 2, x1: cx + w / 2, y0: cy - lh / 2, y1: cy + lh / 2, cx: cx, cy: cy };
       if (!chevauche(b)) bx = b;
     }
-    if (!bx) { const cx = Math.max(G + w / 2, Math.min(W - R - w / 2, o.x)), cy = o.y - d - lh / 2; bx = { x0: cx - w / 2, x1: cx + w / 2, y0: cy - lh / 2, y1: cy + lh / 2, cx: cx, cy: cy }; }
+    // v48 : sinon, on éloigne le nom (dessus puis dessous, recadré dans la carte) avec un trait de rappel.
+    const cxc = Math.max(G + w / 2, Math.min(W - R - w / 2, o.x));
+    for (let k = 0; k < 10 && !bx; k++) [-1, 1].forEach(function (sg) {
+      if (bx) return;
+      const cy = o.y + sg * (d + lh * (0.5 + 1.15 * k)), b = { x0: cxc - w / 2, x1: cxc + w / 2, y0: cy - lh / 2, y1: cy + lh / 2, cx: cxc, cy: cy };
+      if (!chevauche(b)) bx = b;
+    });
+    if (!bx) { const cy = o.y - d - lh / 2; bx = { x0: cxc - w / 2, x1: cxc + w / 2, y0: cy - lh / 2, y1: cy + lh / 2, cx: cxc, cy: cy }; }
     pris.push(bx);
     // Trait de rappel quand le nom n'est pas collé à sa bulle.
     const px = Math.max(bx.x0, Math.min(o.x, bx.x1)), py = Math.max(bx.y0, Math.min(o.y, bx.y1));
@@ -115,7 +143,11 @@ const VE_NOMS_COURTS = { DOC_DISPERSEE: "Doc dispersée", DEMANDE_TARDIVE: "Supp
   PIECES_RENVOYEES: "Pièces renvoyées", ACTIONS_NON_FERMEES: "Actions non fermées" };
 function veNomCourt(l) {
   if (VE_NOMS_COURTS[l.code]) return VE_NOMS_COURTS[l.code];
-  return l.label.length > 20 ? l.label.slice(0, 19).replace(/\s+\S*$/, "") + "…" : l.label;
+  // v48 : on retire le début générique des libellés importés (« Demande de », « Question sur le »…) avant de couper.
+  let t = l.label.replace(/^(demande|question|signalement|déclaration|transmission|inscription)\s+(sur\s+)?(d'une?\s+|de la\s+|de l'|des\s+|du\s+|de\s+|d'|la\s+|le\s+|les\s+|l'|à une?\s+|à\s+)?/i, "");
+  if (t.length < 4) t = l.label;
+  t = t.charAt(0).toUpperCase() + t.slice(1);
+  return t.length > 26 ? t.slice(0, 25).replace(/\s+\S*$/, "").replace(/(\s+(et|ou|de|des|du|d'|à|la|le|les|en|pour))+$/i, "") + "…" : t;
 }
 
 function veSpark(p) {
@@ -173,7 +205,7 @@ function viewVueEnsemble() {
     '<p class="note" style="margin:-4px 0 12px">' + badge("b-emerald", "● En direct") + " Lecture seule : la Direction voit les tendances, le HRBP décide. Agrégats par type d'irritant, aucune donnée sur une personne ni sur une équipe.</p>" +
     kpis +
     '<div class="card ve-carte" style="margin-top:16px"><div class="kpi-h">' + tendIcone("courbe") + '<div class="spechead">Carte des irritants</div></div>' +
-    '<p class="note" style="margin:4px 0 6px">Plus une bulle est à droite, plus l\'irritant progresse ; plus elle est haute, plus il revient souvent. Clic sur une bulle ou sur un nom : fiche de l\'irritant.</p>' + veCarte(L) + "</div>" +
+    '<p class="note" style="margin:4px 0 6px">Plus une bulle est à droite, plus l\'irritant progresse ; plus elle est haute, plus il revient souvent. Seuls les irritants à ' + VE_SEUIL_CARTE + ' signaux ou plus sont dessinés. Clic sur une bulle ou sur un nom : fiche de l\'irritant.</p>' + veCarteFiltree(L) + "</div>" +
     // v43 : « Répartition par source » avant « Irritants à suivre », pleine largeur ; « Pour en parler avec l'équipe » a son propre onglet.
     sources + '<div style="margin-top:16px">' + table + "</div>";
 }
