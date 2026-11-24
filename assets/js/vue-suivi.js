@@ -68,6 +68,22 @@ function suivCarte(c, sig, codes) {
     (badges.length ? '<span class="suiv-badges">' + badges.join(" ") + "</span>" : "") + "</button>";
 }
 
+// v57 : aide « Comment lire cet onglet » du tableau de suivi (même composant que Spécifications).
+function suivAide() {
+  const li = function (t, x) { return "<li><b>" + t + " :</b> " + x + "</li>"; };
+  return '<details class="spec-aide"><summary title="Comment lire cet onglet">ⓘ Comment lire cet onglet</summary>' +
+    '<p class="note" style="margin:0 0 6px">Chaque carte est un type d\'irritant. Sa colonne est <b>calculée</b> à partir de la base : on ne la déplace pas à la main.</p>' +
+    '<ul class="note" style="margin:0 0 6px;padding-left:18px">' +
+    li("Détecté", "des signaux, aucune décision du HRBP.") +
+    li("À surveiller", "le HRBP a choisi « À surveiller ».") +
+    li("Réponse en place", "décision « Validé », mais pas encore assez de recul : aucune semaine après la semaine d\'effet, aucune semaine avant, ou moins de 3 signaux au total.") +
+    li("À revoir", "décision « Validé » ; en moyenne par semaine, les signaux après la semaine d\'effet sont stables ou en hausse (au moins 80 % d\'avant).") +
+    li("Efficace", "décision « Validé » ; en moyenne par semaine, les signaux après la semaine d\'effet baissent de 20 % ou plus.") +
+    li("Écartés", "le HRBP a choisi « Écarté » (liste repliée sous le tableau).") + "</ul>" +
+    '<p class="note" style="margin:0 0 6px"><b>Pour qu\'un irritant arrive dans « À revoir » ou « Efficace » :</b> cliquez sur sa carte, puis « Décider » ; choisissez « Validé », une réponse, et une semaine d\'effet qui laisse des semaines avant et après (ni la première, ni après la dernière semaine de signaux).</p>' +
+    '<p class="note" style="margin:0">Les semaines sont celles du scénario (S1 = semaine du 19/10/2026), comme dans le formulaire de décision : la période choisie dans « Tendances » ne s\'applique pas ici. La mesure compte des signaux, elle ne prouve pas à elle seule que la réponse en est la cause.</p></details>';
+}
+
 function viewSuiviTableau() {
   const sig = aciaSignaux();
   if (!sig.ok) return messageSansBase("Décisions", sig);
@@ -88,7 +104,7 @@ function viewSuiviTableau() {
   const ec = groupes.ECARTE;
   const ecartes = ec.length ? '<details class="suiv-ecartes"><summary>Écartés (' + ec.length + ")</summary><div class=\"suiv-ecartes-l\">" +
     ec.map(function (c) { return suivCarte(c, sig, codes); }).join("") + "</div></details>" : "";
-  return '<h2 class="exp-h2"><span>Décisions</span>' + suivInterrupteur() + "</h2>" + bandeauVersionC() +
+  return '<h2 class="exp-h2"><span>Décisions</span>' + suivInterrupteur() + "</h2>" + bandeauVersionC() + suivAide() +
     '<div class="filtres-ligne">' + filtreProcessusHtml() + filtrePropoHtml(avantPropo) + "</div>" +
     '<div class="suiv-board">' + colonnes + "</div>" + ecartes +
     '<p class="note" style="margin-top:10px">Colonnes calculées à partir de la base : signaux, décision du HRBP et mesure avant / après la semaine d\'effet (en baisse = moins 20 % ou plus). ' +
