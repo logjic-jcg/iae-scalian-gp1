@@ -73,7 +73,8 @@ function viewSuiviTableau() {
   if (!sig.ok) return messageSansBase("Décisions", sig);
   const codes = typesPilotage().map(function (t) { return t.code; });
   const groupes = { ECARTE: [] }; SUIV_COLONNES.forEach(function (k) { groupes[k.id] = []; });
-  codes.filter(function (c) { return passeProcessus(c) && sig.parCode[c]; }).forEach(function (c) {
+  const avantPropo = codes.filter(function (c) { return passeProcessus(c) && sig.parCode[c] && suivColonne(c, sig.parCode[c], decisionDe(c)); });
+  codes.filter(function (c) { return passeProcessus(c) && passePropo(c) && sig.parCode[c]; }).forEach(function (c) {
     const col = suivColonne(c, sig.parCode[c], decisionDe(c));
     if (col) groupes[col].push(c);
   });
@@ -88,7 +89,7 @@ function viewSuiviTableau() {
   const ecartes = ec.length ? '<details class="suiv-ecartes"><summary>Écartés (' + ec.length + ")</summary><div class=\"suiv-ecartes-l\">" +
     ec.map(function (c) { return suivCarte(c, sig, codes); }).join("") + "</div></details>" : "";
   return '<h2 class="exp-h2"><span>Décisions</span>' + suivInterrupteur() + "</h2>" + bandeauVersionC() +
-    '<div class="filtres-ligne">' + filtreProcessusHtml() + "</div>" +
+    '<div class="filtres-ligne">' + filtreProcessusHtml() + filtrePropoHtml(avantPropo) + "</div>" +
     '<div class="suiv-board">' + colonnes + "</div>" + ecartes +
     '<p class="note" style="margin-top:10px">Colonnes calculées à partir de la base : signaux, décision du HRBP et mesure avant / après la semaine d\'effet (en baisse = moins 20 % ou plus). ' +
     "Pour changer un irritant de colonne, on change sa décision : cliquez sur la carte, puis « Décider ». Aucune donnée sur une personne.</p>";

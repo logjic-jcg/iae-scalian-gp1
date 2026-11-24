@@ -158,6 +158,44 @@ const FILTRES_PILOT = [
   { id: "EXAMINER",     label: "À examiner",    test: function (d, p) { return aExaminer(p); } },
 ];
 state.filtrePilot = state.filtrePilot || "TOUS";
+// v47 : filtre « Proposition de l'assistant » (Décisions : Liste et Tableau de suivi), à côté du filtre Processus.
+// Les types créés dans « Types d’irritants » n'ont pas de proposition (confDe renvoie SIMPLIFIER par défaut) : ils sont
+// rangés à part, dans « À définir », pour ne pas gonfler « Simplifier ».
+const PROPOS_PILOT = [
+  { id: "SIMPLIFIER",  label: "Simplifier, sans IA" },
+  { id: "AUTOMATISER", label: "Automatiser" },
+  { id: "ASSISTER",    label: "Assister (agent IA)" },
+  { id: "A_DEFINIR",   label: "À définir (pas de proposition)" },
+];
+state.filtrePropo = state.filtrePropo || [];
+function propoDe(code) { return PILOTAGE[code] ? PILOTAGE[code].reco : "A_DEFINIR"; }
+function passePropo(code) { return !state.filtrePropo.length || state.filtrePropo.indexOf(propoDe(code)) >= 0; }
+function basculerPropo(id) { const i = state.filtrePropo.indexOf(id); if (i >= 0) state.filtrePropo.splice(i, 1); else state.filtrePropo.push(id); state.propoOuvert = true; render(); }
+function viderPropo() { state.filtrePropo = []; state.propoOuvert = false; render(); }
+function filtrePropoHtml(codes) {
+  const actifs = state.filtrePropo;
+  const resume = !actifs.length ? "Toutes" : PROPOS_PILOT.filter(function (r) { return actifs.indexOf(r.id) >= 0; }).map(function (r) { return r.label.split(" (")[0].split(",")[0]; }).join(", ");
+  const cases = PROPOS_PILOT.map(function (r) {
+    const n = codes.filter(function (c) { return propoDe(c) === r.id; }).length;
+    const ic = typeof specIcone === "function" && r.id !== "A_DEFINIR" ? specIcone(r.id, 22) : '<span class="tend-ic" aria-hidden="true" style="background:#f1f5f9;color:#64748b;width:22px;height:22px;font-size:12px;font-weight:700">?</span>';
+    return '<label style="display:flex;gap:8px;align-items:center;padding:5px 4px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap">' +
+      '<input type="checkbox" style="width:auto;margin:0"' + (actifs.indexOf(r.id) >= 0 ? " checked" : "") + ' onchange="basculerPropo(\'' + r.id + '\')"> ' + ic + esc(r.label) +
+      '<span class="note" style="margin:0 0 0 auto;padding-left:10px">' + n + "</span></label>";
+  }).join("");
+  return '<details class="propo-filtre" style="position:relative;display:inline-block;margin:0 0 10px"' + (state.propoOuvert ? " open" : "") + ' ontoggle="state.propoOuvert=this.open">' +
+    '<summary class="chip' + (actifs.length ? " active" : "") + '" style="list-style:none;display:inline-block">Proposition de l\'assistant : ' + esc(resume) + " ▾</summary>" +
+    '<div style="position:absolute;z-index:30;top:calc(100% + 4px);left:0;min-width:280px;background:#fff;border:1px solid #cbd5e1;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.12);padding:6px 8px">' +
+    cases + '<p class="note" style="margin:4px 4px 0;white-space:normal;max-width:300px">Proposition = grille du livrable 01, avant la décision du HRBP. La réponse retenue peut être différente.</p>' +
+    '<div style="border-top:1px solid #e2e8f0;margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;gap:8px">' +
+    '<button class="chip" onclick="viderPropo()">Tout afficher</button><button class="chip" onclick="state.propoOuvert=false;render()">Fermer</button></div></div></details>';
+}
+document.addEventListener("click", function (e) {
+  if (!state.propoOuvert) return;
+  if (e.target && e.target.closest && e.target.closest(".propo-filtre")) return;
+  state.propoOuvert = false;
+  const d = document.querySelector(".propo-filtre"); if (d) d.open = false;
+});
+
 function filtrePilot(id) { state.filtrePilot = id; state.msgPilot = ""; render(); }
 
 // v13 : indicateur en anneau du nombre de signaux d'un type.
@@ -196,14 +234,15 @@ function viewPilotOrienter() {
   const sig = aciaSignaux();
   if (!sig.ok) return messageSansBase("Décisions", sig);
   // v14 : filtre « Processus » appliqué avant le filtre de statut (les compteurs des puces en tiennent compte).
-  const tous = typesPilotage().filter(function (t) { return (t.actif || sig.parCode[t.code].total || decisionDe(t.code)) && passeProcessus(t.code); }).map(function (t) { return t.code; }).sort(function (a, b) { return sig.parCode[b].total - sig.parCode[a].total; });
+  const avantPropo = typesPilotage().filter(function (t) { return (t.actif || sig.parCode[t.code].total || decisionDe(t.code)) && passeProcessus(t.code); }).map(function (t) { return t.code; });
+  const tous = avantPropo.filter(passePropo).sort(function (a, b) { return sig.parCode[b].total - sig.parCode[a].total; });
   // v13 : filtre par statut de décision (ou « à examiner »).
   const filtre = FILTRES_PILOT.find(function (f) { return f.id === state.filtrePilot; }) || FILTRES_PILOT[0];
   const passe = function (f, c) { return f.test(decisionDe(c), sig.parCode[c]); };
   const codes = tous.filter(function (c) { return passe(filtre, c); });
   if (codes.length && codes.indexOf(state.selPilot) < 0) state.selPilot = codes[0];
   // v23 : liste des processus à gauche des boutons de statut, sur une seule ligne.
-  const chips = '<div class="filtres-ligne">' + filtreProcessusHtml() + '<div class="chips">' + FILTRES_PILOT.map(function (f) {
+  const chips = '<div class="filtres-ligne">' + filtreProcessusHtml() + filtrePropoHtml(avantPropo) + '<div class="chips">' + FILTRES_PILOT.map(function (f) {
     const n = tous.filter(function (c) { return passe(f, c); }).length;
     return '<button class="chip' + (f.id === filtre.id ? " active" : "") + '" onclick="filtrePilot(\'' + f.id + '\')">' + esc(f.label) + " (" + n + ")</button>";
   }).join("") + "</div></div>";
@@ -215,8 +254,9 @@ function viewPilotOrienter() {
       anneauSignaux(p, maxTot) + '<div style="min-width:0">' +
       '<div style="font-weight:700;font-size:14px">' + esc(libelleType(c)) + (actifType(c) ? "" : " (désactivé)") + "</div>" +
       '<div class="psub">' + esc(st.label) + (d ? " · " + esc(libReponse(d.reponse)) : "") + (processusDe(c) ? " · " + esc(processusDe(c)) : "") +
-      (aExaminer(p) ? " · à examiner" : "") + "</div></div></button>";
-  }).join("") || '<div class="card"><p class="note" style="margin:0">Aucune catégorie avec ce statut' + (filtreProcActif().length ? " et ce processus" : "") + ".</p></div>";
+      (aExaminer(p) ? " · à examiner" : "") + "</div></div>" +
+      '<span style="margin-left:auto" title="Proposition de l\'assistant : ' + esc(PROPOS_PILOT.find(function (r) { return r.id === propoDe(c); }).label) + '">' + (propoDe(c) === "A_DEFINIR" ? "" : specIcone(propoDe(c), 24)) + "</span></button>";
+  }).join("") || '<div class="card"><p class="note" style="margin:0">Aucune catégorie avec ce statut' + (filtreProcActif().length ? " et ce processus" : "") + (state.filtrePropo.length ? " et cette proposition" : "") + ".</p></div>";
   const legende = '<p class="note" style="margin-top:10px">Anneau : nombre total de signaux, rempli en proportion du type le plus signalé. Couleur selon les 2 dernières semaines observées : ' +
     '<b style="color:#e11d48">rouge</b> 3 signaux ou plus (à examiner) · <b style="color:#d97706">orange</b> 1 ou 2 · <b style="color:#059669">vert</b> aucun récent · <b style="color:#94a3b8">gris</b> aucun signal.</p>';
 
