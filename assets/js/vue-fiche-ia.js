@@ -41,6 +41,18 @@ function fiaRelectureHtml(v) {
 }
 function fiaLigneRelecture(v) { return '<div class="avd-l"><span class="avd-k">' + FIA_RELECTURE_LIB + ' <small class="note">(lecture seule)</small></span><span>' + fiaRelectureHtml(v) + "</span></div>"; }
 
+// v61 : « Texte de la réponse automatique » (Automatiser seulement), saisi par le HRBP à la relecture.
+// Le scénario Make de classement l'envoie tel quel à l'expéditeur d'un mail de ce type classé avec une
+// confiance haute, tant que la décision reste « Validé · Automatiser ». Vide : aucun envoi. L'IA ne le rédige pas.
+const FIA_REPAUTO_LIB = "Texte de la réponse automatique";
+const FIA_REPAUTO_MAX = 1500;
+const FIA_REPAUTO_MODELE = "Bonjour,\n\nMerci pour votre message. à compléter : la réponse type que le service RH envoie pour cette demande (où trouver l'information, ce qu'il faut préparer, le délai habituel).\n\nPour toute situation particulière, répondez simplement à ce mail : un membre de l'équipe RH vous répondra.\n\nCordialement,\nService RH";
+function fiaRepAutoHtml(t) {
+  t = String(t || "").trim();
+  return t ? '<div class="fia-apercu">' + esc(t) + "</div>" : '<span class="note">Vide : aucun mail automatique ne part.</span>';
+}
+function fiaRepAutoModele() { if (state.fia.brouillon) { state.fia.brouillon.REPONSE_AUTO = FIA_REPAUTO_MODELE; render(); } }
+
 state.fia = state.fia || { code: "", envoi: "", msg: "", depuis: 0, edit: "", brouillon: null };
 
 function fiaActif(d) { return !!d && d.statut === "VALIDE" && (d.reponse === "ASSISTER" || d.reponse === "AUTOMATISER"); }
@@ -130,12 +142,13 @@ function fiaRelire(code, depuisValidee) {
   const b = {}; FIA_RUBRIQUES.forEach(function (x) { b[x[0]] = String(src[x[0]] || "").slice(0, FIA_MAX); });
   b._origine = depuisValidee ? (src.origine || "IA_RELUE") : "IA_RELUE";
   b.RELECTURE = depuisValidee ? fiaRelecture(src) : "OUI";
+  b.REPONSE_AUTO = String((depuisValidee ? src.REPONSE_AUTO : (fiaValidee(code) || {}).REPONSE_AUTO) || "").slice(0, FIA_REPAUTO_MAX);
   b._ia = depuisValidee ? (src.brouillon_ia || "") : (fiaDerniere(code) || {}).id || "";
   state.specSel = code; state.specVue = "ia";
   state.fia = Object.assign({}, state.fia, { code: code, edit: code, brouillon: b, msg: "" }); render();
   allerVers("fia-" + code);
 }
-function fiaSaisie(k, el) { if (state.fia.brouillon) state.fia.brouillon[k] = String(el.value).slice(0, FIA_MAX); }
+function fiaSaisie(k, el) { if (state.fia.brouillon) state.fia.brouillon[k] = String(el.value).slice(0, k === "REPONSE_AUTO" ? FIA_REPAUTO_MAX : FIA_MAX); }
 function fiaAnnuler() { state.fia = Object.assign({}, state.fia, { edit: "", brouillon: null, msg: "" }); render(); }
 
 function fiaValider(code) {
@@ -147,6 +160,11 @@ function fiaValider(code) {
   const data = { reponse: d.reponse, origine: b._origine || "IA_RELUE", brouillon_ia: String(b._ia || "").slice(0, 80) };
   FIA_RUBRIQUES.forEach(function (x) { data[x[0]] = String(b[x[0]]).trim().slice(0, FIA_MAX); });
   if (d.reponse === "ASSISTER") data.RELECTURE = b.RELECTURE === "NON" ? "NON" : "OUI";
+  if (d.reponse === "AUTOMATISER") {
+    const t = String(b.REPONSE_AUTO || "").trim().slice(0, FIA_REPAUTO_MAX);
+    if (/à compléter|\[|\]/i.test(t)) { state.fia.msg = "« " + FIA_REPAUTO_LIB + " » contient encore « à compléter » ou des crochets : ce texte partirait tel quel. Complétez-le ou videz-le."; render(); return; }
+    data.REPONSE_AUTO = t;
+  }
   window.aciaEcrireFicheSpec(code, data).then(function () {
     state.specVue = "fiche";
     state.fia = { code: code, envoi: "", msg: "Fiche validée et enregistrée dans la base.", depuis: state.fia.depuis, edit: "", brouillon: null }; render();
@@ -179,7 +197,8 @@ function fiaFicheValidee(code, f) {
   return '<p style="margin:8px 0 0">' + badge("b-violet", "IA") + " " + badge("b-emerald", "Relue et validée par le HRBP") +
     ' <span class="note">le ' + esc(fiaDate(f.maj)) + "</span></p>" +
     '<table style="margin-top:8px;font-size:13px"><tbody>' + FIA_RUBRIQUES.map(function (x) { return ligne(x[0], x[1]); }).join("") +
-    (f.reponse === "ASSISTER" ? "<tr><td style='padding:6px 10px 6px 0;color:#64748b;vertical-align:top;white-space:nowrap'>" + FIA_RELECTURE_LIB + "</td><td style='padding:6px 0'>" + fiaRelectureHtml(fiaRelecture(f)) + "</td></tr>" : "") + "</tbody></table>" +
+    (f.reponse === "ASSISTER" ? "<tr><td style='padding:6px 10px 6px 0;color:#64748b;vertical-align:top;white-space:nowrap'>" + FIA_RELECTURE_LIB + "</td><td style='padding:6px 0'>" + fiaRelectureHtml(fiaRelecture(f)) + "</td></tr>" : "") +
+    (f.reponse === "AUTOMATISER" ? "<tr><td style='padding:6px 10px 6px 0;color:#64748b;vertical-align:top;white-space:nowrap'>" + FIA_REPAUTO_LIB + "</td><td style='padding:6px 0'>" + fiaRepAutoHtml(f.REPONSE_AUTO) + "</td></tr>" : "") + "</tbody></table>" +
     '<div class="rv-actions"><button class="btn slim" onclick="fiaRelire(\'' + code + '\', true)">Modifier la fiche</button>' +
     '<button class="btn slim" onclick="fiaRetirer(\'' + code + '\')">Revenir à la fiche de la base</button></div>';
 }
@@ -202,7 +221,13 @@ function fiaBloc(code) {
       '<label class="fia-l"><span class="avd-k">' + FIA_RELECTURE_LIB + "</span>" +
       '<select onchange="state.fia.brouillon.RELECTURE=this.value;render()"><option value="OUI"' + (b.RELECTURE !== "NON" ? " selected" : "") + '>Oui : un humain relit avant tout envoi</option>' +
       '<option value="NON"' + (b.RELECTURE === "NON" ? " selected" : "") + ">Non : l'agent envoie sans relecture</option></select>" +
-      (b.RELECTURE === "NON" ? '<small class="note">' + badge("b-rose", "Attention") + " Écart au garde-fou « aucun message envoyé sans un humain ». Pensez à ajuster le niveau d'autonomie, les risques et les critères d'acceptation ci-dessus.</small>" : "") + "</label>" : "");
+      (b.RELECTURE === "NON" ? '<small class="note">' + badge("b-rose", "Attention") + " Écart au garde-fou « aucun message envoyé sans un humain ». Pensez à ajuster le niveau d'autonomie, les risques et les critères d'acceptation ci-dessus.</small>" : "") + "</label>" : "") +
+      (decisionDe(code).reponse === "AUTOMATISER" ?
+      '<div class="fia-l"><span class="avd-k">' + FIA_REPAUTO_LIB + "</span><div>" +
+      '<textarea rows="8" maxlength="' + FIA_REPAUTO_MAX + '" oninput="fiaSaisie(\'REPONSE_AUTO\', this);var p=document.getElementById(\'fia-ap-' + code + '\');if(p)p.innerHTML=fiaRepAutoHtml(this.value)">' + esc(b.REPONSE_AUTO || "") + "</textarea>" +
+      '<small class="note">Envoyé tel quel, en réponse à l\'expéditeur, pour chaque mail de ce type classé avec une confiance haute, tant que votre décision reste « Validé · Automatiser ». Vide : aucun mail ne part. Pas de nom, pas de chiffre que vous n\'avez pas vérifié.</small>' +
+      (String(b.REPONSE_AUTO || "").trim() ? "" : ' <button type="button" class="btn slim" onclick="fiaRepAutoModele()">Partir d\'un modèle</button>') +
+      '<div class="avd-k" style="margin-top:8px">Aperçu <small class="note">(objet : « Re: » + objet du mail reçu ; expéditeur : Service RH)</small></div><div id="fia-ap-' + code + '">' + fiaRepAutoHtml(b.REPONSE_AUTO) + "</div></div></div>" : "");
     return '<div class="card avd-card fia-card" id="fia-' + code + '" style="margin-top:12px;scroll-margin-top:130px"><div class="spechead" style="color:#4b2882">Relecture de la fiche ' + badge("b-violet", "IA") + "</div>" +
       '<p class="tdb-sub" style="margin-top:4px">Corrigez chaque rubrique. Remplacez « à compléter » par ce que vous savez, ou laissez-le. Dans le workflow, séparez les étapes par « ; ». Rien n\'est enregistré avant « Valider la fiche ».</p>' +
       '<div class="fia-form">' + champs + "</div>" + msg +
@@ -219,7 +244,8 @@ function fiaBloc(code) {
     const hors = fiaHorsDossier(der, r);
     corps = '<div class="avd-r">' + FIA_RUBRIQUES.filter(function (x) { return r[x[0]]; }).map(function (x) {
       return '<div class="avd-l"><span class="avd-k">' + esc(x[1]) + "</span><span>" + fiaTexte(x[0], r[x[0]]) + "</span></div>";
-    }).join("") + (decisionDe(code).reponse === "ASSISTER" ? fiaLigneRelecture("OUI") : "") + "</div>" +
+    }).join("") + (decisionDe(code).reponse === "ASSISTER" ? fiaLigneRelecture("OUI") : "") +
+      (decisionDe(code).reponse === "AUTOMATISER" ? '<div class="avd-l"><span class="avd-k">' + FIA_REPAUTO_LIB + ' <small class="note">(saisi par vous à la relecture)</small></span><span>' + fiaRepAutoHtml((validee || {}).REPONSE_AUTO) + "</span></div>" : "") + "</div>" +
       (decisionDe(code).reponse === "ASSISTER" ? '<p class="note" style="margin-top:6px">« Relecture humaine » vaut « Oui » par défaut : vous la choisissez à l\'étape « Relire et valider ce brouillon ».</p>' : "") +
       '<p class="note" style="margin-top:6px">Brouillon du ' + esc(fiaDate(der.demande)) + ". L'IA peut se tromper : relisez chaque rubrique avant de valider.</p>" +
       (hors.length ? '<p class="note">' + badge("b-rose", "Attention") + " Nombre(s) absent(s) du dossier envoyé : " + esc(hors.join(", ")) + ". À vérifier ou retirer.</p>" : "") +
