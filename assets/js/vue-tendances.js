@@ -155,6 +155,20 @@ function viewTendances() {
   const confMoyenne = analyses.filter(function (d) { return tendNivConf(d) === "MOYENNE"; }).length;
   const aVerifier = analyses.filter(function (d) { return tendNivConf(d) === "BASSE"; }).length;
   const confAutre = analyses.length - confHaute - confMoyenne - aVerifier;
+  // v63 : motif générique donné par l'IA (champ motif_confiance, absent avant le 25/11 22h45).
+  const TEND_MOTIFS = { EXPLICITE: "écrit explicitement", DEDUIT: "déduit du contexte", PLUSIEURS_TYPES: "plusieurs types possibles", PEU_D_INFO: "mail trop court ou vague", HORS_LISTE: "hors des types de la liste", NON_PRECISE: "motif non reconnu" };
+  const motifsDe = function (niveau) {
+    const n = {}; let sans = 0;
+    analyses.forEach(function (d) {
+      if (tendNivConf(d) !== niveau) return;
+      const m = String(d.motif_confiance || "").trim().toUpperCase();
+      if (!m) { sans++; return; }
+      n[m] = (n[m] || 0) + 1;
+    });
+    const parts = Object.keys(n).sort(function (a, b) { return n[b] - n[a]; }).map(function (m) { return (TEND_MOTIFS[m] || m.toLowerCase()) + " " + n[m]; });
+    if (sans) parts.push("sans motif (classé avant le 25/11) " + sans);
+    return parts.length ? " · Motifs : " + parts.join(", ") : "";
+  };
   const surTotal = function (v) { return String(v) + " / " + analyses.length + (analyses.length ? " · " + Math.round(v * 100 / analyses.length) + " %" : ""); };
   let derniere = null;
   docs.forEach(function (d) { const t = d.maj && d.maj.toDate ? d.maj.toDate() : null; if (t && (!derniere || t > derniere)) derniere = t; });
@@ -195,9 +209,9 @@ function viewTendances() {
     ["Mails analysés", String(analyses.length), "Sur la période" + ecart(analyses.length, docsAvant.length), "mail"],
     ["Mails signalant un irritant", String(avecIrr) + " / " + analyses.length, "Sur la période" + ecart(avecIrr, avecIrrAvant), "drapeau"],
     ["Mails écartés sans lecture IA", String(ecartes), "Confidentiel, santé, conflit : seul le nombre est gardé", "bouclier"],
-    ["Confiance haute", surTotal(confHaute), "Signal écrit explicitement. Seul niveau qui peut déclencher une réponse automatique, si le HRBP l'a décidée", "cible"],
-    ["Confiance moyenne", surTotal(confMoyenne), "Signal déduit par l'IA : classé et compté, jamais de réponse automatique", "jauge"],
-    ["Classements à vérifier", surTotal(aVerifier), "Confiance « basse » donnée par l'IA : classé, jamais de réponse automatique" + (confAutre > 0 ? " · " + confAutre + " sans niveau de confiance renseigné" : ""), "loupe"],
+    ["Confiance haute", surTotal(confHaute), "Signal écrit explicitement. Seul niveau qui peut déclencher une réponse automatique, si le HRBP l'a décidée" + motifsDe("HAUTE"), "cible"],
+    ["Confiance moyenne", surTotal(confMoyenne), "Signal déduit par l'IA : classé et compté, jamais de réponse automatique" + motifsDe("MOYENNE"), "jauge"],
+    ["Classements à vérifier", surTotal(aVerifier), "Confiance « basse » donnée par l'IA : classé, jamais de réponse automatique" + (confAutre > 0 ? " · " + confAutre + " sans niveau de confiance renseigné" : "") + motifsDe("BASSE"), "loupe"],
   ];
   const kpis = '<div class="kpis">' + tiles.map(tendTuile).join("") + "</div>";
 
