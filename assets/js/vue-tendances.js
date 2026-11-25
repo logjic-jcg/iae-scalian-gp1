@@ -149,7 +149,13 @@ function viewTendances() {
   const ecartes = docs.filter(function (d) { return d.type === "ECARTE"; }).length;
   const analyses = docs.filter(function (d) { return d.type !== "ECARTE"; });
   const avecIrr = analyses.filter(function (d) { return CODES_HORS_IRRITANT.indexOf(d.type) < 0; }).length;
-  const aVerifier = analyses.filter(function (d) { return d.confiance === "BASSE"; }).length;
+  // v62 : répartition par niveau de confiance (auto-évaluation de l'IA), sur tous les mails analysés.
+  const tendNivConf = function (d) { return String(d.confiance || "").trim().toUpperCase(); };
+  const confHaute = analyses.filter(function (d) { return tendNivConf(d) === "HAUTE"; }).length;
+  const confMoyenne = analyses.filter(function (d) { return tendNivConf(d) === "MOYENNE"; }).length;
+  const aVerifier = analyses.filter(function (d) { return tendNivConf(d) === "BASSE"; }).length;
+  const confAutre = analyses.length - confHaute - confMoyenne - aVerifier;
+  const surTotal = function (v) { return String(v) + " / " + analyses.length + (analyses.length ? " · " + Math.round(v * 100 / analyses.length) + " %" : ""); };
   let derniere = null;
   docs.forEach(function (d) { const t = d.maj && d.maj.toDate ? d.maj.toDate() : null; if (t && (!derniere || t > derniere)) derniere = t; });
 
@@ -189,7 +195,9 @@ function viewTendances() {
     ["Mails analysés", String(analyses.length), "Sur la période" + ecart(analyses.length, docsAvant.length), "mail"],
     ["Mails signalant un irritant", String(avecIrr) + " / " + analyses.length, "Sur la période" + ecart(avecIrr, avecIrrAvant), "drapeau"],
     ["Mails écartés sans lecture IA", String(ecartes), "Confidentiel, santé, conflit : seul le nombre est gardé", "bouclier"],
-    ["Classements à vérifier", String(aVerifier), "Confiance « basse » donnée par l'IA", "loupe"],
+    ["Confiance haute", surTotal(confHaute), "Signal écrit explicitement. Seul niveau qui peut déclencher une réponse automatique, si le HRBP l'a décidée", "cible"],
+    ["Confiance moyenne", surTotal(confMoyenne), "Signal déduit par l'IA : classé et compté, jamais de réponse automatique", "jauge"],
+    ["Classements à vérifier", surTotal(aVerifier), "Confiance « basse » donnée par l'IA : classé, jamais de réponse automatique" + (confAutre > 0 ? " · " + confAutre + " sans niveau de confiance renseigné" : ""), "loupe"],
   ];
   const kpis = '<div class="kpis">' + tiles.map(tendTuile).join("") + "</div>";
 
@@ -281,6 +289,8 @@ const TEND_ICONES = {
   drapeau:  '<path d="M6 21V4"/><path d="M6 4.5h10.5l-2 3.5 2 3.5H6"/>',
   bouclier: '<path d="M12 3.5l7 2.8v5.2c0 4.3-3 7.6-7 9-4-1.4-7-4.7-7-9V6.3z"/><path d="M9.5 12h5"/>',
   loupe:    '<circle cx="10.5" cy="10.5" r="5.5"/><path d="M15 15l5 5"/>',
+  cible:    '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.2"/>',
+  jauge:    '<path d="M4 16a8 8 0 0 1 16 0"/><path d="M12 16l-3-4.5"/><path d="M4 19.5h16"/>',
   document: '<path d="M7 3.5h7l4 4v13H7z"/><path d="M14 3.5v4h4M9.5 12h6M9.5 15.5h6"/>',
   horloge:  '<circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/>',
   personne: '<circle cx="12" cy="8.5" r="3.5"/><path d="M5.5 20c.8-3.6 3.4-5.5 6.5-5.5"/><path d="M16 15l4 4M20 15l-4 4"/>',
