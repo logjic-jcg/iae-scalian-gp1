@@ -37,7 +37,7 @@ function ntyDocs() {
 }
 function ntyDerniere() { return ntyDocs()[0] || null; }
 
-// Mails classés « Autre » aujourd'hui dans la base : identifiant (m + UID) → semaine fictive.
+// Mails classés « Autre » aujourd'hui dans la base : identifiant (g + UID Gmail, m + UID de l'ancienne boîte GMX) → semaine fictive.
 function ntyAutres() {
   const fb = window.ACIA_FB.classement_mails, res = {};
   if (!fb || fb.statut !== "ok") return res;
@@ -50,10 +50,14 @@ function ntyAutres() {
 }
 function ntyNbAutres() { return Object.keys(ntyAutres()).length; }
 
-// Numéros « 90, #103 » → identifiants m90, m103 encore classés « Autre » (les autres sont ignorés).
+// Numéros « 90, #103 » → identifiants g90 (boîte Gmail, depuis le 25/11) ou m90 (ancienne boîte GMX)
+// encore classés « Autre » (les autres sont ignorés).
 function ntyMails(champ, autres) {
   const vus = {};
-  String(champ || "").split(/[^0-9]+/).forEach(function (x) { if (x && autres.hasOwnProperty("m" + x)) vus["m" + x] = 1; });
+  String(champ || "").split(/[^0-9]+/).forEach(function (x) {
+    if (!x) return;
+    if (autres.hasOwnProperty("g" + x)) vus["g" + x] = 1; else if (autres.hasOwnProperty("m" + x)) vus["m" + x] = 1;
+  });
   return Object.keys(vus);
 }
 
