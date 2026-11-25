@@ -157,7 +157,7 @@ const FILTRES_PILOT = [
   { id: "ECARTE",       label: "Écarté",        test: function (d) { return !!d && d.statut === "ECARTE"; } },
   { id: "EXAMINER",     label: "À examiner",    test: function (d, p) { return aExaminer(p); } },
 ];
-state.filtrePilot = state.filtrePilot || "TOUS";
+state.filtrePilot = state.filtrePilot || [];
 // v47 : filtre « Proposition de l'assistant » (Décisions : Liste et Tableau de suivi), à côté du filtre Processus.
 // Les types créés dans « Types d’irritants » n'ont pas de proposition (confDe renvoie SIMPLIFIER par défaut) : ils sont
 // rangés à part, dans « À définir », pour ne pas gonfler « Simplifier ».
@@ -196,7 +196,15 @@ document.addEventListener("click", function (e) {
   const d = document.querySelector(".propo-filtre"); if (d) d.open = false;
 });
 
-function filtrePilot(id) { state.filtrePilot = id; state.msgPilot = ""; render(); }
+// v65 : statuts en multi-sélection (un clic ajoute ou retire un statut ; « Tous les statuts » remet à zéro).
+// state.filtrePilot : tableau d'identifiants ; "TOUS" (posé ailleurs par les liens) = aucun statut choisi.
+function statutsPilot() { const v = state.filtrePilot; return Array.isArray(v) ? v : (v && v !== "TOUS" ? [v] : []); }
+function filtrePilot(id) {
+  let sel = statutsPilot().slice();
+  if (id === "TOUS") sel = [];
+  else { const i = sel.indexOf(id); if (i >= 0) sel.splice(i, 1); else sel.push(id); }
+  state.filtrePilot = sel; state.msgPilot = ""; render();
+}
 
 // v13 : indicateur en anneau du nombre de signaux d'un type.
 // Remplissage = total / total du type le plus signalé. Couleur = activité récente
@@ -237,14 +245,16 @@ function viewPilotOrienter() {
   const avantPropo = typesPilotage().filter(function (t) { return (t.actif || sig.parCode[t.code].total || decisionDe(t.code)) && passeProcessus(t.code); }).map(function (t) { return t.code; });
   const tous = avantPropo.filter(passePropo).sort(function (a, b) { return sig.parCode[b].total - sig.parCode[a].total; });
   // v13 : filtre par statut de décision (ou « à examiner »).
-  const filtre = FILTRES_PILOT.find(function (f) { return f.id === state.filtrePilot; }) || FILTRES_PILOT[0];
+  const choisis = FILTRES_PILOT.filter(function (f) { return statutsPilot().indexOf(f.id) >= 0; });
   const passe = function (f, c) { return f.test(decisionDe(c), sig.parCode[c]); };
-  const codes = tous.filter(function (c) { return passe(filtre, c); });
+  // Plusieurs statuts choisis : une catégorie passe si elle correspond à l'un d'eux.
+  const codes = tous.filter(function (c) { return !choisis.length || choisis.some(function (f) { return passe(f, c); }); });
   if (codes.length && codes.indexOf(state.selPilot) < 0) state.selPilot = codes[0];
   // v23 : liste des processus à gauche des boutons de statut, sur une seule ligne.
   const chips = '<div class="filtres-ligne">' + filtreProcessusHtml() + filtrePropoHtml(avantPropo) + '<div class="chips">' + FILTRES_PILOT.map(function (f) {
     const n = tous.filter(function (c) { return passe(f, c); }).length;
-    return '<button class="chip' + (f.id === filtre.id ? " active" : "") + '" onclick="filtrePilot(\'' + f.id + '\')">' + esc(f.label) + " (" + n + ")</button>";
+    const actif = f.id === "TOUS" ? !choisis.length : choisis.indexOf(f) >= 0;
+    return '<button class="chip' + (actif ? " active" : "") + '" aria-pressed="' + actif + '" title="' + (f.id === "TOUS" ? "Afficher tous les statuts" : "Cliquer pour ajouter ou retirer ce statut") + '" onclick="filtrePilot(\'' + f.id + '\')">' + (actif && f.id !== "TOUS" ? "✓ " : "") + esc(f.label) + " (" + n + ")</button>";
   }).join("") + "</div></div>";
   const maxTot = Math.max(1, Math.max.apply(null, tous.map(function (c) { return sig.parCode[c].total; })));
 
