@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -226,8 +226,15 @@
         (fiv ? fiaRepAutoHtml(fiv.REPONSE_AUTO) : '<span class="note">Pas encore de réponse type : elle se saisit à la relecture de la fiche. Vide : aucun mail automatique ne part.</span>');
     } else {
       const rel = fiv ? fiaRelecture(fiv) : "OUI";
-      corps = '<p style="font-size:14px;margin:6px 0 0">L\'IA rédige une réponse à chaque mail de ce type (confiance haute). ' +
-        (rel === "NON" ? "Relecture humaine : <b>Non</b>, la réponse part directement." : "Relecture humaine : <b>Oui</b>, la réponse reste en brouillon à relire" + (fiv ? "" : " (par défaut)") + ".") + "</p>";
+      corps = '<p style="font-size:14px;margin:6px 0 0">L\'IA rédige une réponse à chaque mail de ce type (confiance haute).</p>' +
+        '<div class="vs-row" style="margin-top:8px"><b style="font-size:14px">Relecture humaine</b>' +
+        (fiv ? '<div class="vs-seg" role="group" aria-label="Relecture humaine">' +
+            '<button aria-pressed="' + (rel !== "NON") + '" onclick="vsRelecture(\'' + c + '\',\'OUI\')">Oui : brouillon à relire</button>' +
+            '<button aria-pressed="' + (rel === "NON") + '" onclick="vsRelecture(\'' + c + '\',\'NON\')">Non : envoi direct</button></div>'
+          : '<span style="font-size:14px">Oui (par défaut)</span>') + "</div>" +
+        (fiv ? (rel === "NON" ? '<p class="note">' + badge("b-rose", "Sans relecture humaine") + " Écart au garde-fou « aucun message envoyé sans un humain » : à suivre dans la revue des agents.</p>" : "")
+          : '<p class="note">Le choix Oui / Non s\'ouvre une fois la fiche rédigée et validée (bouton ci-dessous), comme dans la version complète.</p>') +
+        (state.vs.msgRel && state.vs.msgRel.code === c ? '<p class="note">' + esc(state.vs.msgRel.txt) + "</p>" : "");
     }
     if (fiv) bouton = '<button class="btn slim" onclick="vsSpecOuvrir();fiaRelire(\'' + c + '\', true)">' + (d.reponse === "AUTOMATISER" ? "Modifier la réponse type" : "Modifier la fiche") + "</button>";
     else if (brouillonIA) bouton = '<button class="btn slim" onclick="vsSpecOuvrir();fiaRelire(\'' + c + '\', false)">Relire le brouillon de l\'IA</button>';
@@ -256,6 +263,19 @@
     return '<details class="vs-repli" style="margin:0"' + (ouvert ? " open" : "") + ' ontoggle="vsSpecToggle(this.open)"><summary>Spécification complète <span>(' + esc(typeof etatSpec === "function" ? etatSpec(c)[1] : "") + ")</span></summary>" +
       '<div class="vs-in">' + seg + corps + skill + "</div></details>";
   }
+  // Relecture Oui / Non : réenregistre la fiche validée à l'identique, seule la rubrique RELECTURE change
+  // (même écriture que la validation de la relecture, mêmes règles de la base).
+  window.vsRelecture = function (c, v) {
+    const f = typeof fiaValidee === "function" ? fiaValidee(c) : null, d = decisionDe(c);
+    if (!f || !d || d.reponse !== "ASSISTER" || fiaRelecture(f) === v) return;
+    if (v === "NON" && !window.confirm("Passer en « Non : envoi direct » ?\n\nLes réponses rédigées par l'IA pour ce type partiront sans relecture humaine.")) return;
+    if (typeof window.aciaEcrireFicheSpec !== "function") { state.vs.msgRel = { code: c, txt: "Base non connectée : enregistrement impossible." }; render(); return; }
+    const data = { reponse: d.reponse, origine: f.origine || "IA_RELUE", brouillon_ia: String(f.brouillon_ia || "").slice(0, 80), RELECTURE: v };
+    FIA_RUBRIQUES.forEach(function (x) { data[x[0]] = String(f[x[0]] || "").trim().slice(0, FIA_MAX); });
+    state.vs.msgRel = { code: c, txt: "Enregistrement…" }; render();
+    window.aciaEcrireFicheSpec(c, data).then(function () { state.vs.msgRel = { code: c, txt: "Relecture humaine : " + (v === "NON" ? "Non" : "Oui") + ", enregistré dans la base." }; render(); })
+      .catch(function (e) { state.vs.msgRel = { code: c, txt: "Refusé par la base : " + ((e && e.message) || e) }; render(); });
+  };
   window.vsSpecOuvrir = function () { ouverts["spec"] = true; };
   window.vsSpecToggle = function (o) { ouverts["spec"] = o; };
 
