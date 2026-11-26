@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -545,10 +545,21 @@
     }
     z.innerHTML = '<span>Affichage du site</span>' + interrupteur().replace('class="vs-switch"', 'class="vs-switch clair"');
   }
+  // v67.13 : en version simple (Julien, Pascal), le header affiche « RH · Assistant irritants ».
+  // Version complète : header d'origine (« ACIA »), restauré tel quel.
+  let enteteOrigine = null;
+  function entete() {
+    const br = document.querySelector("header.app .brand");
+    if (!br) return;
+    if (enteteOrigine === null) enteteOrigine = br.innerHTML;
+    const html = actif() ? '<b style="letter-spacing:0;font-weight:700">RH · Assistant irritants</b><span>Les demandes évitables reçues par la RH, et les agents qui y répondent</span>' : enteteOrigine;
+    if (br.innerHTML !== html) br.innerHTML = html;
+  }
   const renderTabsOrigine = renderTabs;
   renderTabs = function () {
     renderTabsOrigine();
     document.body.classList.toggle("acia-simple", actif());
+    try { entete(); } catch (e) { /* header d'origine */ }
     try { bento(); } catch (e) { /* menu complet en cas d'imprévu */ }
     if (!concerne()) return;
     const row = document.querySelector("#tabs .tabrow");
