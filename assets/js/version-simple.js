@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v67.15 (Repérer : pictos des 3 indicateurs, réponse retenue sous « Validé ») · v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -87,6 +87,9 @@
     ".vs-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}",
     ".vs-tile{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}",
     ".vs-tile b{display:block;font-size:28px;line-height:1.2;font-variant-numeric:tabular-nums}",
+    ".vs-tile-h{display:flex;align-items:center;gap:10px;margin-bottom:2px}",
+    ".vs-tile .tend-ic{display:inline-flex;width:34px;height:34px}",
+    ".vs-rep{display:block;font-size:12px;color:var(--muted);margin-top:4px;line-height:1.3}",
     ".vs-tile span{display:block;font-weight:600}.vs-tile small{display:block;color:var(--muted);font-size:13px}",
     ".vs-tbl{width:100%;border-collapse:collapse}",
     ".vs-tbl th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);background:var(--lav)}",
@@ -148,6 +151,10 @@
     const s = libStatut(l.d.statut);
     return badge(s.cls, s.label);
   }
+  // v67.15 : colonne État de Repérer : pour un irritant validé, la réponse retenue sous le badge.
+  function etatTableau(l) {
+    return etiquette(l) + (l.d && l.d.statut === "VALIDE" && l.d.reponse ? '<span class="vs-rep">' + esc(libReponse(l.d.reponse)) + "</span>" : "");
+  }
   function source(code) { return code === CODE_CR ? "Comptes rendus" : "Boîte RH"; }
   function spark(p, semMax) {
     const sem = []; for (let s = Math.max(1, semMax - 5); s <= semMax; s++) sem.push(s);
@@ -159,7 +166,8 @@
     }).join("");
     return '<svg width="' + (sem.length * (bw + g)) + '" height="' + h + '" role="img" aria-label="Signaux des semaines S' + sem[0] + " à S" + semMax + '">' + barres + "</svg>";
   }
-  function tuile(v, l, s) { return '<div class="vs-tile"><b>' + esc(v) + "</b><span>" + esc(l) + "</span><small>" + esc(s) + "</small></div>"; }
+  // v67.15 : picto (mêmes icônes que la Vue d'ensemble de Pascal) devant la valeur.
+  function tuile(v, l, s, ic) { return '<div class="vs-tile"><div class="vs-tile-h">' + (ic && typeof tendIcone === "function" ? tendIcone(ic) : "") + "<b>" + esc(v) + "</b></div><span>" + esc(l) + "</span><small>" + esc(s) + "</small></div>"; }
   function sansBase(titre, msg) { return "<h2>" + titre + '</h2><div class="card"><p class="note" style="margin:0">' + esc(msg) + '</p><p class="note">Aucun chiffre n\'est affiché sans la base.</p></div>'; }
 
   // ---------------------------------------------------------------- Repérer
@@ -183,15 +191,15 @@
       (!state.vs.tousIrr && masques ? '<span class="note" style="margin:0">' + masques + " irritant(s) masqué(s) : sans décision à moins de 3 signaux, à surveiller ou écartés.</span>" : "") + "</div>";
     const C = confiances();
     const rows = visibles.map(function (l) {
-      return '<tr><td class="vs-irr">' + lienNom(l) + '<span class="vs-src">' + source(l.code) + '</span></td><td class="vs-hide-sm vs-c">' + spark(l.p, R.semMax) + '</td><td class="vs-c vs-n">' + l.p.total + '</td><td class="vs-c">' + confCellule(C[l.code]) + '</td><td class="vs-c">' + etiquette(l) + "</td>" +
+      return '<tr><td class="vs-irr">' + lienNom(l) + '<span class="vs-src">' + source(l.code) + '</span></td><td class="vs-hide-sm vs-c">' + spark(l.p, R.semMax) + '</td><td class="vs-c vs-n">' + l.p.total + '</td><td class="vs-c">' + confCellule(C[l.code]) + '</td><td class="vs-c">' + etatTableau(l) + "</td>" +
         '<td class="vs-act"><button class="vs-go' + (l.d ? "" : " p") + '" onclick="vsAllerDecider(\'' + l.code + '\')">' + (l.d ? "Voir →" : "Décider →") + "</button></td></tr>";
     }).join("") || '<tr><td colspan="5" class="note">Aucun irritant dans cette sélection.</td></tr>';
     return relanceSimple(expAjouterSimple("<h2>Ce qui revient</h2>")) +
       '<p class="vs-lead">Boîte RH partagée et comptes rendus de réunion</p>' +
       '<div class="vs-tiles">' +
-        tuile(nAtt, "irritant(s) à examiner", "3 signaux ou plus sur les 2 dernières semaines, sans décision") +
-        tuile(nSD + " / " + signales.length, "sans décision", "Irritants signalés que le HRBP n'a pas encore tranchés") +
-        tuile(enPlace.length ? baisse.length + " sur " + enPlace.length : "—", "réponse(s) en place avec un effet visible", "Au moins 20 % de signaux en moins par semaine") +
+        tuile(nAtt, "irritant(s) à examiner", "3 signaux ou plus sur les 2 dernières semaines, sans décision", "loupe") +
+        tuile(nSD + " / " + signales.length, "sans décision", "Irritants signalés que le HRBP n'a pas encore tranchés", "drapeau") +
+        tuile(enPlace.length ? baisse.length + " sur " + enPlace.length : "—", "réponse(s) en place avec un effet visible", "Au moins 20 % de signaux en moins par semaine", "courbe") +
       "</div>" +
       filtre + '<div class="tw"><table class="vs-tbl"><thead><tr><th class="vs-irr">Irritant</th><th class="vs-hide-sm vs-c" title="Signaux par semaine, 6 dernières semaines (les 2 dernières en foncé)">6 semaines</th><th class="vs-c vs-n">Signaux</th><th class="vs-c" title="Confiance de l\'IA au classement : signaux en confiance haute / total">Confiance</th><th class="vs-c">État</th><th class="vs-act"></th></tr></thead><tbody>' + rows + "</tbody></table></div>" +
       '<p class="note" style="margin-top:8px">Un signal = un mail classé dans ce type, ou une action de réunion reportée ou sans responsable. « À examiner » = 3 signaux ou plus sur les 2 dernières semaines observées. Confiance = auto-évaluation de l\'IA au classement, pas une probabilité mesurée : barre <b style="color:#4b2882">haute</b> · <b style="color:#8b6fc2">moyenne</b> · <b style="color:#d97706">basse</b> · non évaluée, chiffre = signaux en confiance haute / total, pastille orange = signaux en confiance basse, à vérifier.' +
