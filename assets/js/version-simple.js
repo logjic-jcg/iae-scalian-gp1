@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -30,6 +30,7 @@
   function idsSimples() { return (SIMPLE[state.role] || []).map(function (t) { return t[0]; }); }
 
   state.vs = state.vs || { sel: "", tout: false, rep: {}, stat: {}, sem: {}, comm: {} };
+  state.vs.avdVu = state.vs.avdVu || {};
   const ouverts = {};
 
   // ----------------------------------------------------------------- styles
@@ -248,7 +249,7 @@
       "<span>" + r.HAUTE + "/" + r.total + "</span>" + (r.BASSE ? '<span class="vs-conf-v">' + r.BASSE + "</span>" : "") + "</span>";
   }
   function lienNom(l) { return '<a href="#" class="vs-nom" onclick="ouvrirFiche(\'' + l.code + '\', false);return false">' + esc(l.label) + "</a>"; }
-  const PANNEAUX = { tendances: ["Tendances", "Détail semaine par semaine, période, comptes rendus, qualité du classement"], b_pilotage: ["Tableau de bord", "Pilotage des irritants et indicateurs détaillés"] };
+  const PANNEAUX = { tendances: ["Tendances", "Détail semaine par semaine, période, comptes rendus, qualité du classement"], b_pilotage: ["Tableau de bord", "Pilotage des irritants et indicateurs détaillés"], b_agents: ["Revue des agents IA", "Agents en place : signaux mesurés, appréciation du HRBP, règles"] };
   function lien(tab, texte, cible) { return '<button class="vs-lien" onclick="' + (PANNEAUX[tab] ? "vsPanneau(\'" + tab + "\')" : "setTab(\'" + tab + "\')") + '"><span>' + esc(texte) + "</span><small>" + esc(cible) + " →</small></button>"; }
 
   // ---------------------------------------------------------------- Décider
@@ -307,10 +308,28 @@
           '<label>Commentaire (280 caractères maximum, sans nom de personne)<input id="dp-comm" maxlength="280" value="' + esc(comm) + '" oninput="vsSaisie(\'comm\',\'' + c + '\',this.value)"></label></details>' +
         (state.msgPilot ? '<p class="note">' + esc(state.msgPilot) + "</p>" : "") + "</div>" +
       (d && d.statut === "VALIDE" ? reponseMail(c, d, conf) : "") +
-      (typeof avdCarte === "function" ? avdCarte(c) : "") +
+      (typeof avdCarte === "function" ? avdSimple(c) : "") +
       "</div>";
     return "<h2>Que fait-on ?</h2>" + '<p class="vs-lead">Une décision par irritant : la réponse la plus simple qui suffit.</p>' +
       '<div class="vs-dec"><div>' + gauche + "</div><div>" + droite + "</div></div>";
+  }
+
+  // v67.9 : contradicteur avant décision. Une fois une objection reçue (bouton « Relancer l'objection »),
+  // son contenu reste replié tant que le HRBP n'a pas relancé dans cette session.
+  function avdSimple(c) {
+    const html = avdCarte(c);
+    const der = typeof avdDerniere === "function" ? avdDerniere(c) : null;
+    const attente = state.avd && state.avd.code === c && state.avd.envoi === "attente";
+    if (!der || attente || state.vs.avdVu[c]) return html;
+    const i = html.indexOf('<div class="rv-btn">'), j = i < 0 ? -1 : html.indexOf("</div></div>", i);
+    if (j < 0) return html;
+    const tete = html.slice(0, j + 12), corps = html.slice(j + 12, html.length - 6);
+    const date = der.demande && der.demande.toDate ? der.demande.toDate().toLocaleDateString("fr-FR") : "";
+    return tete + '<details class="vs-repli" style="margin:10px 0 0"><summary>Dernière objection reçue' + (date ? " <span>(" + esc(date) + ")</span>" : "") + "</summary><div class=\"vs-in\">" + corps + "</div></details></div>";
+  }
+  if (typeof avdLancer === "function") {
+    const avdLancerOrigine = avdLancer;
+    avdLancer = function (code) { if (state.vs) state.vs.avdVu[code] = true; return avdLancerOrigine(code); };
   }
 
   // v67.2 : décision validée -> « Réponse au mail » (réponse type) + spécification complète, sans quitter Décider.
@@ -512,6 +531,11 @@
       return;
     }
     renderOrigine();
+    // v67.9 : Suivre → « Pour aller plus loin » ouvre la Revue des agents IA dans le panneau latéral.
+    if (actif() && state.tab === "b_revue" && !state.ficheCode && typeof window.viewRevueAgents === "function") {
+      const m = document.getElementById("main");
+      if (m && !m.querySelector(".vs-liens")) m.insertAdjacentHTML("beforeend", '<div class="vs-liens">' + lien("b_agents", "Pour aller plus loin", "écran Revue des agents IA") + "</div>");
+    }
     if (actif() && state.tab === "ensemble") { try { amenagerEnsemble(); } catch (e) { /* écran complet en cas d'imprévu */ } }
     try { dessinerPanneau(); } catch (e) { /* le panneau reste tel quel */ }
   };
@@ -536,7 +560,7 @@
     const E = document.getElementById("vs-panneau") ? elementsPanneau() : null;
     if (!panneau || !actif() || state.ficheCode) { if (panneau) fermer(); return; }
     const P = E || elementsPanneau();
-    const vue = panneau === "tendances" ? window.viewTendances : window.viewTableauBordHrbp;
+    const vue = { tendances: window.viewTendances, b_pilotage: window.viewTableauBordHrbp, b_agents: window.viewRevueAgents }[panneau];
     if (typeof vue !== "function") return;
     const ongletReel = state.tab, defil = P.corps.scrollTop;
     state.tab = panneau;            // les écrans lisent l'onglet courant (export, fiche, filtres)
