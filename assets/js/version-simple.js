@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -30,7 +30,14 @@
   function idsSimples() { return (SIMPLE[state.role] || []).map(function (t) { return t[0]; }); }
 
   state.vs = state.vs || { sel: "", tout: false, rep: {}, stat: {}, sem: {}, comm: {} };
-  state.vs.avdVu = state.vs.avdVu || {};
+  // v67.9.1 : l'état mémorisé de l'onglet (etat.js) est rechargé APRÈS ce fichier et peut venir
+  // d'une version précédente : chaque champ est recréé s'il manque, avant chaque dessin.
+  function etatVs() {
+    if (!state.vs || typeof state.vs !== "object") state.vs = {};
+    ["rep", "stat", "sem", "comm", "avdVu"].forEach(function (k) { if (!state.vs[k] || typeof state.vs[k] !== "object") state.vs[k] = {}; });
+    return state.vs;
+  }
+  etatVs();
   const ouverts = {};
 
   // ----------------------------------------------------------------- styles
@@ -320,7 +327,7 @@
     const html = avdCarte(c);
     const der = typeof avdDerniere === "function" ? avdDerniere(c) : null;
     const attente = state.avd && state.avd.code === c && state.avd.envoi === "attente";
-    if (!der || attente || state.vs.avdVu[c]) return html;
+    if (!der || attente || etatVs().avdVu[c]) return html;
     const i = html.indexOf('<div class="rv-btn">'), j = i < 0 ? -1 : html.indexOf("</div></div>", i);
     if (j < 0) return html;
     const tete = html.slice(0, j + 12), corps = html.slice(j + 12, html.length - 6);
@@ -329,7 +336,7 @@
   }
   if (typeof avdLancer === "function") {
     const avdLancerOrigine = avdLancer;
-    avdLancer = function (code) { if (state.vs) state.vs.avdVu[code] = true; return avdLancerOrigine(code); };
+    avdLancer = function (code) { etatVs().avdVu[code] = true; return avdLancerOrigine(code); };
   }
 
   // v67.2 : décision validée -> « Réponse au mail » (réponse type) + spécification complète, sans quitter Décider.
@@ -522,6 +529,7 @@
 
   const renderOrigine = render;
   render = function () {
+    etatVs();
     if (actif() && NOUVEAUX.indexOf(state.tab) >= 0) {
       if (!role().tabs.some(function (t) { return t[0] === state.tab; })) state.tab = role().tabs[0][0];
       renderTabs(); renderWho();
