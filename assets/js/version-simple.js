@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -236,6 +236,15 @@
   if (typeof expResume === "function") {
     const expResumeOrigine = expResume;
     expResume = function (c) {
+      if (c && c.cle === "ensemble") {
+        const R = lignes();
+        if (R.erreur) return ["Données de la base indisponibles au moment du partage."];
+        const signales = R.L.filter(function (l) { return l.p.total > 0 && l.code !== "AUTRE"; });
+        const top = trier(R.L.filter(attente));
+        const L = [signales.length + " irritant(s) signalé(s), " + top.length + " à examiner sans décision, " + signales.filter(function (l) { return l.d && l.d.statut === "VALIDE"; }).length + " avec une réponse validée.", ""];
+        if (top.length) { L.push("Points pour le comité :"); top.slice(0, 3).forEach(function (l) { L.push("- " + l.label + " : " + l.p.total + " signal(s), réponse proposée : " + libReponse(confDe(l.code).reco)); }); }
+        return L;
+      }
       if (!c || c.cle !== "s_reperer") return expResumeOrigine(c);
       const R = lignes();
       if (R.erreur) return ["Données de la base indisponibles au moment du partage."];
@@ -286,7 +295,8 @@
       "<span>" + r.HAUTE + "/" + r.total + "</span>" + (r.BASSE ? '<span class="vs-conf-v">' + r.BASSE + "</span>" : "") + "</span>";
   }
   function lienNom(l) { return '<a href="#" class="vs-nom" onclick="ouvrirFiche(\'' + l.code + '\', false);return false">' + esc(l.label) + "</a>"; }
-  const PANNEAUX = { tendances: ["Tendances", "Détail semaine par semaine, période, comptes rendus, qualité du classement"], b_pilotage: ["Tableau de bord", "Pilotage des irritants et indicateurs détaillés"], b_agents: ["Revue des agents IA", "Agents en place : signaux mesurés, appréciation du HRBP, règles"] };
+  const PANNEAUX = { tendances: ["Tendances", "Détail semaine par semaine, période, comptes rendus, qualité du classement"], b_pilotage: ["Tableau de bord", "Pilotage des irritants et indicateurs détaillés"], b_agents: ["Revue des agents IA", "Agents en place : signaux mesurés, appréciation du HRBP, règles"],
+    d_repart: ["Répartition et irritants à suivre", "Répartition par source et tableau complet des irritants"], dir_roi: ["Pilotage et ROI", "Hypothèses, calcul, décisions du comité"], dir_equipe: ["Pour en parler avec l’équipe", "Conseils de l'IA pour la discussion"] };
   function lien(tab, texte, cible) { return '<button class="vs-lien" onclick="' + (PANNEAUX[tab] ? "vsPanneau(\'" + tab + "\')" : "setTab(\'" + tab + "\')") + '"><span>' + esc(texte) + "</span><small>" + esc(cible) + " →</small></button>"; }
 
   // ---------------------------------------------------------------- Décider
@@ -475,6 +485,14 @@
       return c.tagName === "DIV" && norme(h ? h.textContent : c.textContent.slice(0, 80)).indexOf(debut) === 0;
     });
   }
+  // Contenu du panneau « Répartition » : les deux blocs de la Vue d'ensemble d'origine, tels quels.
+  function vueRepartition() {
+    if (typeof window.viewVueEnsemble !== "function") return "";
+    const t = document.createElement("div"); t.innerHTML = window.viewVueEnsemble();
+    const blocs = [bloc(t, "repartition par source"), bloc(t, "irritants a suivre")].filter(Boolean);
+    return blocs.length ? blocs.map(function (n) { return n.outerHTML; }).join("") : t.innerHTML;
+  }
+  if (typeof EXP_PAGES === "object") EXP_PAGES.ensemble = "Vue d’ensemble des irritants";
   function amenagerEnsemble() {
     const main = document.getElementById("main");
     if (!main || state.ficheCode) return;
@@ -489,9 +507,14 @@
       carte.insertAdjacentHTML("afterend", '<div class="card" style="margin-top:16px"><div class="spechead">' + (top.length ? top.length + " point(s) pour le comité" : "Pour le comité") + "</div>" +
         (items ? '<ol style="margin:8px 0 0 18px;display:grid;gap:6px">' + items + "</ol>" : '<p class="note" style="margin:6px 0 0">Aucun irritant à examiner n\'attend de décision.</p>') + "</div>");
     }
-    const repart = bloc(main, "repartition par source"), suivre = bloc(main, "irritants a suivre");
-    replier([repart, suivre].filter(Boolean), "Répartition par source et tableau complet des irritants");
-    main.insertAdjacentHTML("beforeend", '<div class="vs-liens">' + lien("dir_roi", "Pilotage et ROI", "hypothèses, calcul, décisions du comité") + lien("dir_equipe", "Pour en parler avec l’équipe", "conseils de l'IA") + "</div>");
+    // v67.14 : icônes PDF / mail au titre ; répartition, Pilotage et ROI, équipe s'ouvrent dans le panneau latéral.
+    const h2 = main.querySelector("h2");
+    if (h2 && !h2.querySelector(".exp-ic") && typeof expIcones === "function") {
+      h2.className = "exp-h2"; h2.innerHTML = "<span>" + h2.innerHTML + "</span>" + expIcones();
+    }
+    [bloc(main, "repartition par source"), bloc(main, "irritants a suivre")].forEach(function (n) { if (n) n.remove(); });
+    main.insertAdjacentHTML("beforeend", '<div class="vs-liens">' + lien("d_repart", "Répartition par source et tableau complet des irritants", "détail par source et par irritant") +
+      lien("dir_roi", "Pilotage et ROI", "hypothèses, calcul, décisions du comité") + lien("dir_equipe", "Pour en parler avec l’équipe", "conseils de l'IA") + "</div>");
   }
 
   // ----------------------------------------------------------- branchements
@@ -623,7 +646,7 @@
     const E = document.getElementById("vs-panneau") ? elementsPanneau() : null;
     if (!panneau || !actif() || state.ficheCode) { if (panneau) fermer(); return; }
     const P = E || elementsPanneau();
-    const vue = { tendances: window.viewTendances, b_pilotage: window.viewTableauBordHrbp, b_agents: window.viewRevueAgents }[panneau];
+    const vue = { tendances: window.viewTendances, b_pilotage: window.viewTableauBordHrbp, b_agents: window.viewRevueAgents, d_repart: vueRepartition, dir_roi: window.viewPilotageRoi, dir_equipe: window.viewVedOnglet }[panneau];
     if (typeof vue !== "function") return;
     const ongletReel = state.tab, defil = P.corps.scrollTop;
     state.tab = panneau;            // les écrans lisent l'onglet courant (export, fiche, filtres)
