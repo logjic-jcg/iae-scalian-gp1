@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -258,16 +258,24 @@
     if (R.erreur) return sansBase("Que fait-on ?", R.erreur);
     const V = state.vs;
     const tous = trier(R.L.filter(function (l) { return l.p.total > 0 || l.d; }));
+    // v67.8 : même filtre Essentiel / Tous que Repérer (choix partagé entre les deux écrans).
+    const portee = tous.filter(function (l) { return V.tout || !l.d; });
+    const retenus = V.tousIrr ? portee : portee.filter(essentiel);
     if (!V.sel || !tous.some(function (l) { return l.code === V.sel; })) {
-      const premier = tous.find(function (l) { return !l.d; }) || tous[0];
+      const premier = retenus.find(function (l) { return !l.d; }) || retenus[0] || tous.find(function (l) { return !l.d; }) || tous[0];
       V.sel = premier ? premier.code : "";
     }
-    const liste = tous.filter(function (l) { return V.tout || !l.d || l.code === V.sel; });
+    const liste = retenus.concat(tous.filter(function (l) { return l.code === V.sel && retenus.indexOf(l) < 0; }));
     const nDec = tous.filter(function (l) { return l.d; }).length;
-    const gauche = '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:8px"><input type="checkbox" ' + (V.tout ? "checked" : "") + ' onchange="vsTout(this.checked)"> Voir aussi les ' + nDec + " irritant(s) déjà décidé(s)</label>" +
+    const nEss = portee.filter(essentiel).length, masques = portee.length - nEss;
+    const filtre = '<div class="vs-seg vs-filtre" role="group" aria-label="Irritants affichés" style="margin-bottom:8px">' +
+      '<button aria-pressed="' + !V.tousIrr + '" onclick="vsTousIrr(false)" title="À examiner, sans décision à 3 signaux ou plus, validés">Essentiel (' + nEss + ")</button>" +
+      '<button aria-pressed="' + !!V.tousIrr + '" onclick="vsTousIrr(true)" title="Tous les irritants signalés ou décidés">Tous les irritants (' + portee.length + ")</button></div>" +
+      (!V.tousIrr && masques ? '<p class="note" style="margin:0 0 8px">' + masques + " irritant(s) masqué(s) : sans décision à moins de 3 signaux" + (V.tout ? ", à surveiller ou écartés" : "") + ".</p>" : "");
+    const gauche = filtre + '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:8px"><input type="checkbox" ' + (V.tout ? "checked" : "") + ' onchange="vsTout(this.checked)"> Voir aussi les ' + nDec + " irritant(s) déjà décidé(s)</label>" +
       '<div class="vs-list">' + (liste.map(function (l) {
         return '<button class="vs-it" aria-current="' + (l.code === V.sel) + '" onclick="vsSel(\'' + l.code + '\')"><span><span class="t">' + esc(l.label) + "</span>" + etiquette(l) + "</span><b>" + l.p.total + "</b></button>";
-      }).join("") || '<p class="note">Aucun irritant n\'attend de décision.</p>') + "</div>";
+      }).join("") || '<p class="note">' + (V.tousIrr || !portee.length ? "Aucun irritant n\'attend de décision." : "Aucun irritant essentiel : voir « Tous les irritants ».") + "</p>") + "</div>";
     if (!V.sel) return "<h2>Que fait-on ?</h2>" + '<div class="vs-dec"><div>' + gauche + "</div><div></div></div>";
 
     const l = tous.find(function (x) { return x.code === V.sel; }), c = l.code, d = l.d, conf = confDe(c);
@@ -276,8 +284,6 @@
     const stat = V.stat[c] || (pre ? "VALIDE" : d && d.statut) || "VALIDE";
     const sem = V.sem[c] !== undefined ? V.sem[c] : (d && d.semaine_effet ? d.semaine_effet : (l.p.semMax || 0) + 1);
     const comm = V.comm[c] !== undefined ? V.comm[c] : (pre ? pre.commentaire : d && d.commentaire) || "";
-    const semaines = Object.keys(l.p.parSem).map(Number).sort(function (a, b) { return a - b; });
-    const detail = semaines.length ? semaines.map(function (s) { return "S" + s + " : " + l.p.parSem[s]; }).join(" · ") : "aucun signal daté";
     const choix = REPONSES_HRBP.map(function (r) {
       return '<button class="vs-ch" aria-pressed="' + (rep === r.id) + '" onclick="vsRep(\'' + c + "','" + r.id + '\')">' + (conf.reco === r.id ? '<span class="vs-reco">Proposé par l\'assistant</span>' : "") + "<b>" + esc(r.label) + "</b><small>" + esc(r.aide) + "</small></button>";
     }).join("");
@@ -287,7 +293,7 @@
     }).join("") + "</div>";
     const droite = '<div class="vs-stack">' +
       '<div class="card"><div class="spech3" style="margin:0">' + esc(l.label) + "</div>" +
-        '<p style="margin:6px 0 0;font-size:14px"><b>' + l.p.total + " signal(s)</b> " + esc(sourceDe(c)) + " (" + esc(detail) + ") · " + etiquette(l) + "</p>" +
+        '<p style="margin:6px 0 0;font-size:14px"><b>' + l.p.total + " signal(s)</b> " + esc(sourceDe(c)) + " · " + etiquette(l) + "</p>" +
         '<a href="#" class="pick-fiche" onclick="ouvrirFiche(\'' + c + '\', false);return false">Ouvrir la fiche de l\'irritant →</a>' +
         (conf.action ? '<p class="note">Proposition de l\'assistant : ' + esc(conf.action) + "</p>" : "") + "</div>" +
       '<div class="card" id="decision-hrbp"><div class="spechead">Réponse retenue</div><div class="vs-choices" style="margin-top:8px">' + choix + "</div>" +
@@ -299,8 +305,7 @@
         '<details class="vs-opts"' + (ouverts["opts"] ? " open" : "") + ' ontoggle="vsOpts(this.open)"><summary>Plus d\'options : semaine d\'effet (S' + esc(sem) + "), commentaire</summary>" +
           '<label>Semaine à partir de laquelle la réponse s\'applique<input id="dp-sem" type="number" min="' + ((l.p.semMax || 0) + 1) + '" max="53" value="' + esc(sem) + '" oninput="vsSaisie(\'sem\',\'' + c + '\',this.value)"></label>' +
           '<label>Commentaire (280 caractères maximum, sans nom de personne)<input id="dp-comm" maxlength="280" value="' + esc(comm) + '" oninput="vsSaisie(\'comm\',\'' + c + '\',this.value)"></label></details>' +
-        (state.msgPilot ? '<p class="note">' + esc(state.msgPilot) + "</p>" : "") +
-        '<p class="note">La décision porte sur un processus, jamais sur une personne.</p></div>' +
+        (state.msgPilot ? '<p class="note">' + esc(state.msgPilot) + "</p>" : "") + "</div>" +
       (d && d.statut === "VALIDE" ? reponseMail(c, d, conf) : "") +
       (typeof avdCarte === "function" ? avdCarte(c) : "") +
       "</div>";
@@ -356,7 +361,14 @@
         ligneSpec("Sorties", esc(conf.sorties || "À définir")) + ligneSpec("Workflow", (conf.workflow || ["À définir"]).map(function (x, k) { return (k + 1) + ". " + esc(x); }).join("<br>")) +
         ligneSpec("Indicateur de suivi", esc(conf.indicateur)) + "</tbody></table>";
     }
-    const skill = vue === "fiche" && d.reponse === "ASSISTER" && typeof skillBloc === "function" ? skillBloc(c) : "";
+    let skill = vue === "fiche" && d.reponse === "ASSISTER" && typeof skillBloc === "function" ? skillBloc(c) : "";
+    // v67.8 : « Générer le skill (.zip) » sur la même ligne que « Modifier la fiche » et « Revenir à la fiche de la base ».
+    const btnSkill = skill.match(/<button[^>]*genererSkill[^>]*>[\s\S]*?<\/button>/), iAct = corps.lastIndexOf('<div class="rv-actions">');
+    if (btnSkill && iAct >= 0) {
+      const fin = corps.indexOf("</div>", iAct);
+      corps = corps.slice(0, fin) + btnSkill[0] + corps.slice(fin);
+      skill = skill.replace(btnSkill[0], "");
+    }
     return '<details class="vs-repli" style="margin:0"' + (ouvert ? " open" : "") + ' ontoggle="vsSpecToggle(this.open)"><summary>Spécification complète <span>(' + esc(typeof etatSpec === "function" ? etatSpec(c)[1] : "") + ")</span></summary>" +
       '<div class="vs-in">' + seg + corps + skill + "</div></details>";
   }
