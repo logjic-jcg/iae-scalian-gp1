@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -46,10 +46,25 @@
     ".vs-switch.clair button[aria-pressed=true]{background:var(--dark);color:#fff}",
     ".vs-switch.clair button:focus-visible{outline-color:var(--accent)}",
     ".vs-tbl .vs-c{width:1%;white-space:nowrap}",
-    ".vs-tbl .vs-irr{width:34%;min-width:200px}",
+    ".vs-tbl .vs-irr{width:34%;min-width:200px;padding-right:40px}",
     ".vs-tbl .vs-act{width:auto;text-align:right;white-space:nowrap}",
     ".vs-tbl th.vs-c,.vs-tbl td.vs-c{padding-left:16px;padding-right:16px}",
     ".vs-tbl th.vs-c.vs-n,.vs-tbl td.vs-c.vs-n{text-align:center !important}",
+    "#vs-voile{position:fixed;inset:0;background:rgba(20,8,50,.38);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}",
+    "#vs-voile.ouvert{opacity:1;pointer-events:auto}",
+    "#vs-panneau{position:fixed;top:0;right:0;bottom:0;width:min(1080px,94vw);background:var(--bg);z-index:61;box-shadow:-12px 0 32px rgba(20,8,50,.25);transform:translateX(102%);transition:transform .25s ease;display:flex;flex-direction:column}",
+    "#vs-panneau.ouvert{transform:none}",
+    ".vs-pan-tete{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;background:var(--dark);color:#fff}",
+    ".vs-pan-tete b{font-size:16px}.vs-pan-tete small{display:block;font-size:12px;opacity:.75;font-weight:400}",
+    ".vs-pan-ferme{border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;border-radius:8px;padding:6px 12px;font:inherit;font-weight:600;cursor:pointer}",
+    ".vs-pan-ferme:focus-visible{outline:2px solid #fff;outline-offset:2px}",
+    ".vs-pan-corps{flex:1;overflow:auto;padding:20px}",
+    "#vs-panneau .exp-ic{display:none}",
+    "body.vs-pan-ouvert{overflow:hidden}",
+    "body.vs-pan-ouvert .btn-haut{display:none}",
+    "@media (prefers-reduced-motion:reduce){#vs-panneau,#vs-voile{transition:none}}",
+    "@media (max-width:760px){#vs-panneau{width:100vw}.vs-pan-corps{padding:14px}}",
+    "@media print{#vs-panneau,#vs-voile{display:none !important}}",
     ".vs-conf{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px;font-variant-numeric:tabular-nums}",
     ".vs-conf-b{display:inline-flex;width:34px;height:6px;border-radius:3px;overflow:hidden;background:#f1edf6}",
     ".vs-conf-v{display:inline-grid;place-items:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#fef3c7;color:#b45309;border:1px solid #fde68a;font-size:10.5px;font-weight:700}",
@@ -233,7 +248,8 @@
       "<span>" + r.HAUTE + "/" + r.total + "</span>" + (r.BASSE ? '<span class="vs-conf-v">' + r.BASSE + "</span>" : "") + "</span>";
   }
   function lienNom(l) { return '<a href="#" class="vs-nom" onclick="ouvrirFiche(\'' + l.code + '\', false);return false">' + esc(l.label) + "</a>"; }
-  function lien(tab, texte, cible) { return '<button class="vs-lien" onclick="setTab(\'' + tab + '\')"><span>' + esc(texte) + "</span><small>" + esc(cible) + " →</small></button>"; }
+  const PANNEAUX = { tendances: ["Tendances", "Détail semaine par semaine, période, comptes rendus, qualité du classement"], b_pilotage: ["Tableau de bord", "Pilotage des irritants et indicateurs détaillés"] };
+  function lien(tab, texte, cible) { return '<button class="vs-lien" onclick="' + (PANNEAUX[tab] ? "vsPanneau(\'" + tab + "\')" : "setTab(\'" + tab + "\')") + '"><span>' + esc(texte) + "</span><small>" + esc(cible) + " →</small></button>"; }
 
   // ---------------------------------------------------------------- Décider
   function vsDecider() {
@@ -480,11 +496,81 @@
       renderTabs(); renderWho();
       document.getElementById("main").innerHTML = state.tab === "s_reperer" ? vsReperer() : vsDecider();
       state.justAdded = false; state.fresh = null;
+      try { dessinerPanneau(); } catch (e) { /* le panneau reste tel quel */ }
       return;
     }
     renderOrigine();
     if (actif() && state.tab === "ensemble") { try { amenagerEnsemble(); } catch (e) { /* écran complet en cas d'imprévu */ } }
+    try { dessinerPanneau(); } catch (e) { /* le panneau reste tel quel */ }
   };
+
+  // ---------------------------------------------------------------------------
+  // v67.7 : en version simple, Tendances et Tableau de bord s'ouvrent dans un panneau
+  // latéral (depuis la droite, toute la hauteur). Mêmes écrans, mêmes données en direct.
+  // L'onglet courant ne change pas : le panneau se ferme par ×, Échap ou clic sur le voile.
+  // ---------------------------------------------------------------------------
+  let panneau = null, dernierFocus = null;
+  function elementsPanneau() {
+    let voile = document.getElementById("vs-voile"), pan = document.getElementById("vs-panneau");
+    if (!pan) {
+      voile = document.createElement("div"); voile.id = "vs-voile"; voile.addEventListener("click", function () { window.vsFermerPanneau(); });
+      pan = document.createElement("aside"); pan.id = "vs-panneau"; pan.setAttribute("role", "dialog"); pan.setAttribute("aria-modal", "true"); pan.setAttribute("aria-labelledby", "vs-pan-titre");
+      pan.innerHTML = '<div class="vs-pan-tete"><div><b id="vs-pan-titre"></b><small id="vs-pan-sous"></small></div><button class="vs-pan-ferme" type="button" onclick="vsFermerPanneau()" aria-label="Fermer le panneau">✕ Fermer</button></div><div class="vs-pan-corps" id="vs-pan-corps"></div>';
+      document.body.appendChild(voile); document.body.appendChild(pan);
+    }
+    return { voile: voile, pan: pan, corps: document.getElementById("vs-pan-corps") };
+  }
+  function dessinerPanneau() {
+    const E = document.getElementById("vs-panneau") ? elementsPanneau() : null;
+    if (!panneau || !actif() || state.ficheCode) { if (panneau) fermer(); return; }
+    const P = E || elementsPanneau();
+    const vue = panneau === "tendances" ? window.viewTendances : window.viewTableauBordHrbp;
+    if (typeof vue !== "function") return;
+    const ongletReel = state.tab, defil = P.corps.scrollTop;
+    state.tab = panneau;            // les écrans lisent l'onglet courant (export, fiche, filtres)
+    let html;
+    try { html = vue(); } finally { state.tab = ongletReel; }
+    P.corps.innerHTML = html;
+    P.corps.scrollTop = defil;
+    document.getElementById("vs-pan-titre").textContent = PANNEAUX[panneau][0];
+    document.getElementById("vs-pan-sous").textContent = PANNEAUX[panneau][1];
+  }
+  function fermer() {
+    const t = panneau;
+    panneau = null;
+    if (dernierFocus && !document.body.contains(dernierFocus)) dernierFocus = document.querySelector('.vs-lien[onclick*="' + t + '"]');
+    const pan = document.getElementById("vs-panneau"), voile = document.getElementById("vs-voile");
+    if (pan) pan.classList.remove("ouvert");
+    if (voile) voile.classList.remove("ouvert");
+    document.body.classList.remove("vs-pan-ouvert");
+    if (dernierFocus && dernierFocus.focus) { try { dernierFocus.focus(); } catch (e) { /* rien */ } }
+  }
+  window.vsPanneau = function (t) {
+    if (!PANNEAUX[t]) return;
+    dernierFocus = document.activeElement;
+    panneau = t;
+    const P = elementsPanneau();
+    P.corps.scrollTop = 0;
+    dessinerPanneau();
+    document.body.classList.add("vs-pan-ouvert");
+    requestAnimationFrame(function () { P.voile.classList.add("ouvert"); P.pan.classList.add("ouvert"); P.pan.querySelector(".vs-pan-ferme").focus(); });
+  };
+  window.vsFermerPanneau = function () { fermer(); };
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && panneau) fermer(); });
+  // Depuis le panneau : ouvrir une fiche ou changer d'onglet ferme d'abord le panneau.
+  if (typeof ouvrirFiche === "function") {
+    const ouvrirFicheOrigine = ouvrirFiche;
+    ouvrirFiche = function (code, statique) { if (panneau) fermer(); return ouvrirFicheOrigine(code, statique); };
+  }
+  // Raccourcis internes (« Comptes rendus ↓ ») : défilement dans le panneau quand la cible y est.
+  if (typeof allerSection === "function") {
+    const allerSectionOrigine = allerSection;
+    allerSection = function (id) {
+      const el = document.getElementById(id), pan = document.getElementById("vs-pan-corps");
+      if (el && pan && pan.contains(el)) { pan.scrollTo({ top: pan.scrollTop + el.getBoundingClientRect().top - pan.getBoundingClientRect().top - 12, behavior: "smooth" }); return; }
+      return allerSectionOrigine(id);
+    };
+  }
 
   // Mise à jour en direct : les nouveaux écrans se redessinent comme les autres onglets en direct.
   const majOrigine = aciaFbMisAJour;
@@ -494,7 +580,9 @@
       if (nom === "suggestions_ia" && typeof ntyVerifierArrivee === "function") ntyVerifierArrivee();
       return;
     }
-    return majOrigine(nom);
+    const r = majOrigine(nom);
+    if (panneau) { try { dessinerPanneau(); } catch (e) { /* le panneau reste tel quel */ } }
+    return r;
   };
   window.aciaFbMisAJour = aciaFbMisAJour;
 
@@ -506,6 +594,7 @@
   // Revue mensuelle : une suggestion acceptée pré-remplit la décision. En version simple, aller sur Décider.
   const setTabOrigine = setTab;
   setTab = function (t) {
+    if (panneau) fermer();
     if (actif() && t === "b_orienter" && state.prefillPilot && state.prefillPilot.code) { state.vs.sel = state.prefillPilot.code; t = "s_decider"; }
     return setTabOrigine(t);
   };
@@ -515,6 +604,7 @@
     if (actif()) { if (idsSimples().indexOf(state.tab) === -1) state.tab = idsSimples()[0]; }
     else if (NOUVEAUX.indexOf(state.tab) >= 0) state.tab = roleOrigine().tabs[0][0];
     state.ficheCode = null;
+    if (panneau) fermer();
     render(); window.scrollTo(0, 0);
   };
 })();
