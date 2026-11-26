@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -49,6 +49,8 @@
     ".vs-switch button:focus-visible{outline:2px solid #fff;outline-offset:-2px}",
     "body.acia-simple .fi-btns [onclick^='ficheVoirSpec']{display:none}",
     ".vs-bento{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;font-weight:600;color:var(--muted)}",
+    ".exp-ic .vs-act-date{align-self:center;font-size:12px;font-weight:500;color:#6b6280;margin-right:2px;white-space:nowrap;letter-spacing:0;text-transform:none}",
+    ".exp-ic button:disabled{opacity:.4;cursor:not-allowed;background:transparent;border-color:transparent}",
     ".bento-grid a[hidden],.bento > [hidden]{display:none !important}",
     ".vs-switch.clair{margin-left:0;border-color:var(--line)}",
     ".vs-switch.clair button{color:var(--ink)}",
@@ -184,7 +186,7 @@
       return '<tr><td class="vs-irr">' + lienNom(l) + '<span class="vs-src">' + source(l.code) + '</span></td><td class="vs-hide-sm vs-c">' + spark(l.p, R.semMax) + '</td><td class="vs-c vs-n">' + l.p.total + '</td><td class="vs-c">' + confCellule(C[l.code]) + '</td><td class="vs-c">' + etiquette(l) + "</td>" +
         '<td class="vs-act"><button class="vs-go' + (l.d ? "" : " p") + '" onclick="vsAllerDecider(\'' + l.code + '\')">' + (l.d ? "Voir →" : "Décider →") + "</button></td></tr>";
     }).join("") || '<tr><td colspan="5" class="note">Aucun irritant dans cette sélection.</td></tr>';
-    return expAjouterSimple("<h2>Ce qui revient</h2>") +
+    return relanceSimple(expAjouterSimple("<h2>Ce qui revient</h2>")) +
       '<p class="vs-lead">Boîte RH partagée et comptes rendus de réunion</p>' +
       '<div class="vs-tiles">' +
         tuile(nAtt, "irritant(s) à examiner", "3 signaux ou plus sur les 2 dernières semaines, sans décision") +
@@ -199,6 +201,33 @@
         lien("b_pilotage", "Tableau de bord complet et indicateurs détaillés", "écran Tableau de bord") +
       "</div>";
   }
+  // v67.12 : « Actualiser » à gauche des icônes d'export, même apparence qu'elles.
+  // Mêmes règles que le bouton de Tendances : visible seulement si parametres/ihm.refresh_ihm vaut 1,
+  // une relance toutes les 10 minutes au plus ; Make revérifie lui-même. Même fonction relancerTraitement().
+  const SVG_ACT = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>';
+  function relanceSimple(h) {
+    if (typeof parametresIhm !== "function" || typeof relancerTraitement !== "function") return h;
+    const p = parametresIhm();
+    if (!p || Number(p.refresh_ihm) !== 1 || h.indexOf('<span class="exp-ic">') < 0) return h;
+    const delai = typeof RELANCE_DELAI_MIN === "number" ? RELANCE_DELAI_MIN : 10;
+    const der = p.derniere_relance && p.derniere_relance.toDate ? p.derniere_relance.toDate() : null;
+    const prochaine = der ? new Date(der.getTime() + delai * 60000) : null;
+    const attente = prochaine && prochaine > new Date();
+    const heure = function (d) { return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }); };
+    if (attente && !window.__vsRelanceTimer) {
+      window.__vsRelanceTimer = setTimeout(function () { window.__vsRelanceTimer = null; if (state.tab === "s_reperer") render(); }, prochaine - new Date() + 1000);
+    }
+    const texte = state.msgRelance ? (state.msgRelance.indexOf("impossible") >= 0 ? "Relance impossible" : "Relance envoyée")
+      : der ? "Actualisé le " + der.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }) + " à " + heure(der) : "Jamais actualisé à la main";
+    const titre = state.msgRelance || (attente ? "Prochaine relance possible à " + heure(prochaine) : "Relance la lecture de la boîte RH et des comptes rendus (une fois toutes les " + delai + " minutes au plus)");
+    const bloc = '<span class="vs-act-date" title="' + esc(titre) + '">' + esc(texte) + "</span>" +
+      '<button type="button" ' + (attente ? "disabled " : "") + 'onclick="vsRelancer()" title="' + esc(titre) + '" aria-label="Actualiser">' + SVG_ACT + "</button>";
+    return h.replace('<span class="exp-ic">', '<span class="exp-ic">' + bloc);
+  }
+  window.vsRelancer = function () {
+    relancerTraitement();
+    setTimeout(function () { if (state.tab === "s_reperer") render(); }, 61000);
+  };
   function essentiel(l) { return attente(l) || (!l.d && l.p.total >= 3) || (l.d && l.d.statut === "VALIDE"); }
   function expAjouterSimple(h) { return typeof expAjouter === "function" ? expAjouter(h) : h; }
   window.vsTousIrr = function (v) { state.vs.tousIrr = !!v; render(); };
