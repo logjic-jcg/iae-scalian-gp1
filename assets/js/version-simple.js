@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -48,7 +48,6 @@
     ".vs-switch button[aria-pressed=true]{background:#fff;color:var(--dark)}",
     ".vs-switch button:focus-visible{outline:2px solid #fff;outline-offset:-2px}",
     "body.acia-simple .fi-btns [onclick^='ficheVoirSpec']{display:none}",
-    ".vs-bento-liens .bento-grid .bt{font-size:16px}",
     ".vs-bento{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;font-weight:600;color:var(--muted)}",
     ".bento-grid a[hidden],.bento > [hidden]{display:none !important}",
     ".vs-switch.clair{margin-left:0;border-color:var(--line)}",
@@ -498,11 +497,13 @@
     if (!S) { if (L) L.remove(); }
     else {
       if (!L) { L = document.createElement("div"); L.id = "vs-bento-liens"; L.className = "vs-bento-liens"; menu.insertBefore(L, menu.firstChild); }
-      let rh = null;
-      menu.querySelectorAll(":scope > .bento-grid a").forEach(function (a) { const bt = a.querySelector(".bt"); if (bt && bt.textContent.trim() === "RH") rh = a; });
+      const orig = {};
+      menu.querySelectorAll(":scope > .bento-grid a").forEach(function (a) { const bt = a.querySelector(".bt"); if (bt) orig[bt.textContent.trim()] = a; });
+      const rh = orig.RH, aide = orig.AIDE;
       L.innerHTML = '<div class="bento-h">Liens</div><div class="bento-grid">' +
-        (state.role === "hrbp" ? '<a role="menuitem" href="#" onclick="closeBento();setTab(\'types\');return false"><span class="bt" aria-hidden="true">⚙</span>Réglages<small>Types d’irritants</small></a>' : "") +
-        (rh ? '<a role="menuitem" href="' + esc(rh.getAttribute("href")) + '" target="_blank" rel="noopener"><span class="bt">RH</span>Intranet RH<small>Notion</small></a>' : "") + "</div>";
+        (state.role === "hrbp" ? '<a role="menuitem" href="#" onclick="closeBento();setTab(\'types\');return false"><span class="bt" aria-hidden="true" style="font-size:16px">⚙</span>Réglages<small>Types d’irritants</small></a>' : "") +
+        (rh ? '<a role="menuitem" href="' + esc(rh.getAttribute("href")) + '" target="_blank" rel="noopener"><span class="bt">RH</span>Intranet RH<small>Notion</small></a>' : "") +
+        (aide ? '<a role="menuitem" href="' + esc(aide.getAttribute("href")) + '" target="_blank"><span class="bt">AIDE</span>Boucle de l\'assistant<small>Schéma</small></a>' : "") + "</div>";
     }
     const bb = document.getElementById("bento-btn");
     if (bb) { const t = S ? "Liens et affichage" : "Livrables du projet"; bb.setAttribute("aria-label", t); bb.title = t; }
@@ -533,9 +534,9 @@
       }).join("");
       if (ids.indexOf(state.tab) === -1) {
         const t = roleOrigine().tabs.find(function (x) { return x[0] === state.tab; });
-        if (t) html += '<button class="tab active">' + esc(state.tab === "types" ? "Réglages" : t[1]) + '<span class="vs-q">écran de la version complète</span></button>';
+        if (t) html += '<button class="tab active">' + esc(state.tab === "types" ? "Réglages" : t[1]) + '<span class="vs-q">' + (state.tab === "types" ? "des types d’irritants" : "écran de la version complète") + "</span></button>";
       }
-      if (state.role === "hrbp" && state.tab !== "types") html += '<button class="tab vs-gear" onclick="setTab(\'types\')" title="Types d’irritants">⚙ Réglages</button>';
+      // v67.11 : plus d'onglet « Réglages » permanent ; il n'apparaît qu'ouvert depuis le menu Bento.
       row.innerHTML = html;
     }
     // v67.5 : l'interrupteur n'est plus dans la barre d'onglets, seulement dans le menu Bento.
