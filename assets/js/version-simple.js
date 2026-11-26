@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -137,26 +137,57 @@
     const nAtt = signales.filter(attente).length, nSD = signales.filter(function (l) { return !l.d; }).length;
     const enPlace = R.L.filter(function (l) { return l.effet && l.d.statut === "VALIDE"; });
     const baisse = enPlace.filter(function (l) { return l.effet.verdict === "BAISSE"; });
-    const visibles = trier(R.L.filter(function (l) { return l.p.total > 0 || l.d; }));
-    const caches = R.L.length - visibles.length;
+    // v67.5 : « Essentiel » = à examiner, sans décision à 3 signaux ou plus, validés ; « Tous » = tout irritant signalé ou décidé.
+    const tous = trier(R.L.filter(function (l) { return l.p.total > 0 || l.d; }));
+    const essentiels = tous.filter(essentiel);
+    const visibles = state.vs.tousIrr ? tous : essentiels;
+    const caches = R.L.length - tous.length;
+    const masques = tous.length - essentiels.length;
+    const filtre = '<div class="vs-row" style="margin:0 0 10px"><div class="vs-seg vs-filtre" role="group" aria-label="Irritants affichés">' +
+      '<button aria-pressed="' + !state.vs.tousIrr + '" onclick="vsTousIrr(false)" title="À examiner, sans décision à 3 signaux ou plus, validés">Essentiel (' + essentiels.length + ")</button>" +
+      '<button aria-pressed="' + !!state.vs.tousIrr + '" onclick="vsTousIrr(true)" title="Tous les irritants signalés ou décidés">Tous les irritants (' + tous.length + ")</button></div>" +
+      (!state.vs.tousIrr && masques ? '<span class="note" style="margin:0">' + masques + " irritant(s) masqué(s) : sans décision à moins de 3 signaux, à surveiller ou écartés.</span>" : "") + "</div>";
     const rows = visibles.map(function (l) {
       return "<tr><td>" + lienNom(l) + '<span class="vs-src">' + source(l.code) + '</span></td><td class="vs-hide-sm">' + spark(l.p, R.semMax) + '</td><td class="vs-n">' + l.p.total + "</td><td>" + etiquette(l) + "</td>" +
         '<td style="text-align:right"><button class="vs-go' + (l.d ? "" : " p") + '" onclick="vsAllerDecider(\'' + l.code + '\')">' + (l.d ? "Voir →" : "Décider →") + "</button></td></tr>";
-    }).join("");
-    return "<h2>Ce qui revient</h2>" +
-      '<p class="vs-lead">Boîte RH partagée et comptes rendus de réunion · ' + (R.semMax ? "jusqu'à la semaine S" + R.semMax : "") + "</p>" +
+    }).join("") || '<tr><td colspan="5" class="note">Aucun irritant dans cette sélection.</td></tr>';
+    return expAjouterSimple("<h2>Ce qui revient</h2>") +
+      '<p class="vs-lead">Boîte RH partagée et comptes rendus de réunion</p>' +
       '<div class="vs-tiles">' +
         tuile(nAtt, "irritant(s) à examiner", "3 signaux ou plus sur les 2 dernières semaines, sans décision") +
         tuile(nSD + " / " + signales.length, "sans décision", "Irritants signalés que le HRBP n'a pas encore tranchés") +
         tuile(enPlace.length ? baisse.length + " sur " + enPlace.length : "—", "réponse(s) en place avec un effet visible", "Au moins 20 % de signaux en moins par semaine") +
       "</div>" +
-      '<div class="tw"><table class="vs-tbl"><thead><tr><th>Irritant</th><th class="vs-hide-sm">6 dernières semaines</th><th style="text-align:right">Signaux</th><th>État</th><th></th></tr></thead><tbody>' + rows + "</tbody></table></div>" +
+      filtre + '<div class="tw"><table class="vs-tbl"><thead><tr><th>Irritant</th><th class="vs-hide-sm">6 dernières semaines</th><th style="text-align:right">Signaux</th><th>État</th><th></th></tr></thead><tbody>' + rows + "</tbody></table></div>" +
       '<p class="note" style="margin-top:8px">Un signal = un mail classé dans ce type, ou une action de réunion reportée ou sans responsable. « À examiner » = 3 signaux ou plus sur les 2 dernières semaines observées.' +
       (caches ? " " + caches + " type(s) sans aucun signal ne sont pas affichés." : "") + "</p>" +
       '<div class="vs-liens">' +
         lien("tendances", "Détail semaine par semaine, période, comptes rendus, qualité du classement", "écran Tendances") +
         lien("b_pilotage", "Tableau de bord complet et indicateurs détaillés", "écran Tableau de bord") +
       "</div>";
+  }
+  function essentiel(l) { return attente(l) || (!l.d && l.p.total >= 3) || (l.d && l.d.statut === "VALIDE"); }
+  function expAjouterSimple(h) { return typeof expAjouter === "function" ? expAjouter(h) : h; }
+  window.vsTousIrr = function (v) { state.vs.tousIrr = !!v; render(); };
+  // Export PDF / partage par mail de « Repérer » (mêmes fonctions que la Revue mensuelle).
+  if (typeof EXP_PAGES === "object") EXP_PAGES.s_reperer = "Repérer · ce qui revient";
+  if (typeof expResume === "function") {
+    const expResumeOrigine = expResume;
+    expResume = function (c) {
+      if (!c || c.cle !== "s_reperer") return expResumeOrigine(c);
+      const R = lignes();
+      if (R.erreur) return ["Données de la base indisponibles au moment du partage."];
+      const tous = trier(R.L.filter(function (l) { return l.p.total > 0 || l.d; }));
+      const vis = state.vs.tousIrr ? tous : tous.filter(essentiel);
+      const signales = R.L.filter(function (l) { return l.p.total > 0 && l.code !== "AUTRE"; });
+      const L = [signales.filter(attente).length + " irritant(s) à examiner sans décision, " + signales.filter(function (l) { return !l.d; }).length + " sans décision sur " + signales.length + " signalé(s).", "",
+        (state.vs.tousIrr ? "Tous les irritants :" : "Irritants essentiels (à examiner, sans décision à 3 signaux ou plus, validés) :")];
+      vis.forEach(function (l) {
+        const et = attente(l) ? "à examiner" : !l.d ? "sans décision" : libStatut(l.d.statut).label.toLowerCase() + ", " + libReponse(l.d.reponse);
+        L.push("- " + l.label + " : " + l.p.total + " signal(s), " + et);
+      });
+      return L;
+    };
   }
   function lienNom(l) { return '<a href="#" class="vs-nom" onclick="ouvrirFiche(\'' + l.code + '\', false);return false">' + esc(l.label) + "</a>"; }
   function lien(tab, texte, cible) { return '<button class="vs-lien" onclick="setTab(\'' + tab + '\')"><span>' + esc(texte) + "</span><small>" + esc(cible) + " →</small></button>"; }
@@ -396,7 +427,7 @@
       if (state.role === "hrbp" && state.tab !== "types") html += '<button class="tab vs-gear" onclick="setTab(\'types\')" title="Types d’irritants">⚙ Réglages</button>';
       row.innerHTML = html;
     }
-    row.insertAdjacentHTML("beforeend", interrupteur());
+    // v67.5 : l'interrupteur n'est plus dans la barre d'onglets, seulement dans le menu Bento.
   };
 
   const renderOrigine = render;
