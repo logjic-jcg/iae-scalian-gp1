@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -45,6 +45,14 @@
     ".vs-switch.clair button{color:var(--ink)}",
     ".vs-switch.clair button[aria-pressed=true]{background:var(--dark);color:#fff}",
     ".vs-switch.clair button:focus-visible{outline-color:var(--accent)}",
+    ".vs-tbl .vs-c{width:1%;white-space:nowrap}",
+    ".vs-tbl .vs-irr{width:34%;min-width:200px}",
+    ".vs-tbl .vs-act{width:auto;text-align:right;white-space:nowrap}",
+    ".vs-tbl th.vs-c,.vs-tbl td.vs-c{padding-left:16px;padding-right:16px}",
+    ".vs-tbl th.vs-c.vs-n,.vs-tbl td.vs-c.vs-n{text-align:center !important}",
+    ".vs-conf{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px;font-variant-numeric:tabular-nums}",
+    ".vs-conf-b{display:inline-flex;width:34px;height:6px;border-radius:3px;overflow:hidden;background:#f1edf6}",
+    ".vs-conf-v{display:inline-grid;place-items:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#fef3c7;color:#b45309;border:1px solid #fde68a;font-size:10.5px;font-weight:700}",
     ".tab .vs-q{display:block;font-size:11px;font-weight:400;opacity:.8;line-height:1.2}",
     ".tab .vs-num{display:inline-block;min-width:18px;padding:0 6px;margin-left:6px;border-radius:999px;background:#e11d48;color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center}",
     ".tab.vs-gear{margin-left:8px}",
@@ -147,9 +155,10 @@
       '<button aria-pressed="' + !state.vs.tousIrr + '" onclick="vsTousIrr(false)" title="À examiner, sans décision à 3 signaux ou plus, validés">Essentiel (' + essentiels.length + ")</button>" +
       '<button aria-pressed="' + !!state.vs.tousIrr + '" onclick="vsTousIrr(true)" title="Tous les irritants signalés ou décidés">Tous les irritants (' + tous.length + ")</button></div>" +
       (!state.vs.tousIrr && masques ? '<span class="note" style="margin:0">' + masques + " irritant(s) masqué(s) : sans décision à moins de 3 signaux, à surveiller ou écartés.</span>" : "") + "</div>";
+    const C = confiances();
     const rows = visibles.map(function (l) {
-      return "<tr><td>" + lienNom(l) + '<span class="vs-src">' + source(l.code) + '</span></td><td class="vs-hide-sm">' + spark(l.p, R.semMax) + '</td><td class="vs-n">' + l.p.total + "</td><td>" + etiquette(l) + "</td>" +
-        '<td style="text-align:right"><button class="vs-go' + (l.d ? "" : " p") + '" onclick="vsAllerDecider(\'' + l.code + '\')">' + (l.d ? "Voir →" : "Décider →") + "</button></td></tr>";
+      return '<tr><td class="vs-irr">' + lienNom(l) + '<span class="vs-src">' + source(l.code) + '</span></td><td class="vs-hide-sm vs-c">' + spark(l.p, R.semMax) + '</td><td class="vs-c vs-n">' + l.p.total + '</td><td class="vs-c">' + confCellule(C[l.code]) + '</td><td class="vs-c">' + etiquette(l) + "</td>" +
+        '<td class="vs-act"><button class="vs-go' + (l.d ? "" : " p") + '" onclick="vsAllerDecider(\'' + l.code + '\')">' + (l.d ? "Voir →" : "Décider →") + "</button></td></tr>";
     }).join("") || '<tr><td colspan="5" class="note">Aucun irritant dans cette sélection.</td></tr>';
     return expAjouterSimple("<h2>Ce qui revient</h2>") +
       '<p class="vs-lead">Boîte RH partagée et comptes rendus de réunion</p>' +
@@ -158,8 +167,8 @@
         tuile(nSD + " / " + signales.length, "sans décision", "Irritants signalés que le HRBP n'a pas encore tranchés") +
         tuile(enPlace.length ? baisse.length + " sur " + enPlace.length : "—", "réponse(s) en place avec un effet visible", "Au moins 20 % de signaux en moins par semaine") +
       "</div>" +
-      filtre + '<div class="tw"><table class="vs-tbl"><thead><tr><th>Irritant</th><th class="vs-hide-sm">6 dernières semaines</th><th style="text-align:right">Signaux</th><th>État</th><th></th></tr></thead><tbody>' + rows + "</tbody></table></div>" +
-      '<p class="note" style="margin-top:8px">Un signal = un mail classé dans ce type, ou une action de réunion reportée ou sans responsable. « À examiner » = 3 signaux ou plus sur les 2 dernières semaines observées.' +
+      filtre + '<div class="tw"><table class="vs-tbl"><thead><tr><th class="vs-irr">Irritant</th><th class="vs-hide-sm vs-c" title="Signaux par semaine, 6 dernières semaines (les 2 dernières en foncé)">6 semaines</th><th class="vs-c vs-n">Signaux</th><th class="vs-c" title="Confiance de l\'IA au classement : signaux en confiance haute / total">Confiance</th><th class="vs-c">État</th><th class="vs-act"></th></tr></thead><tbody>' + rows + "</tbody></table></div>" +
+      '<p class="note" style="margin-top:8px">Un signal = un mail classé dans ce type, ou une action de réunion reportée ou sans responsable. « À examiner » = 3 signaux ou plus sur les 2 dernières semaines observées. Confiance = auto-évaluation de l\'IA au classement, pas une probabilité mesurée : barre <b style="color:#4b2882">haute</b> · <b style="color:#8b6fc2">moyenne</b> · <b style="color:#d97706">basse</b> · non évaluée, chiffre = signaux en confiance haute / total, pastille orange = signaux en confiance basse, à vérifier.' +
       (caches ? " " + caches + " type(s) sans aucun signal ne sont pas affichés." : "") + "</p>" +
       '<div class="vs-liens">' +
         lien("tendances", "Détail semaine par semaine, période, comptes rendus, qualité du classement", "écran Tendances") +
@@ -188,6 +197,40 @@
       });
       return L;
     };
+  }
+  // Confiance par irritant : comptes haute / moyenne / basse / non évaluée, mêmes règles de comptage que les signaux.
+  function confiances() {
+    const R = {}, ajoute = function (c, n) { c = String(c || "").trim(); if (!c) return; const r = R[c] = R[c] || { HAUTE: 0, MOYENNE: 0, BASSE: 0, NE: 0, total: 0 }; r[n] += 1; r.total += 1; };
+    const niv = function (v) { v = String(v || "").toUpperCase(); return v === "HAUTE" || v === "MOYENNE" || v === "BASSE" ? v : "NE"; };
+    const fm = window.ACIA_FB.classement_mails;
+    if (fm && fm.statut === "ok") fm.docs.forEach(function (d) {
+      if (d.type === "ECARTE") return;
+      const n = niv(d.confiance);
+      ajoute(d.type, n);
+      if (d.type_secondaire && String(d.type_secondaire).trim() !== String(d.type).trim()) ajoute(d.type_secondaire, n);
+    });
+    const fc = window.ACIA_FB.comptes_rendus;
+    if (fc && fc.statut === "ok" && typeof lireAnalyseCR === "function") {
+      const vus = {};
+      fc.docs.filter(function (d) { return d.statut === "ANALYSE"; }).sort(function (a, b) { return (Number(a.jour_reunion) || 0) - (Number(b.jour_reunion) || 0); })
+        .forEach(function (cr) {
+          const a = lireAnalyseCR(cr.analyse), n = niv(a.confiance);
+          a.actions.forEach(function (x) {
+            let st = x.statut; if (st === "NOUVELLE" && vus[x.libelle]) st = "REPORTEE"; vus[x.libelle] = true;
+            if (st === "REPORTEE" || (st !== "FERMEE" && !x.resp)) ajoute(CODE_CR, n);
+          });
+        });
+    }
+    return R;
+  }
+  // Cellule compacte : barre empilée (haute · moyenne · basse · non évaluée) + « haute / total », point orange si basse.
+  function confCellule(r) {
+    if (!r || !r.total) return '<span class="note">—</span>';
+    const titre = "Confiance de l'IA : haute " + r.HAUTE + " · moyenne " + r.MOYENNE + " · basse " + r.BASSE + (r.NE ? " · non évaluée " + r.NE : "") + " (sur " + r.total + " signaux)";
+    const seg = function (n, coul) { return n ? '<span style="display:block;height:100%;width:' + (100 * n / r.total).toFixed(1) + "%;background:" + coul + '"></span>' : ""; };
+    return '<span class="vs-conf" title="' + esc(titre) + '" aria-label="' + esc(titre) + '">' +
+      '<span class="vs-conf-b">' + seg(r.HAUTE, "#4b2882") + seg(r.MOYENNE, "#a48bcf") + seg(r.BASSE, "#f59e0b") + seg(r.NE, "#e3dcee") + "</span>" +
+      "<span>" + r.HAUTE + "/" + r.total + "</span>" + (r.BASSE ? '<span class="vs-conf-v">' + r.BASSE + "</span>" : "") + "</span>";
   }
   function lienNom(l) { return '<a href="#" class="vs-nom" onclick="ouvrirFiche(\'' + l.code + '\', false);return false">' + esc(l.label) + "</a>"; }
   function lien(tab, texte, cible) { return '<button class="vs-lien" onclick="setTab(\'' + tab + '\')"><span>' + esc(texte) + "</span><small>" + esc(cible) + " →</small></button>"; }
