@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -204,11 +204,60 @@
           '<label>Commentaire (280 caractères maximum, sans nom de personne)<input id="dp-comm" maxlength="280" value="' + esc(comm) + '" oninput="vsSaisie(\'comm\',\'' + c + '\',this.value)"></label></details>' +
         (state.msgPilot ? '<p class="note">' + esc(state.msgPilot) + "</p>" : "") +
         '<p class="note">La décision porte sur un processus, jamais sur une personne.</p></div>' +
+      (d && d.statut === "VALIDE" ? reponseMail(c, d, conf) : "") +
       (typeof avdCarte === "function" ? avdCarte(c) : "") +
       "</div>";
     return "<h2>Que fait-on ?</h2>" + '<p class="vs-lead">Une décision par irritant : la réponse la plus simple qui suffit.</p>' +
       '<div class="vs-dec"><div>' + gauche + "</div><div>" + droite + "</div></div>";
   }
+
+  // v67.2 : décision validée -> « Réponse au mail » (réponse type) + spécification complète, sans quitter Décider.
+  function reponseMail(c, d, conf) {
+    if (d.reponse === "SIMPLIFIER") {
+      return '<div class="card"><div class="spechead">Réponse au mail</div><p style="font-size:14px;margin:6px 0 0">Aucune réponse automatique : réponse sans outil.</p>' +
+        (conf.action ? '<p class="note">Action : ' + esc(conf.action) + "</p>" : "") + "</div>";
+    }
+    const fiv = typeof fiaValidee === "function" ? fiaValidee(c) : null;
+    const der = typeof fiaDerniere === "function" ? fiaDerniere(c) : null;
+    const brouillonIA = !!(der && typeof fiaLire === "function" && fiaLire(der.texte));
+    let corps, bouton;
+    if (d.reponse === "AUTOMATISER") {
+      corps = '<p class="note" style="margin:4px 0 8px">Envoyée telle quelle à l\'expéditeur d\'un mail de ce type classé en confiance haute, tant que la décision reste « Validé · Automatiser ».</p>' +
+        (fiv ? fiaRepAutoHtml(fiv.REPONSE_AUTO) : '<span class="note">Pas encore de réponse type : elle se saisit à la relecture de la fiche. Vide : aucun mail automatique ne part.</span>');
+    } else {
+      const rel = fiv ? fiaRelecture(fiv) : "OUI";
+      corps = '<p style="font-size:14px;margin:6px 0 0">L\'IA rédige une réponse à chaque mail de ce type (confiance haute). ' +
+        (rel === "NON" ? "Relecture humaine : <b>Non</b>, la réponse part directement." : "Relecture humaine : <b>Oui</b>, la réponse reste en brouillon à relire" + (fiv ? "" : " (par défaut)") + ".") + "</p>";
+    }
+    if (fiv) bouton = '<button class="btn slim" onclick="vsSpecOuvrir();fiaRelire(\'' + c + '\', true)">' + (d.reponse === "AUTOMATISER" ? "Modifier la réponse type" : "Modifier la fiche") + "</button>";
+    else if (brouillonIA) bouton = '<button class="btn slim" onclick="vsSpecOuvrir();fiaRelire(\'' + c + '\', false)">Relire le brouillon de l\'IA</button>';
+    else bouton = '<button class="btn slim" onclick="vsSpecOuvrir();vueSpec(\'ia\')">Rédiger la fiche avec l\'IA</button>';
+    return '<div class="card"><div class="kpi-h">' + (typeof specIcone === "function" ? specIcone(d.reponse) : "") + '<div class="spechead">Réponse au mail · ' + esc(libReponse(d.reponse)) + "</div></div>" + corps +
+      '<div class="vs-row">' + bouton + "</div></div>" + specDetails(c, d, fiv);
+  }
+  // Même contenu que la fiche de l'écran Spécifications (fiche de la base ou fiche validée, ou rédaction avec l'IA).
+  function specDetails(c, d, fiv) {
+    const enRelecture = state.fia && state.fia.edit === c;
+    const vue = enRelecture ? "ia" : (state.specVue === "ia" && typeof fiaBloc === "function" ? "ia" : "fiche");
+    const ouvert = ouverts["spec"] || enRelecture || vue === "ia";
+    const seg = typeof fiaBloc === "function" ? '<div class="vs-seg" role="tablist" style="margin-bottom:10px">' +
+      '<button aria-pressed="' + (vue === "fiche") + '" onclick="vueSpec(\'fiche\')">Fiche</button>' +
+      '<button aria-pressed="' + (vue === "ia") + '" onclick="vueSpec(\'ia\')">' + (enRelecture ? "Relecture" : "Rédaction avec l\'IA") + "</button></div>" : "";
+    let corps;
+    if (vue === "ia") corps = fiaBloc(c);
+    else if (fiv) corps = fiaFicheValidee(c, fiv);
+    else {
+      const conf = confDe(c);
+      corps = '<table style="font-size:13px"><tbody>' + ligneSpec("Besoin métier", esc(conf.besoin || conf.action || "")) + ligneSpec("Entrées", esc(conf.entrees || "À définir")) +
+        ligneSpec("Sorties", esc(conf.sorties || "À définir")) + ligneSpec("Workflow", (conf.workflow || ["À définir"]).map(function (x, k) { return (k + 1) + ". " + esc(x); }).join("<br>")) +
+        ligneSpec("Indicateur de suivi", esc(conf.indicateur)) + "</tbody></table>";
+    }
+    const skill = vue === "fiche" && d.reponse === "ASSISTER" && typeof skillBloc === "function" ? skillBloc(c) : "";
+    return '<details class="vs-repli" style="margin:0"' + (ouvert ? " open" : "") + ' ontoggle="vsSpecToggle(this.open)"><summary>Spécification complète <span>(' + esc(typeof etatSpec === "function" ? etatSpec(c)[1] : "") + ")</span></summary>" +
+      '<div class="vs-in">' + seg + corps + skill + "</div></details>";
+  }
+  window.vsSpecOuvrir = function () { ouverts["spec"] = true; };
+  window.vsSpecToggle = function (o) { ouverts["spec"] = o; };
 
   // Actions de l'écran Décider (les choix restent en mémoire si la base se met à jour).
   window.vsAllerDecider = function (code) { state.vs.sel = code; state.msgPilot = ""; setTab("s_decider"); };
@@ -321,7 +370,7 @@
   const majOrigine = aciaFbMisAJour;
   aciaFbMisAJour = function (nom) {
     if (actif() && NOUVEAUX.indexOf(state.tab) >= 0) {
-      if (["classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres", "suggestions_ia"].indexOf(nom) >= 0) render();
+      if (["classement_mails", "decisions_hrbp", "comptes_rendus", "types_irritants", "parametres", "suggestions_ia", "fiches_specs"].indexOf(nom) >= 0) render();
       if (nom === "suggestions_ia" && typeof ntyVerifierArrivee === "function") ntyVerifierArrivee();
       return;
     }
