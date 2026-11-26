@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -47,8 +47,10 @@
     ".vs-switch button{border:0;background:transparent;color:rgba(255,255,255,.78);font:inherit;font-size:12px;font-weight:600;padding:4px 12px;cursor:pointer}",
     ".vs-switch button[aria-pressed=true]{background:#fff;color:var(--dark)}",
     ".vs-switch button:focus-visible{outline:2px solid #fff;outline-offset:-2px}",
+    "body.acia-simple .fi-btns [onclick^='ficheVoirSpec']{display:none}",
+    ".vs-bento-liens .bento-grid .bt{font-size:16px}",
     ".vs-bento{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;font-weight:600;color:var(--muted)}",
-    ".bento-grid a[hidden]{display:none}",
+    ".bento-grid a[hidden],.bento > [hidden]{display:none !important}",
     ".vs-switch.clair{margin-left:0;border-color:var(--line)}",
     ".vs-switch.clair button{color:var(--ink)}",
     ".vs-switch.clair button[aria-pressed=true]{background:var(--dark);color:#fff}",
@@ -484,14 +486,26 @@
       '<button type="button" aria-pressed="' + !simple + '" onclick="aciaVersionSimple(false)" title="Tous les onglets et tous les blocs">Version complète</button></div>';
   }
   // v67.4 : menu Bento allégé en version simple (boucle, S2, S6, S7, S8, intranet RH) + interrupteur.
-  const BENTO_SIMPLE = ["AIDE", "S2", "S6", "S7", "S8", "RH"];
   function bento() {
     const menu = document.getElementById("bento");
     if (!menu) return;
-    menu.querySelectorAll(".bento-grid a").forEach(function (a) {
-      const bt = a.querySelector(".bt");
-      a.hidden = actif() && BENTO_SIMPLE.indexOf(bt ? bt.textContent.trim() : "") === -1;
-    });
+    // v67.10 : en version simple, « Livrables du projet » et sa mention de pied sont masqués ;
+    // une section « Liens » (Réglages, Intranet RH) les remplace. Version complète : menu d'origine.
+    const S = actif();
+    menu.querySelectorAll(":scope > .bento-h, :scope > .bento-grid, :scope > .bento-f").forEach(function (el) { el.hidden = S; });
+    menu.querySelectorAll(":scope > .bento-grid a").forEach(function (a) { a.hidden = false; });
+    let L = document.getElementById("vs-bento-liens");
+    if (!S) { if (L) L.remove(); }
+    else {
+      if (!L) { L = document.createElement("div"); L.id = "vs-bento-liens"; L.className = "vs-bento-liens"; menu.insertBefore(L, menu.firstChild); }
+      let rh = null;
+      menu.querySelectorAll(":scope > .bento-grid a").forEach(function (a) { const bt = a.querySelector(".bt"); if (bt && bt.textContent.trim() === "RH") rh = a; });
+      L.innerHTML = '<div class="bento-h">Liens</div><div class="bento-grid">' +
+        (state.role === "hrbp" ? '<a role="menuitem" href="#" onclick="closeBento();setTab(\'types\');return false"><span class="bt" aria-hidden="true">⚙</span>Réglages<small>Types d’irritants</small></a>' : "") +
+        (rh ? '<a role="menuitem" href="' + esc(rh.getAttribute("href")) + '" target="_blank" rel="noopener"><span class="bt">RH</span>Intranet RH<small>Notion</small></a>' : "") + "</div>";
+    }
+    const bb = document.getElementById("bento-btn");
+    if (bb) { const t = S ? "Liens et affichage" : "Livrables du projet"; bb.setAttribute("aria-label", t); bb.title = t; }
     let z = document.getElementById("vs-bento");
     if (!concerne()) { if (z) z.remove(); return; }
     if (!z) {
@@ -542,7 +556,7 @@
     // v67.9 : Suivre → « Pour aller plus loin » ouvre la Revue des agents IA dans le panneau latéral.
     if (actif() && state.tab === "b_revue" && !state.ficheCode && typeof window.viewRevueAgents === "function") {
       const m = document.getElementById("main");
-      if (m && !m.querySelector(".vs-liens")) m.insertAdjacentHTML("beforeend", '<div class="vs-liens">' + lien("b_agents", "Pour aller plus loin", "écran Revue des agents IA") + "</div>");
+      if (m && !m.querySelector(".vs-liens")) m.insertAdjacentHTML("beforeend", '<div class="vs-liens">' + lien("b_agents", "Améliorer dans la durée", "écran Revue des agents IA") + "</div>");
     }
     if (actif() && state.tab === "ensemble") { try { amenagerEnsemble(); } catch (e) { /* écran complet en cas d'imprévu */ } }
     try { dessinerPanneau(); } catch (e) { /* le panneau reste tel quel */ }
