@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -21,7 +21,8 @@
   };
   const NOUVEAUX = ["s_reperer", "s_decider"];
 
-  function lire() { try { return localStorage.getItem(CLE) === "simple"; } catch (e) { return false; } }
+  // v67.4 : version simple par défaut ; la version complète seulement si elle a été choisie dans ce navigateur.
+  function lire() { try { return localStorage.getItem(CLE) !== "complete"; } catch (e) { return true; } }
   function ecrire(v) { try { localStorage.setItem(CLE, v ? "simple" : "complete"); } catch (e) { /* stockage bloqué */ } }
   let simple = lire();
   function concerne() { return !!SIMPLE[state.role]; }
@@ -38,6 +39,12 @@
     ".vs-switch button{border:0;background:transparent;color:rgba(255,255,255,.78);font:inherit;font-size:12px;font-weight:600;padding:4px 12px;cursor:pointer}",
     ".vs-switch button[aria-pressed=true]{background:#fff;color:var(--dark)}",
     ".vs-switch button:focus-visible{outline:2px solid #fff;outline-offset:-2px}",
+    ".vs-bento{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;font-weight:600;color:var(--muted)}",
+    ".bento-grid a[hidden]{display:none}",
+    ".vs-switch.clair{margin-left:0;border-color:var(--line)}",
+    ".vs-switch.clair button{color:var(--ink)}",
+    ".vs-switch.clair button[aria-pressed=true]{background:var(--dark);color:#fff}",
+    ".vs-switch.clair button:focus-visible{outline-color:var(--accent)}",
     ".tab .vs-q{display:block;font-size:11px;font-weight:400;opacity:.8;line-height:1.2}",
     ".tab .vs-num{display:inline-block;min-width:18px;padding:0 6px;margin-left:6px;border-radius:999px;background:#e11d48;color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center}",
     ".tab.vs-gear{margin-left:8px}",
@@ -348,10 +355,29 @@
       '<button type="button" aria-pressed="' + simple + '" onclick="aciaVersionSimple(true)" title="Trois écrans : repérer, décider, suivre">Version simple</button>' +
       '<button type="button" aria-pressed="' + !simple + '" onclick="aciaVersionSimple(false)" title="Tous les onglets et tous les blocs">Version complète</button></div>';
   }
+  // v67.4 : menu Bento allégé en version simple (boucle, S2, S6, S7, S8, intranet RH) + interrupteur.
+  const BENTO_SIMPLE = ["AIDE", "S2", "S6", "S7", "S8", "RH"];
+  function bento() {
+    const menu = document.getElementById("bento");
+    if (!menu) return;
+    menu.querySelectorAll(".bento-grid a").forEach(function (a) {
+      const bt = a.querySelector(".bt");
+      a.hidden = actif() && BENTO_SIMPLE.indexOf(bt ? bt.textContent.trim() : "") === -1;
+    });
+    let z = document.getElementById("vs-bento");
+    if (!concerne()) { if (z) z.remove(); return; }
+    if (!z) {
+      z = document.createElement("div"); z.id = "vs-bento"; z.className = "vs-bento";
+      const pied = menu.querySelector(".bento-f");
+      menu.insertBefore(z, pied || null);
+    }
+    z.innerHTML = '<span>Affichage du site</span>' + interrupteur().replace('class="vs-switch"', 'class="vs-switch clair"');
+  }
   const renderTabsOrigine = renderTabs;
   renderTabs = function () {
     renderTabsOrigine();
     document.body.classList.toggle("acia-simple", actif());
+    try { bento(); } catch (e) { /* menu complet en cas d'imprévu */ }
     if (!concerne()) return;
     const row = document.querySelector("#tabs .tabrow");
     if (!row) return;
