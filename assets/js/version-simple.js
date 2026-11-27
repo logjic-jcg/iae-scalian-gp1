@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v67.15 (Repérer : pictos des 3 indicateurs, réponse retenue sous « Validé ») · v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v68 (Décider en 4 étapes, fiche en familles, accords singulier/pluriel) · v67.15 (Repérer : pictos des 3 indicateurs, réponse retenue sous « Validé ») · v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -87,6 +87,28 @@
     ".vs-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}",
     ".vs-tile{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}",
     ".vs-tile b{display:block;font-size:28px;line-height:1.2;font-variant-numeric:tabular-nums}",
+    ".vs-etape{padding:0;overflow:hidden}",
+    ".vs-et-h{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:#faf8fd}",
+    ".vs-et-n{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:#4b2882;color:#fff;font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}",
+    ".vs-et-t{font-weight:700;color:#2b1452;font-size:15px}.vs-et-t small{font-weight:500;color:var(--muted);font-size:12px;margin-left:4px}",
+    ".vs-et-s{margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;text-align:right}",
+    ".vs-et-rep{font-size:12px;color:var(--muted)}",
+    ".vs-et-b{padding:14px 16px}",
+    ".vs-et-b .vs-plat .rv-top{margin:0}",
+    ".vs-et-note{font-size:13px;margin:8px 0 0;color:#3b3355}",
+    ".vs-et-b > .card{border:0;padding:0;margin:0 0 12px;box-shadow:none;background:transparent}",
+    ".vs-et-b > .card .kpi-h{margin-bottom:4px}",
+    ".vs-fam{border:1px solid var(--line);border-radius:10px;margin:0 0 8px;background:#fff}",
+    ".vs-fam summary{display:flex;align-items:baseline;gap:8px;padding:10px 12px;cursor:pointer;list-style:none}",
+    ".vs-fam summary::-webkit-details-marker{display:none}",
+    ".vs-fam summary::before{content:'▸';color:#4b2882;font-size:12px}.vs-fam[open] summary::before{content:'▾'}",
+    ".vs-fam summary b{color:#2b1452}.vs-fam summary small{color:var(--muted);font-size:12px}",
+    ".vs-fam-c{margin-left:auto;font-size:12px;font-weight:600;color:#047857;background:#ecfdf5;border-radius:999px;padding:1px 8px}.vs-fam-c.manque{color:#b45309;background:#fffbeb}",
+    ".vs-fam-t{width:100%;font-size:13px;border-collapse:collapse;margin:0 0 6px}",
+    ".vs-fam-t th{width:34%;text-align:left;font-weight:500;color:#64748b;vertical-align:top;padding:6px 10px 6px 12px}",
+    ".vs-fam-t td{padding:6px 12px 6px 0;vertical-align:top}",
+    ".vs-fam-t tr+tr th,.vs-fam-t tr+tr td{border-top:1px solid var(--line)}",
+    "@media (max-width:760px){.vs-et-h{flex-wrap:wrap}.vs-et-s{margin-left:32px;justify-content:flex-start}.vs-fam-t th{width:40%}}",
     ".vs-tile-h{display:flex;align-items:center;gap:10px;margin-bottom:2px}",
     ".vs-tile .tend-ic{display:inline-flex;width:34px;height:34px}",
     ".vs-rep{display:block;font-size:12px;color:var(--muted);margin-top:4px;line-height:1.3}",
@@ -155,6 +177,14 @@
   function etatTableau(l) {
     return etiquette(l) + (l.d && l.d.statut === "VALIDE" && l.d.reponse ? '<span class="vs-rep">' + esc(libReponse(l.d.reponse)) + "</span>" : "");
   }
+  // v68 : accords singulier / pluriel (0 et 1 au singulier).
+  function nb(n, sing, plur) { return n + " " + (Math.abs(Number(n)) >= 2 ? plur : sing); }
+  function sig(n) { return nb(n, "signal", "signaux"); }
+  // v68 : bloc d'étape de l'écran Décider (même en-tête pour chaque bloc : numéro, picto, titre, état à droite).
+  function etape(n, ic, titre, statut, corps, extra) {
+    return '<section class="card vs-etape"' + (extra || "") + '><div class="vs-et-h"><span class="vs-et-n">' + n + "</span>" + (typeof tendIcone === "function" ? tendIcone(ic) : "") +
+      '<div class="vs-et-t">' + titre + '</div><div class="vs-et-s">' + (statut || "") + '</div></div><div class="vs-et-b">' + corps + "</div></section>";
+  }
   function source(code) { return code === CODE_CR ? "Comptes rendus" : "Boîte RH"; }
   function spark(p, semMax) {
     const sem = []; for (let s = Math.max(1, semMax - 5); s <= semMax; s++) sem.push(s);
@@ -188,7 +218,7 @@
     const filtre = '<div class="vs-row" style="margin:0 0 10px"><div class="vs-seg vs-filtre" role="group" aria-label="Irritants affichés">' +
       '<button aria-pressed="' + !state.vs.tousIrr + '" onclick="vsTousIrr(false)" title="À examiner, sans décision à 3 signaux ou plus, validés">Essentiel (' + essentiels.length + ")</button>" +
       '<button aria-pressed="' + !!state.vs.tousIrr + '" onclick="vsTousIrr(true)" title="Tous les irritants signalés ou décidés">Tous les irritants (' + tous.length + ")</button></div>" +
-      (!state.vs.tousIrr && masques ? '<span class="note" style="margin:0">' + masques + " irritant(s) masqué(s) : sans décision à moins de 3 signaux, à surveiller ou écartés.</span>" : "") + "</div>";
+      (!state.vs.tousIrr && masques ? '<span class="note" style="margin:0">' + nb(masques, "irritant masqué", "irritants masqués") + " : sans décision à moins de 3 signaux, à surveiller ou écartés.</span>" : "") + "</div>";
     const C = confiances();
     const rows = visibles.map(function (l) {
       return '<tr><td class="vs-irr">' + lienNom(l) + '<span class="vs-src">' + source(l.code) + '</span></td><td class="vs-hide-sm vs-c">' + spark(l.p, R.semMax) + '</td><td class="vs-c vs-n">' + l.p.total + '</td><td class="vs-c">' + confCellule(C[l.code]) + '</td><td class="vs-c">' + etatTableau(l) + "</td>" +
@@ -197,13 +227,13 @@
     return relanceSimple(expAjouterSimple("<h2>Ce qui revient</h2>")) +
       '<p class="vs-lead">Boîte RH partagée et comptes rendus de réunion</p>' +
       '<div class="vs-tiles">' +
-        tuile(nAtt, "irritant(s) à examiner", "3 signaux ou plus sur les 2 dernières semaines, sans décision", "loupe") +
+        tuile(nAtt, nAtt >= 2 ? "irritants à examiner" : "irritant à examiner", "3 signaux ou plus sur les 2 dernières semaines, sans décision", "loupe") +
         tuile(nSD + " / " + signales.length, "sans décision", "Irritants signalés que le HRBP n'a pas encore tranchés", "drapeau") +
-        tuile(enPlace.length ? baisse.length + " sur " + enPlace.length : "—", "réponse(s) en place avec un effet visible", "Au moins 20 % de signaux en moins par semaine", "courbe") +
+        tuile(enPlace.length ? baisse.length + " sur " + enPlace.length : "—", enPlace.length >= 2 ? "réponses en place avec un effet visible" : "réponse en place avec un effet visible", "Au moins 20 % de signaux en moins par semaine", "courbe") +
       "</div>" +
       filtre + '<div class="tw"><table class="vs-tbl"><thead><tr><th class="vs-irr">Irritant</th><th class="vs-hide-sm vs-c" title="Signaux par semaine, 6 dernières semaines (les 2 dernières en foncé)">6 semaines</th><th class="vs-c vs-n">Signaux</th><th class="vs-c" title="Confiance de l\'IA au classement : signaux en confiance haute / total">Confiance</th><th class="vs-c">État</th><th class="vs-act"></th></tr></thead><tbody>' + rows + "</tbody></table></div>" +
       '<p class="note" style="margin-top:8px">Un signal = un mail classé dans ce type, ou une action de réunion reportée ou sans responsable. « À examiner » = 3 signaux ou plus sur les 2 dernières semaines observées. Confiance = auto-évaluation de l\'IA au classement, pas une probabilité mesurée : barre <b style="color:#4b2882">haute</b> · <b style="color:#8b6fc2">moyenne</b> · <b style="color:#d97706">basse</b> · non évaluée, chiffre = signaux en confiance haute / total, pastille orange = signaux en confiance basse, à vérifier.' +
-      (caches ? " " + caches + " type(s) sans aucun signal ne sont pas affichés." : "") + "</p>" +
+      (caches ? " " + (caches >= 2 ? caches + " types sans aucun signal ne sont pas affichés." : caches + " type sans aucun signal n'est pas affiché.") : "") + "</p>" +
       '<div class="vs-liens">' +
         lien("tendances", "Détail semaine par semaine, période, comptes rendus, qualité du classement", "écran Tendances") +
         lien("b_pilotage", "Tableau de bord complet et indicateurs détaillés", "écran Tableau de bord") +
@@ -249,8 +279,8 @@
         if (R.erreur) return ["Données de la base indisponibles au moment du partage."];
         const signales = R.L.filter(function (l) { return l.p.total > 0 && l.code !== "AUTRE"; });
         const top = trier(R.L.filter(attente));
-        const L = [signales.length + " irritant(s) signalé(s), " + top.length + " à examiner sans décision, " + signales.filter(function (l) { return l.d && l.d.statut === "VALIDE"; }).length + " avec une réponse validée.", ""];
-        if (top.length) { L.push("Points pour le comité :"); top.slice(0, 3).forEach(function (l) { L.push("- " + l.label + " : " + l.p.total + " signal(s), réponse proposée : " + libReponse(confDe(l.code).reco)); }); }
+        const L = [nb(signales.length, "irritant signalé", "irritants signalés") + ", " + top.length + " à examiner sans décision, " + signales.filter(function (l) { return l.d && l.d.statut === "VALIDE"; }).length + " avec une réponse validée.", ""];
+        if (top.length) { L.push("Points pour le comité :"); top.slice(0, 3).forEach(function (l) { L.push("- " + l.label + " : " + sig(l.p.total) + ", réponse proposée : " + libReponse(confDe(l.code).reco)); }); }
         return L;
       }
       if (!c || c.cle !== "s_reperer") return expResumeOrigine(c);
@@ -259,11 +289,11 @@
       const tous = trier(R.L.filter(function (l) { return l.p.total > 0 || l.d; }));
       const vis = state.vs.tousIrr ? tous : tous.filter(essentiel);
       const signales = R.L.filter(function (l) { return l.p.total > 0 && l.code !== "AUTRE"; });
-      const L = [signales.filter(attente).length + " irritant(s) à examiner sans décision, " + signales.filter(function (l) { return !l.d; }).length + " sans décision sur " + signales.length + " signalé(s).", "",
+      const L = [nb(signales.filter(attente).length, "irritant", "irritants") + " à examiner sans décision, " + signales.filter(function (l) { return !l.d; }).length + " sans décision sur " + nb(signales.length, "signalé", "signalés") + ".", "",
         (state.vs.tousIrr ? "Tous les irritants :" : "Irritants essentiels (à examiner, sans décision à 3 signaux ou plus, validés) :")];
       vis.forEach(function (l) {
         const et = attente(l) ? "à examiner" : !l.d ? "sans décision" : libStatut(l.d.statut).label.toLowerCase() + ", " + libReponse(l.d.reponse);
-        L.push("- " + l.label + " : " + l.p.total + " signal(s), " + et);
+        L.push("- " + l.label + " : " + sig(l.p.total) + ", " + et);
       });
       return L;
     };
@@ -327,8 +357,8 @@
     const filtre = '<div class="vs-seg vs-filtre" role="group" aria-label="Irritants affichés" style="margin-bottom:8px">' +
       '<button aria-pressed="' + !V.tousIrr + '" onclick="vsTousIrr(false)" title="À examiner, sans décision à 3 signaux ou plus, validés">Essentiel (' + nEss + ")</button>" +
       '<button aria-pressed="' + !!V.tousIrr + '" onclick="vsTousIrr(true)" title="Tous les irritants signalés ou décidés">Tous les irritants (' + portee.length + ")</button></div>" +
-      (!V.tousIrr && masques ? '<p class="note" style="margin:0 0 8px">' + masques + " irritant(s) masqué(s) : sans décision à moins de 3 signaux" + (V.tout ? ", à surveiller ou écartés" : "") + ".</p>" : "");
-    const gauche = filtre + '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:8px"><input type="checkbox" ' + (V.tout ? "checked" : "") + ' onchange="vsTout(this.checked)"> Voir aussi les ' + nDec + " irritant(s) déjà décidé(s)</label>" +
+      (!V.tousIrr && masques ? '<p class="note" style="margin:0 0 8px">' + nb(masques, "irritant masqué", "irritants masqués") + " : sans décision à moins de 3 signaux" + (V.tout ? ", à surveiller ou écartés" : "") + ".</p>" : "");
+    const gauche = filtre + '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:8px"><input type="checkbox" ' + (V.tout ? "checked" : "") + ' onchange="vsTout(this.checked)"> Voir aussi ' + (nDec >= 2 ? "les " + nDec + " irritants déjà décidés" : nDec === 1 ? "l'irritant déjà décidé" : "les irritants déjà décidés") + "</label>" +
       '<div class="vs-list">' + (liste.map(function (l) {
         return '<button class="vs-it" aria-current="' + (l.code === V.sel) + '" onclick="vsSel(\'' + l.code + '\')"><span><span class="t">' + esc(l.label) + "</span>" + etiquette(l) + "</span><b>" + l.p.total + "</b></button>";
       }).join("") || '<p class="note">' + (V.tousIrr || !portee.length ? "Aucun irritant n\'attend de décision." : "Aucun irritant essentiel : voir « Tous les irritants ».") + "</p>") + "</div>";
@@ -347,23 +377,31 @@
     const seg = '<div class="vs-seg" role="group" aria-label="Statut">' + STATUTS_HRBP.map(function (s) {
       return '<button aria-pressed="' + (stat === s.id) + '" onclick="vsStat(\'' + c + "','" + s.id + '\')">' + (LIB[s.id] || s.label) + "</button>";
     }).join("") + "</div>";
-    const droite = '<div class="vs-stack">' +
-      '<div class="card"><div class="spech3" style="margin:0">' + esc(l.label) + "</div>" +
-        '<p style="margin:6px 0 0;font-size:14px"><b>' + l.p.total + " signal(s)</b> " + esc(sourceDe(c)) + " · " + etiquette(l) + "</p>" +
-        '<a href="#" class="pick-fiche" onclick="ouvrirFiche(\'' + c + '\', false);return false">Ouvrir la fiche de l\'irritant →</a>' +
-        (conf.action ? '<p class="note">Proposition de l\'assistant : ' + esc(conf.action) + "</p>" : "") + "</div>" +
-      '<div class="card" id="decision-hrbp"><div class="spechead">Réponse retenue</div><div class="vs-choices" style="margin-top:8px">' + choix + "</div>" +
-        (d ? '<p style="font-size:13px;margin-top:10px">Décision enregistrée : ' + badge(libStatut(d.statut).cls, libStatut(d.statut).label) + " " + esc(libReponse(d.reponse)) + " · effet en semaine " + esc(d.semaine_effet) +
-          (d.statut === "VALIDE" ? ' · <a href="#" class="pick-fiche" style="margin:0" onclick="allerSpec(\'' + c + '\');return false">Voir la spécification →</a>' : "") + "</p>" : "") +
+    // v68 : quatre étapes numérotées, même en-tête : constat, objection de l'IA, décision, mise en œuvre.
+    const constat = '<div class="spech3" style="margin:0">' + esc(l.label) + "</div>" +
+      '<p style="margin:6px 0 0;font-size:14px"><b>' + sig(l.p.total) + "</b> " + esc(sourceDe(c)) + "</p>" +
+      (conf.action ? '<p class="vs-et-note">' + badge("b-violet", "IA") + " Proposition de l'assistant : " + esc(conf.action) + "</p>" : "") +
+      '<a href="#" class="pick-fiche" onclick="ouvrirFiche(\'' + c + '\', false);return false">Ouvrir la fiche de l\'irritant →</a>';
+    const der = typeof avdDerniere === "function" ? avdDerniere(c) : null, rAvd = der && typeof avdLire === "function" ? avdLire(der.texte) : null;
+    const cAvd = rAvd && typeof AVD_CONCLUSIONS === "object" ? AVD_CONCLUSIONS[rAvd.conclusion] : null;
+    const objection = typeof avdCarte === "function" ? avdSimple(c)
+      .replace('<div class="card avd-card" style="margin-top:16px">', '<div class="avd-card vs-plat">')
+      .replace(/<div class="spechead"[^>]*>Contradicteur avant décision[\s\S]*?<\/span><\/div>/, "") : "";
+    const decision = '<div class="vs-choices">' + choix + "</div>" +
         (pre ? '<p class="note">' + badge("b-violet", "IA") + " " + esc(pre.note || "Pré-rempli d'après la suggestion acceptée dans la Revue mensuelle : relisez, puis enregistrez vous-même.") + "</p>" : "") +
         '<div class="vs-row">' + seg + '<button class="btn ok" onclick="vsEnregistrer(\'' + c + '\')">Enregistrer la décision</button></div>' +
         '<input type="hidden" id="dp-statut" value="' + esc(stat) + '"><input type="hidden" id="dp-reponse" value="' + esc(rep) + '">' +
         '<details class="vs-opts"' + (ouverts["opts"] ? " open" : "") + ' ontoggle="vsOpts(this.open)"><summary>Plus d\'options : semaine d\'effet (S' + esc(sem) + "), commentaire</summary>" +
           '<label>Semaine à partir de laquelle la réponse s\'applique<input id="dp-sem" type="number" min="' + ((l.p.semMax || 0) + 1) + '" max="53" value="' + esc(sem) + '" oninput="vsSaisie(\'sem\',\'' + c + '\',this.value)"></label>' +
           '<label>Commentaire (280 caractères maximum, sans nom de personne)<input id="dp-comm" maxlength="280" value="' + esc(comm) + '" oninput="vsSaisie(\'comm\',\'' + c + '\',this.value)"></label></details>' +
-        (state.msgPilot ? '<p class="note">' + esc(state.msgPilot) + "</p>" : "") + "</div>" +
-      (d && d.statut === "VALIDE" ? reponseMail(c, d, conf) : "") +
-      (typeof avdCarte === "function" ? avdSimple(c) : "") +
+        (state.msgPilot ? '<p class="note">' + esc(state.msgPilot) + "</p>" : "");
+    const valide = d && d.statut === "VALIDE";
+    const oeuvre = valide ? reponseMail(c, d, conf) : '<p class="note" style="margin:0">S\'ouvre quand la décision est « Valider » : réponse au mail et spécification.</p>';
+    const droite = '<div class="vs-stack">' +
+      etape(1, "loupe", "Le constat", d ? "" : etiquette(l), constat) +
+      etape(2, "bouclier", "L'objection de l'IA <small>avant de décider</small>", cAvd ? badge(cAvd[0], cAvd[1]) : '<span class="note" style="margin:0">Pas encore demandée</span>', objection) +
+      etape(3, "drapeau", "La décision", d ? badge(libStatut(d.statut).cls, libStatut(d.statut).label) + (d.statut === "VALIDE" ? ' <span class="vs-et-rep">' + esc(libReponse(d.reponse)) + " · dès S" + esc(d.semaine_effet) + "</span>" : "") : badge("b-sky", "À prendre"), decision, ' id="decision-hrbp"') +
+      etape(4, "document", "La mise en œuvre", valide && typeof etatSpec === "function" ? badge(etatSpec(c)[0], etatSpec(c)[1]) : '<span class="note" style="margin:0">Après validation</span>', oeuvre, valide ? "" : ' style="opacity:.75"') +
       "</div>";
     return "<h2>Que fait-on ?</h2>" + '<p class="vs-lead">Une décision par irritant : la réponse la plus simple qui suffit.</p>' +
       '<div class="vs-dec"><div>' + gauche + "</div><div>" + droite + "</div></div>";
@@ -412,11 +450,12 @@
           : '<p class="note">Le choix Oui / Non s\'ouvre une fois la fiche rédigée et validée (bouton ci-dessous), comme dans la version complète.</p>') +
         (state.vs.msgRel && state.vs.msgRel.code === c ? '<p class="note">' + esc(state.vs.msgRel.txt) + "</p>" : "");
     }
-    if (fiv) bouton = '<button class="btn slim" onclick="vsSpecOuvrir();fiaRelire(\'' + c + '\', true)">' + (d.reponse === "AUTOMATISER" ? "Modifier la réponse type" : "Modifier la fiche") + "</button>";
+    if (fiv && d.reponse === "ASSISTER") bouton = "";   // v68 : « Modifier la fiche » reste sous la fiche (évite le doublon)
+    else if (fiv) bouton = '<button class="btn slim" onclick="vsSpecOuvrir();fiaRelire(\'' + c + '\', true)">' + (d.reponse === "AUTOMATISER" ? "Modifier la réponse type" : "Modifier la fiche") + "</button>";
     else if (brouillonIA) bouton = '<button class="btn slim" onclick="vsSpecOuvrir();fiaRelire(\'' + c + '\', false)">Relire le brouillon de l\'IA</button>';
     else bouton = '<button class="btn slim" onclick="vsSpecOuvrir();vueSpec(\'ia\')">Rédiger la fiche avec l\'IA</button>';
     return '<div class="card"><div class="kpi-h">' + (typeof specIcone === "function" ? specIcone(d.reponse) : "") + '<div class="spechead">Réponse au mail · ' + esc(libReponse(d.reponse)) + "</div></div>" + corps +
-      '<div class="vs-row">' + bouton + "</div></div>" + specDetails(c, d, fiv);
+      (bouton ? '<div class="vs-row">' + bouton + "</div>" : "") + "</div>" + specDetails(c, d, fiv);
   }
   // Même contenu que la fiche de l'écran Spécifications (fiche de la base ou fiche validée, ou rédaction avec l'IA).
   function specDetails(c, d, fiv) {
@@ -428,13 +467,7 @@
       '<button aria-pressed="' + (vue === "ia") + '" onclick="vueSpec(\'ia\')">' + (enRelecture ? "Relecture" : "Rédaction avec l\'IA") + "</button></div>" : "";
     let corps;
     if (vue === "ia") corps = fiaBloc(c);
-    else if (fiv) corps = fiaFicheValidee(c, fiv);
-    else {
-      const conf = confDe(c);
-      corps = '<table style="font-size:13px"><tbody>' + ligneSpec("Besoin métier", esc(conf.besoin || conf.action || "")) + ligneSpec("Entrées", esc(conf.entrees || "À définir")) +
-        ligneSpec("Sorties", esc(conf.sorties || "À définir")) + ligneSpec("Workflow", (conf.workflow || ["À définir"]).map(function (x, k) { return (k + 1) + ". " + esc(x); }).join("<br>")) +
-        ligneSpec("Indicateur de suivi", esc(conf.indicateur)) + "</tbody></table>";
-    }
+    else corps = famillesFiche(c, d, fiv);
     let skill = vue === "fiche" && d.reponse === "ASSISTER" && typeof skillBloc === "function" ? skillBloc(c) : "";
     // v67.8 : « Générer le skill (.zip) » sur la même ligne que « Modifier la fiche » et « Revenir à la fiche de la base ».
     const btnSkill = skill.match(/<button[^>]*genererSkill[^>]*>[\s\S]*?<\/button>/), iAct = corps.lastIndexOf('<div class="rv-actions">');
@@ -446,6 +479,45 @@
     return '<details class="vs-repli" style="margin:0"' + (ouvert ? " open" : "") + ' ontoggle="vsSpecToggle(this.open)"><summary>Spécification complète <span>(' + esc(typeof etatSpec === "function" ? etatSpec(c)[1] : "") + ")</span></summary>" +
       '<div class="vs-in">' + seg + corps + skill + "</div></details>";
   }
+  // v68 : la fiche en quatre familles repliables (même contenu, mêmes boutons).
+  const FAMILLES = [
+    ["Le besoin", "Pourquoi et pour qui", ["IRRITANT", "BESOIN", "UTILISATEURS"]],
+    ["Le fonctionnement", "Ce qui entre, ce qui sort, les étapes", ["ENTREES", "SORTIES", "WORKFLOW", "REPONSE_AUTO"]],
+    ["Les garde-fous", "Autonomie, risques, relecture", ["AUTONOMIE", "RISQUES", "AGENT", "RELECTURE"]],
+    ["La mesure", "Comment savoir si ça marche", ["ACCEPTATION", "INDICATEUR"]],
+  ];
+  function famillesFiche(c, d, fiv) {
+    const lib = {}; (typeof FIA_RUBRIQUES === "object" ? FIA_RUBRIQUES : []).forEach(function (x) { lib[x[0]] = x[1]; });
+    lib.RELECTURE = typeof FIA_RELECTURE_LIB === "string" ? FIA_RELECTURE_LIB : "Relecture humaine";
+    lib.REPONSE_AUTO = typeof FIA_REPAUTO_LIB === "string" ? FIA_REPAUTO_LIB : "Réponse automatique";
+    let val, tete = "", pied = "";
+    if (fiv) {
+      val = function (k) {
+        if (k === "RELECTURE") return fiv.reponse === "ASSISTER" ? fiaRelectureHtml(fiaRelecture(fiv)) : null;
+        if (k === "REPONSE_AUTO") return fiv.reponse === "AUTOMATISER" ? fiaRepAutoHtml(fiv.REPONSE_AUTO) : null;
+        return String(fiv[k] || "").trim() ? fiaTexte(k, fiv[k]) : "";
+      };
+      tete = '<p style="margin:0 0 8px">' + badge("b-violet", "IA") + " " + badge("b-emerald", "Relue et validée par le HRBP") + (typeof fiaDate === "function" ? ' <span class="note">le ' + esc(fiaDate(fiv.maj)) + "</span>" : "") + "</p>";
+      pied = '<div class="rv-actions"><button class="btn slim" onclick="fiaRelire(\'' + c + '\', true)">Modifier la fiche</button>' +
+        '<button class="btn slim" onclick="fiaRetirer(\'' + c + '\')">Revenir à la fiche de la base</button></div>';
+    } else {
+      const conf = confDe(c);
+      const base = { BESOIN: conf.besoin || conf.action, ENTREES: conf.entrees, SORTIES: conf.sorties, INDICATEUR: conf.indicateur,
+        WORKFLOW: conf.workflow ? conf.workflow.map(function (x, k) { return (k + 1) + ". " + esc(x); }).join("<br>") : "" };
+      val = function (k) { return k === "WORKFLOW" ? base.WORKFLOW : (base[k] !== undefined ? esc(base[k] || "") : null); };
+      tete = '<p class="note" style="margin:0 0 8px">Fiche de la base, pas encore relue : utilisez « Rédaction avec l\'IA » pour la compléter.</p>';
+    }
+    return tete + FAMILLES.map(function (f, i) {
+      const lignes = f[2].map(function (k) { const v = val(k); return v === null || v === undefined ? null : [k, v]; }).filter(Boolean);
+      if (!lignes.length) return "";
+      const pleines = lignes.filter(function (x) { return x[1] && !/fia-ac/.test(x[1]); }).length;
+      const cle = "fam-" + i;
+      return '<details class="vs-fam"' + (ouverts[cle] ? " open" : "") + ' ontoggle="vsFam(\'' + cle + '\',this.open)"><summary><b>' + esc(f[0]) + "</b><small>" + esc(f[1]) + "</small>" +
+        '<span class="vs-fam-c' + (pleines < lignes.length ? " manque" : "") + '">' + pleines + " / " + lignes.length + "</span></summary>" +
+        '<table class="vs-fam-t"><tbody>' + lignes.map(function (x) { return "<tr><th>" + esc(lib[x[0]] || x[0]) + "</th><td>" + (x[1] || '<span class="fia-ac">à compléter</span>') + "</td></tr>"; }).join("") + "</tbody></table></details>";
+    }).join("") + pied;
+  }
+  window.vsFam = function (k, o) { ouverts[k] = o; };
   // Relecture Oui / Non : réenregistre la fiche validée à l'identique, seule la rubrique RELECTURE change
   // (même écriture que la validation de la relecture, mêmes règles de la base).
   window.vsRelecture = function (c, v) {
@@ -510,9 +582,9 @@
     if (!R.erreur) {
       const top = trier(R.L.filter(attente)).slice(0, 3);
       const items = top.map(function (l) {
-        return "<li><b>" + esc(l.label) + "</b> : " + l.p.total + " signal(s), en attente de décision du HRBP. Réponse proposée : " + esc((function (x) { return x.charAt(0).toLowerCase() + x.slice(1); })(libReponse(confDe(l.code).reco))) + ".</li>";
+        return "<li><b>" + esc(l.label) + "</b> : " + sig(l.p.total) + ", en attente de décision du HRBP. Réponse proposée : " + esc((function (x) { return x.charAt(0).toLowerCase() + x.slice(1); })(libReponse(confDe(l.code).reco))) + ".</li>";
       }).join("");
-      carte.insertAdjacentHTML("afterend", '<div class="card" style="margin-top:16px"><div class="spechead">' + (top.length ? top.length + " point(s) pour le comité" : "Pour le comité") + "</div>" +
+      carte.insertAdjacentHTML("afterend", '<div class="card" style="margin-top:16px"><div class="spechead">' + (top.length ? nb(top.length, "point", "points") + " pour le comité" : "Pour le comité") + "</div>" +
         (items ? '<ol style="margin:8px 0 0 18px;display:grid;gap:6px">' + items + "</ol>" : '<p class="note" style="margin:6px 0 0">Aucun irritant à examiner n\'attend de décision.</p>') + "</div>");
     }
     // v67.14 : icônes PDF / mail au titre ; répartition, Pilotage et ROI, équipe s'ouvrent dans le panneau latéral.
