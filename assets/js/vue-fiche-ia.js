@@ -53,6 +53,22 @@ function fiaRepAutoHtml(t) {
 }
 function fiaRepAutoModele() { if (state.fia.brouillon) { state.fia.brouillon.REPONSE_AUTO = FIA_REPAUTO_MODELE; render(); } }
 
+// v69 : « Sources Notion de la réponse » (Assister seulement), saisi par le HRBP à la relecture.
+// 1 à 3 liens de pages Notion (documents de référence RH). Le scénario Make de classement lit ces pages
+// et l'IA rédige la réponse uniquement à partir d'elles, en citant leur titre ; sinon elle dit qu'elle
+// n'a pas trouvé et renvoie vers un RH. Vide : l'IA répond comme avant (orientation générale).
+const FIA_SOURCES_LIB = "Sources Notion de la réponse";
+const FIA_SOURCES_MAX = 600;
+function fiaSourcesLiens(t) { return String(t || "").match(/https?:\/\/[^\s<>"']+/g) || []; }
+function fiaSourcesOk(t) { return /[0-9a-f]{32}/.test(String(t || "")); }
+function fiaSourcesHtml(t) {
+  t = String(t || "").trim();
+  if (!t) return '<span class="note">Aucune : l\'IA répond sans document de référence (orientation générale).</span>';
+  const liens = fiaSourcesLiens(t);
+  const html = liens.length ? liens.map(function (u) { return '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(u.replace(/^https?:\/\/(www\.)?/, "").slice(0, 70)) + "</a>"; }).join("<br>") : esc(t);
+  return html + (fiaSourcesOk(t) ? "" : '<br><small class="note">' + badge("b-rose", "Attention") + " Aucun lien de page Notion reconnu : l'IA répondra sans document.</small>");
+}
+
 state.fia = state.fia || { code: "", envoi: "", msg: "", depuis: 0, edit: "", brouillon: null };
 
 function fiaActif(d) { return !!d && d.statut === "VALIDE" && (d.reponse === "ASSISTER" || d.reponse === "AUTOMATISER"); }
@@ -143,12 +159,13 @@ function fiaRelire(code, depuisValidee) {
   b._origine = depuisValidee ? (src.origine || "IA_RELUE") : "IA_RELUE";
   b.RELECTURE = depuisValidee ? fiaRelecture(src) : "OUI";
   b.REPONSE_AUTO = String((depuisValidee ? src.REPONSE_AUTO : (fiaValidee(code) || {}).REPONSE_AUTO) || "").slice(0, FIA_REPAUTO_MAX);
+  b.SOURCES_NOTION = String((depuisValidee ? src.SOURCES_NOTION : (fiaValidee(code) || {}).SOURCES_NOTION) || "").slice(0, FIA_SOURCES_MAX);
   b._ia = depuisValidee ? (src.brouillon_ia || "") : (fiaDerniere(code) || {}).id || "";
   state.specSel = code; state.specVue = "ia";
   state.fia = Object.assign({}, state.fia, { code: code, edit: code, brouillon: b, msg: "" }); render();
   allerVers("fia-" + code);
 }
-function fiaSaisie(k, el) { if (state.fia.brouillon) state.fia.brouillon[k] = String(el.value).slice(0, k === "REPONSE_AUTO" ? FIA_REPAUTO_MAX : FIA_MAX); }
+function fiaSaisie(k, el) { if (state.fia.brouillon) state.fia.brouillon[k] = String(el.value).slice(0, k === "REPONSE_AUTO" ? FIA_REPAUTO_MAX : k === "SOURCES_NOTION" ? FIA_SOURCES_MAX : FIA_MAX); }
 function fiaAnnuler() { state.fia = Object.assign({}, state.fia, { edit: "", brouillon: null, msg: "" }); render(); }
 
 function fiaValider(code) {
@@ -160,6 +177,11 @@ function fiaValider(code) {
   const data = { reponse: d.reponse, origine: b._origine || "IA_RELUE", brouillon_ia: String(b._ia || "").slice(0, 80) };
   FIA_RUBRIQUES.forEach(function (x) { data[x[0]] = String(b[x[0]]).trim().slice(0, FIA_MAX); });
   if (d.reponse === "ASSISTER") data.RELECTURE = b.RELECTURE === "NON" ? "NON" : "OUI";
+  if (d.reponse === "ASSISTER") {
+    const sn = String(b.SOURCES_NOTION || "").trim().slice(0, FIA_SOURCES_MAX);
+    if (sn && !fiaSourcesOk(sn)) { state.fia.msg = "« " + FIA_SOURCES_LIB + " » : aucun lien de page Notion reconnu. Dans Notion, « Copier le lien » de la page, puis collez-le ici (ou videz la rubrique)."; render(); return; }
+    if (sn) data.SOURCES_NOTION = sn;
+  }
   if (d.reponse === "AUTOMATISER") {
     const t = String(b.REPONSE_AUTO || "").trim().slice(0, FIA_REPAUTO_MAX);
     if (/à compléter|\[|\]/i.test(t)) { state.fia.msg = "« " + FIA_REPAUTO_LIB + " » contient encore « à compléter » ou des crochets : ce texte partirait tel quel. Complétez-le ou videz-le."; render(); return; }
@@ -198,6 +220,7 @@ function fiaFicheValidee(code, f) {
     ' <span class="note">le ' + esc(fiaDate(f.maj)) + "</span></p>" +
     '<table style="margin-top:8px;font-size:13px"><tbody>' + FIA_RUBRIQUES.map(function (x) { return ligne(x[0], x[1]); }).join("") +
     (f.reponse === "ASSISTER" ? "<tr><td style='padding:6px 10px 6px 0;color:#64748b;vertical-align:top;white-space:nowrap'>" + FIA_RELECTURE_LIB + "</td><td style='padding:6px 0'>" + fiaRelectureHtml(fiaRelecture(f)) + "</td></tr>" : "") +
+    (f.reponse === "ASSISTER" ? "<tr><td style='padding:6px 10px 6px 0;color:#64748b;vertical-align:top;white-space:nowrap'>" + FIA_SOURCES_LIB + "</td><td style='padding:6px 0'>" + fiaSourcesHtml(f.SOURCES_NOTION) + "</td></tr>" : "") +
     (f.reponse === "AUTOMATISER" ? "<tr><td style='padding:6px 10px 6px 0;color:#64748b;vertical-align:top;white-space:nowrap'>" + FIA_REPAUTO_LIB + "</td><td style='padding:6px 0'>" + fiaRepAutoHtml(f.REPONSE_AUTO) + "</td></tr>" : "") + "</tbody></table>" +
     '<div class="rv-actions"><button class="btn slim" onclick="fiaRelire(\'' + code + '\', true)">Modifier la fiche</button>' +
     '<button class="btn slim" onclick="fiaRetirer(\'' + code + '\')">Revenir à la fiche de la base</button></div>';
@@ -221,7 +244,10 @@ function fiaBloc(code) {
       '<label class="fia-l"><span class="avd-k">' + FIA_RELECTURE_LIB + "</span>" +
       '<select onchange="state.fia.brouillon.RELECTURE=this.value;render()"><option value="OUI"' + (b.RELECTURE !== "NON" ? " selected" : "") + '>Oui : un humain relit avant tout envoi</option>' +
       '<option value="NON"' + (b.RELECTURE === "NON" ? " selected" : "") + ">Non : l'agent envoie sans relecture</option></select>" +
-      (b.RELECTURE === "NON" ? '<small class="note">' + badge("b-rose", "Attention") + " Écart au garde-fou « aucun message envoyé sans un humain ». Pensez à ajuster le niveau d'autonomie, les risques et les critères d'acceptation ci-dessus.</small>" : "") + "</label>" : "") +
+      (b.RELECTURE === "NON" ? '<small class="note">' + badge("b-rose", "Attention") + " Écart au garde-fou « aucun message envoyé sans un humain ». Pensez à ajuster le niveau d'autonomie, les risques et les critères d'acceptation ci-dessus.</small>" : "") + "</label>" +
+      '<div class="fia-l"><span class="avd-k">' + FIA_SOURCES_LIB + "</span><div>" +
+      '<textarea rows="3" maxlength="' + FIA_SOURCES_MAX + '" placeholder="https://www.notion.so/…" oninput="fiaSaisie(\'SOURCES_NOTION\', this)">' + esc(b.SOURCES_NOTION || "") + "</textarea>" +
+      '<small class="note">Collez 1 à 3 liens de pages Notion (dans Notion : « Copier le lien »), un par ligne. L\'IA rédige la réponse uniquement à partir de ces pages et cite leur titre ; si la réponse n\'y est pas, elle le dit et renvoie vers un RH. Vide : réponse générale, sans document.</small></div></div>' : "") +
       (decisionDe(code).reponse === "AUTOMATISER" ?
       '<div class="fia-l"><span class="avd-k">' + FIA_REPAUTO_LIB + "</span><div>" +
       '<textarea rows="8" maxlength="' + FIA_REPAUTO_MAX + '" oninput="fiaSaisie(\'REPONSE_AUTO\', this);var p=document.getElementById(\'fia-ap-' + code + '\');if(p)p.innerHTML=fiaRepAutoHtml(this.value)">' + esc(b.REPONSE_AUTO || "") + "</textarea>" +

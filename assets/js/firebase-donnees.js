@@ -97,6 +97,7 @@ if (!app) {
       ["IRRITANT", "BESOIN", "UTILISATEURS", "ENTREES", "SORTIES", "WORKFLOW", "AUTONOMIE", "RISQUES", "AGENT", "ACCEPTATION", "INDICATEUR"].forEach(function (k) { d[k] = f[k]; });
       if (f.RELECTURE === "OUI" || f.RELECTURE === "NON") d.RELECTURE = f.RELECTURE;   // v58 : Assister seulement
       if (typeof f.REPONSE_AUTO === "string") d.REPONSE_AUTO = f.REPONSE_AUTO.slice(0, 1500);   // v61 : Automatiser seulement
+      if (typeof f.SOURCES_NOTION === "string" && f.SOURCES_NOTION) d.SOURCES_NOTION = f.SOURCES_NOTION.slice(0, 600);   // v69 : Assister seulement
       return setDoc(doc(db, "fiches_specs", code), d);
     };
     window.aciaEffacerFicheSpec = function (code) { return deleteDoc(doc(db, "fiches_specs", code)); };

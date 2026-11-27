@@ -486,7 +486,7 @@
   // v68 : la fiche en quatre familles repliables (même contenu, mêmes boutons).
   const FAMILLES = [
     ["Le besoin", "Pourquoi et pour qui", ["IRRITANT", "BESOIN", "UTILISATEURS"]],
-    ["Le fonctionnement", "Ce qui entre, ce qui sort, les étapes", ["ENTREES", "SORTIES", "WORKFLOW", "REPONSE_AUTO"]],
+    ["Le fonctionnement", "Ce qui entre, ce qui sort, les étapes", ["ENTREES", "SOURCES_NOTION", "SORTIES", "WORKFLOW", "REPONSE_AUTO"]],
     ["Les garde-fous", "Autonomie, risques, relecture", ["AUTONOMIE", "RISQUES", "AGENT", "RELECTURE"]],
     ["La mesure", "Comment savoir si ça marche", ["ACCEPTATION", "INDICATEUR"]],
   ];
@@ -494,11 +494,13 @@
     const lib = {}; (typeof FIA_RUBRIQUES === "object" ? FIA_RUBRIQUES : []).forEach(function (x) { lib[x[0]] = x[1]; });
     lib.RELECTURE = typeof FIA_RELECTURE_LIB === "string" ? FIA_RELECTURE_LIB : "Relecture humaine";
     lib.REPONSE_AUTO = typeof FIA_REPAUTO_LIB === "string" ? FIA_REPAUTO_LIB : "Réponse automatique";
+    lib.SOURCES_NOTION = typeof FIA_SOURCES_LIB === "string" ? FIA_SOURCES_LIB : "Sources Notion de la réponse";
     let val, tete = "", pied = "";
     if (fiv) {
       val = function (k) {
         if (k === "RELECTURE") return fiv.reponse === "ASSISTER" ? fiaRelectureHtml(fiaRelecture(fiv)) : null;
         if (k === "REPONSE_AUTO") return fiv.reponse === "AUTOMATISER" ? fiaRepAutoHtml(fiv.REPONSE_AUTO) : null;
+        if (k === "SOURCES_NOTION") return fiv.reponse === "ASSISTER" && typeof fiaSourcesHtml === "function" ? fiaSourcesHtml(fiv.SOURCES_NOTION) : null;
         return String(fiv[k] || "").trim() ? fiaTexte(k, fiv[k]) : "";
       };
       tete = '<p style="margin:0 0 8px">' + badge("b-violet", "IA") + " " + badge("b-emerald", "Relue et validée par le HRBP") + (typeof fiaDate === "function" ? ' <span class="note">le ' + esc(fiaDate(fiv.maj)) + "</span>" : "") + "</p>";
@@ -531,6 +533,7 @@
     if (typeof window.aciaEcrireFicheSpec !== "function") { state.vs.msgRel = { code: c, txt: "Base non connectée : enregistrement impossible." }; render(); return; }
     const data = { reponse: d.reponse, origine: f.origine || "IA_RELUE", brouillon_ia: String(f.brouillon_ia || "").slice(0, 80), RELECTURE: v };
     FIA_RUBRIQUES.forEach(function (x) { data[x[0]] = String(f[x[0]] || "").trim().slice(0, FIA_MAX); });
+    if (typeof f.SOURCES_NOTION === "string" && f.SOURCES_NOTION) data.SOURCES_NOTION = f.SOURCES_NOTION;   // v69 : garder les sources Notion
     state.vs.msgRel = { code: c, txt: "Enregistrement…" }; render();
     window.aciaEcrireFicheSpec(c, data).then(function () { state.vs.msgRel = { code: c, txt: "Relecture humaine : " + (v === "NON" ? "Non" : "Oui") + ", enregistré dans la base." }; render(); })
       .catch(function (e) { state.vs.msgRel = { code: c, txt: "Refusé par la base : " + ((e && e.message) || e) }; render(); });
