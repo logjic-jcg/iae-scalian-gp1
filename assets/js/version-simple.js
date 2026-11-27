@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v68.1 (« Voir la spécification » → Décider) · v68 (Décider en 4 étapes, fiche en familles, accords singulier/pluriel) · v67.15 (Repérer : pictos des 3 indicateurs, réponse retenue sous « Validé ») · v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v68.2 (« Autre » hors des listes : mêmes totaux partout) · v68.1 (« Voir la spécification » → Décider) · v68 (Décider en 4 étapes, fiche en familles, accords singulier/pluriel) · v67.15 (Repérer : pictos des 3 indicateurs, réponse retenue sous « Validé ») · v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -210,10 +210,11 @@
     const enPlace = R.L.filter(function (l) { return l.effet && l.d.statut === "VALIDE"; });
     const baisse = enPlace.filter(function (l) { return l.effet.verdict === "BAISSE"; });
     // v67.5 : « Essentiel » = à examiner, sans décision à 3 signaux ou plus, validés ; « Tous » = tout irritant signalé ou décidé.
-    const tous = trier(R.L.filter(function (l) { return l.p.total > 0 || l.d; }));
+    const tous = trier(R.L.filter(function (l) { return l.code !== "AUTRE" && (l.p.total > 0 || l.d); }));
     const essentiels = tous.filter(essentiel);
+    const autre = R.L.find(function (l) { return l.code === "AUTRE"; }), autreN = autre ? autre.p.total : 0;
     const visibles = state.vs.tousIrr ? tous : essentiels;
-    const caches = R.L.length - tous.length;
+    const caches = R.L.filter(function (l) { return l.code !== "AUTRE"; }).length - tous.length;
     const masques = tous.length - essentiels.length;
     const filtre = '<div class="vs-row" style="margin:0 0 10px"><div class="vs-seg vs-filtre" role="group" aria-label="Irritants affichés">' +
       '<button aria-pressed="' + !state.vs.tousIrr + '" onclick="vsTousIrr(false)" title="À examiner, sans décision à 3 signaux ou plus, validés">Essentiel (' + essentiels.length + ")</button>" +
@@ -233,6 +234,7 @@
       "</div>" +
       filtre + '<div class="tw"><table class="vs-tbl"><thead><tr><th class="vs-irr">Irritant</th><th class="vs-hide-sm vs-c" title="Signaux par semaine, 6 dernières semaines (les 2 dernières en foncé)">6 semaines</th><th class="vs-c vs-n">Signaux</th><th class="vs-c" title="Confiance de l\'IA au classement : signaux en confiance haute / total">Confiance</th><th class="vs-c">État</th><th class="vs-act"></th></tr></thead><tbody>' + rows + "</tbody></table></div>" +
       '<p class="note" style="margin-top:8px">Un signal = un mail classé dans ce type, ou une action de réunion reportée ou sans responsable. « À examiner » = 3 signaux ou plus sur les 2 dernières semaines observées. Confiance = auto-évaluation de l\'IA au classement, pas une probabilité mesurée : barre <b style="color:#4b2882">haute</b> · <b style="color:#8b6fc2">moyenne</b> · <b style="color:#d97706">basse</b> · non évaluée, chiffre = signaux en confiance haute / total, pastille orange = signaux en confiance basse, à vérifier.' +
+      (autreN ? " " + sig(autreN) + " classé" + (autreN >= 2 ? "s" : "") + " « Autre » ne " + (autreN >= 2 ? "sont" : "est") + " pas dans ce tableau : à relire, puis créer un type dans Réglages si un motif revient." : "") +
       (caches ? " " + (caches >= 2 ? caches + " types sans aucun signal ne sont pas affichés." : caches + " type sans aucun signal n'est pas affiché.") : "") + "</p>" +
       '<div class="vs-liens">' +
         lien("tendances", "Détail semaine par semaine, période, comptes rendus, qualité du classement", "écran Tendances") +
@@ -286,7 +288,7 @@
       if (!c || c.cle !== "s_reperer") return expResumeOrigine(c);
       const R = lignes();
       if (R.erreur) return ["Données de la base indisponibles au moment du partage."];
-      const tous = trier(R.L.filter(function (l) { return l.p.total > 0 || l.d; }));
+      const tous = trier(R.L.filter(function (l) { return l.code !== "AUTRE" && (l.p.total > 0 || l.d); }));
       const vis = state.vs.tousIrr ? tous : tous.filter(essentiel);
       const signales = R.L.filter(function (l) { return l.p.total > 0 && l.code !== "AUTRE"; });
       const L = [nb(signales.filter(attente).length, "irritant", "irritants") + " à examiner sans décision, " + signales.filter(function (l) { return !l.d; }).length + " sans décision sur " + nb(signales.length, "signalé", "signalés") + ".", "",
@@ -343,7 +345,7 @@
     const R = lignes();
     if (R.erreur) return sansBase("Que fait-on ?", R.erreur);
     const V = state.vs;
-    const tous = trier(R.L.filter(function (l) { return l.p.total > 0 || l.d; }));
+    const tous = trier(R.L.filter(function (l) { return l.code !== "AUTRE" && (l.p.total > 0 || l.d); }));
     // v67.8 : même filtre Essentiel / Tous que Repérer (choix partagé entre les deux écrans).
     const portee = tous.filter(function (l) { return V.tout || !l.d; });
     const retenus = V.tousIrr ? portee : portee.filter(essentiel);
