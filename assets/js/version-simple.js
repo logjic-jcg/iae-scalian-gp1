@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v68 (Décider en 4 étapes, fiche en familles, accords singulier/pluriel) · v67.15 (Repérer : pictos des 3 indicateurs, réponse retenue sous « Validé ») · v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v68.1 (« Voir la spécification » → Décider) · v68 (Décider en 4 étapes, fiche en familles, accords singulier/pluriel) · v67.15 (Repérer : pictos des 3 indicateurs, réponse retenue sous « Validé ») · v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -401,7 +401,7 @@
       etape(1, "loupe", "Le constat", d ? "" : etiquette(l), constat) +
       etape(2, "bouclier", "L'objection de l'IA <small>avant de décider</small>", cAvd ? badge(cAvd[0], cAvd[1]) : '<span class="note" style="margin:0">Pas encore demandée</span>', objection) +
       etape(3, "drapeau", "La décision", d ? badge(libStatut(d.statut).cls, libStatut(d.statut).label) + (d.statut === "VALIDE" ? ' <span class="vs-et-rep">' + esc(libReponse(d.reponse)) + " · dès S" + esc(d.semaine_effet) + "</span>" : "") : badge("b-sky", "À prendre"), decision, ' id="decision-hrbp"') +
-      etape(4, "document", "La mise en œuvre", valide && typeof etatSpec === "function" ? badge(etatSpec(c)[0], etatSpec(c)[1]) : '<span class="note" style="margin:0">Après validation</span>', oeuvre, valide ? "" : ' style="opacity:.75"') +
+      etape(4, "document", "La mise en œuvre", valide && typeof etatSpec === "function" ? badge(etatSpec(c)[0], etatSpec(c)[1]) : '<span class="note" style="margin:0">Après validation</span>', oeuvre, valide ? ' id="vs-oeuvre"' : ' id="vs-oeuvre" style="opacity:.75"') +
       "</div>";
     return "<h2>Que fait-on ?</h2>" + '<p class="vs-lead">Une décision par irritant : la réponse la plus simple qui suffit.</p>' +
       '<div class="vs-dec"><div>' + gauche + "</div><div>" + droite + "</div></div>";
@@ -535,6 +535,26 @@
   window.vsSpecToggle = function (o) { ouverts["spec"] = o; };
 
   // Actions de l'écran Décider (les choix restent en mémoire si la base se met à jour).
+  // v68.1 : en version simple, « Voir la spécification » (Revue des agents IA, etc.) ouvre Décider sur
+  // l'irritant, avec la spécification dépliée dans « La mise en œuvre », au lieu de l'onglet Spécifications.
+  if (typeof allerSpec === "function") {
+    const allerSpecOrigine = allerSpec;
+    allerSpec = function (code) {
+      if (!actif()) return allerSpecOrigine(code);
+      const d = decisionDe(code);
+      etatVs(); state.vs.sel = code; state.msgPilot = ""; state.specVue = "fiche";
+      if (d) state.vs.tout = true;                  // un irritant décidé doit rester visible dans la liste
+      ouverts["spec"] = true;
+      if (panneau) fermer();
+      state.ficheCode = null;
+      setTab("s_decider");
+      setTimeout(function () {
+        const el = document.getElementById("vs-oeuvre");
+        if (el) { const h = document.querySelector("header.app"), haut = h && getComputedStyle(h).position !== "static" ? h.offsetHeight : 0;
+          window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - haut - 12, behavior: "smooth" }); }
+      }, 50);
+    };
+  }
   window.vsAllerDecider = function (code) { state.vs.sel = code; state.msgPilot = ""; setTab("s_decider"); };
   window.vsSel = function (code) { state.vs.sel = code; state.msgPilot = ""; render(); };
   window.vsTout = function (v) { state.vs.tout = !!v; render(); };
