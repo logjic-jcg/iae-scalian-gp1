@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v68.4 (Bento : vidéo de présentation) · v68.3 (mention « Brouillon à relire avant import » masquée) · v68.2 (« Autre » hors des listes : mêmes totaux partout) · v68.1 (« Voir la spécification » → Décider) · v68 (Décider en 4 étapes, fiche en familles, accords singulier/pluriel) · v67.15 (Repérer : pictos des 3 indicateurs, réponse retenue sous « Validé ») · v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v72 (Pascal : « Pilotage et temps gagné » en panneau) · v68.4 (Bento : vidéo de présentation) · v68.3 (mention « Brouillon à relire avant import » masquée) · v68.2 (« Autre » hors des listes : mêmes totaux partout) · v68.1 (« Voir la spécification » → Décider) · v68 (Décider en 4 étapes, fiche en familles, accords singulier/pluriel) · v67.15 (Repérer : pictos des 3 indicateurs, réponse retenue sous « Validé ») · v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -336,7 +336,7 @@
   }
   function lienNom(l) { return '<a href="#" class="vs-nom" onclick="ouvrirFiche(\'' + l.code + '\', false);return false">' + esc(l.label) + "</a>"; }
   const PANNEAUX = { tendances: ["Tendances", "Détail semaine par semaine, période, comptes rendus, qualité du classement"], b_pilotage: ["Tableau de bord", "Pilotage des irritants et indicateurs détaillés"], b_agents: ["Revue des agents IA", "Agents en place : signaux mesurés, appréciation du HRBP, règles"],
-    d_repart: ["Répartition et irritants à suivre", "Répartition par source et tableau complet des irritants"], dir_roi: ["Pilotage et ROI", "Hypothèses, calcul, décisions du comité"], dir_equipe: ["Pour en parler avec l’équipe", "Conseils de l'IA pour la discussion"] };
+    d_repart: ["Répartition et irritants à suivre", "Répartition par source et tableau complet des irritants"], dir_roi: ["Pilotage et temps gagné", "Temps rendu au HRBP, délai de prise en charge, euros en option"], dir_equipe: ["Pour en parler avec l’équipe", "Conseils de l'IA pour la discussion"] };
   function lien(tab, texte, cible) { return '<button class="vs-lien" onclick="' + (PANNEAUX[tab] ? "vsPanneau(\'" + tab + "\')" : "setTab(\'" + tab + "\')") + '"><span>' + esc(texte) + "</span><small>" + esc(cible) + " →</small></button>"; }
 
   // ---------------------------------------------------------------- Décider
@@ -621,7 +621,7 @@
     }
     [bloc(main, "repartition par source"), bloc(main, "irritants a suivre")].forEach(function (n) { if (n) n.remove(); });
     main.insertAdjacentHTML("beforeend", '<div class="vs-liens">' + lien("d_repart", "Répartition par source et tableau complet des irritants", "détail par source et par irritant") +
-      lien("dir_roi", "Pilotage et ROI", "hypothèses, calcul, décisions du comité") + lien("dir_equipe", "Pour en parler avec l’équipe", "conseils de l'IA") + "</div>");
+      lien("dir_roi", "Pilotage et temps gagné", "temps rendu au HRBP, délai de prise en charge") + lien("dir_equipe", "Pour en parler avec l’équipe", "conseils de l'IA") + "</div>");
   }
 
   // ----------------------------------------------------------- branchements
@@ -740,6 +740,106 @@
   // latéral (depuis la droite, toute la hauteur). Mêmes écrans, mêmes données en direct.
   // L'onglet courant ne change pas : le panneau se ferme par ×, Échap ou clic sur le voile.
   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // v72 : version simple, panneau Direction « Pilotage et temps gagné ».
+  // Met en avant le temps rendu au HRBP (heures, ETP) et le délai de prise en charge
+  // des mails ; le calcul en euros (écran « Pilotage et ROI » existant) est replié en bas.
+  // Lecture seule pour la base : volumes et délais mesurés, minutes = hypothèses saisies ici.
+  // ---------------------------------------------------------------------------
+  function tgNum(k) { return typeof roiNum === "function" ? roiNum(k) : null; }
+  function tgDate(x) { return x && x.toDate ? x.toDate() : null; }
+  function tgDelais() {
+    const fb = window.ACIA_FB && window.ACIA_FB.classement_mails;
+    const D = [];
+    if (fb && fb.statut === "ok") fb.docs.forEach(function (d) {
+      const r = tgDate(d.recu), m = tgDate(d.maj);
+      if (!r || !m) return;
+      const h = (m.getTime() - r.getTime()) / 3600000;
+      if (h >= 0 && h < 24 * 30) D.push({ r: r, h: h });
+    });
+    if (!D.length) return null;
+    const moy = function (L) { return L.reduce(function (s, x) { return s + x.h; }, 0) / L.length; };
+    const tri = D.map(function (x) { return x.h; }).sort(function (a, b) { return a - b; });
+    const med = tri.length % 2 ? tri[(tri.length - 1) / 2] : (tri[tri.length / 2 - 1] + tri[tri.length / 2]) / 2;
+    const lundi = function (dt) { const x = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
+    const sem = {};
+    D.forEach(function (x) { const k = lundi(x.r).getTime(); (sem[k] = sem[k] || []).push(x); });
+    const S = Object.keys(sem).map(Number).sort(function (a, b) { return a - b; }).slice(-6).map(function (k) { return { lundi: new Date(k), n: sem[k].length, moy: moy(sem[k]) }; });
+    return { n: D.length, moy: moy(D), med: med, sem: S };
+  }
+  function tgH(h) { return h === null ? "—" : h === 0 ? "0 h" : (h < 1 ? Math.max(1, Math.round(h * 60)) + " min" : tdbFr(h, 1) + " h"); }
+  function vsTempsGagne() {
+    const sig = aciaSignaux();
+    if (!sig.ok) return messageSansBase("Pilotage et temps gagné", sig);
+    const R = roiCalcul(), Q = roiSaisies();
+    const mMail = tgNum("minMail"), mCR = tgNum("minCR"), mSig = tgNum("minutes");
+    const etpBase = tgNum("etp") || 1607;
+    const hMail = R.mailsMois === null || mMail === null ? null : R.mailsMois * mMail / 60;
+    const hCR = mCR === null ? null : R.crMois * mCR / 60;
+    const hSig = mSig === null ? null : R.evites * mSig / 60;
+    const parts = [hMail, hCR, hSig].filter(function (x) { return x !== null; });
+    const total = parts.length ? parts.reduce(function (a, b) { return a + b; }, 0) : null;
+    const an = total === null ? null : total * 12;
+    const etp = an === null ? null : an / etpBase;
+    const hyp = badge("b-amber", "hypothèse"), mes = badge("b-emerald", "mesuré");
+    const champ = function (k, ph) { return '<input inputmode="decimal" placeholder="' + ph + '" value="' + esc(state.roi[k] || "") + '" onchange="roiSet(\'' + k + '\', this.value)" style="width:72px;text-align:right">'; };
+
+    // Tuile principale
+    const coul = ["#4b2882", "#9b7fd0", "#2fa36b"], libs = ["Tri de la boîte RH", "Lecture des comptes rendus", "Sollicitations évitées"], hs = [hMail, hCR, hSig];
+    const barre = total ? '<div style="display:flex;height:14px;border-radius:7px;overflow:hidden;background:#eee;margin:12px 0 6px">' + hs.map(function (h, i) { return h ? '<div style="width:' + (100 * h / total).toFixed(1) + '%;background:' + coul[i] + '"></div>' : ""; }).join("") + "</div>" +
+      '<div class="note" style="display:flex;flex-wrap:wrap;gap:12px">' + hs.map(function (h, i) { return '<span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:' + coul[i] + ';margin-right:4px"></span>' + libs[i] + " " + tgH(h) + "</span>"; }).join("") + "</div>" : "";
+    const heros = '<div class="card"><div class="kpi-h">' + tendIcone("horloge") + '<div class="spechead">Temps rendu au HRBP</div></div>' +
+      '<div style="font-size:40px;font-weight:800;color:var(--dark);line-height:1.15;margin-top:4px">' + (total === null ? "—" : "≈ " + tgH(total)) + ' <span style="font-size:18px;color:#6b6480;font-weight:600">/ mois</span></div>' +
+      (total === null ? '<p class="note" style="margin:4px 0 0">Saisissez les minutes gagnées par tâche ci-dessous pour calculer le temps rendu.</p>' :
+        '<div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:6px"><div><div style="font-size:24px;font-weight:800;color:var(--dark)">≈ ' + tdbFr(etp, 2) + " ETP</div>" + '<div class="note">' + tdbFr(an, 0) + " h / an ÷ " + Math.round(etpBase).toLocaleString("fr-FR") + " h</div></div>" +
+        '<div><div style="font-size:24px;font-weight:800;color:var(--dark)">≈ ' + tdbFr(an, 0) + " h / an</div>" + '<div class="note">soit environ ' + tdbFr(an / 7, 0) + " jours de 7 h</div></div></div>" +
+        '<p class="note" style="margin:6px 0 0">Temps libéré pour l\'accompagnement des collaborateurs.</p>') +
+      barre + '<div style="margin-top:6px">' + badge("b-emerald", "volumes mesurés") + " " + badge("b-amber", "minutes : hypothèse") + "</div></div>";
+    const mini = function (t, v, s, b) { return '<div class="kpi"><div class="spechead">' + esc(t) + '</div><div class="kv">' + v + '</div><div class="note">' + s + '</div><div style="margin-top:4px">' + b + "</div></div>"; };
+    const minis = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+      mini("Mails triés pour le HRBP", R.mailsMois === null ? "—" : tdbFr(R.mailsMois, 0), "par mois", mes) +
+      mini("Comptes rendus lus", tdbFr(R.crMois, 0), "par mois", mes) +
+      mini("Sollicitations évitées", tdbFr(R.evites, 1), "par mois, baisse mesurée après décision", mes) +
+      mini("Incidents des agents IA", String(Q.incidents), Q.n ? "saisis dans la Revue des agents IA" : "aucune revue saisie", Q.incidents ? badge("b-rose", "À traiter") : badge("b-emerald", "Aucun")) + "</div>";
+
+    // Délai de prise en charge
+    const DL = tgDelais(), avant = tgNum("delaiAvant");
+    const evo = DL && avant ? (DL.moy - avant) / avant : null;
+    const maxS = DL ? Math.max.apply(null, DL.sem.map(function (s) { return s.moy; }).concat([avant || 0, 0.01])) : 1;
+    const barres = DL ? '<div style="display:flex;gap:6px;align-items:flex-end">' + DL.sem.map(function (s) {
+      return '<div style="flex:1;text-align:center;min-width:34px"><div style="height:110px;display:flex;align-items:flex-end;justify-content:center"><div title="' + s.n + ' mail(s)" style="width:60%;height:' + Math.max(2, Math.round(110 * s.moy / maxS)) + 'px;background:#4b2882;border-radius:4px 4px 0 0"></div></div>' +
+        '<div class="note">' + s.lundi.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }) + '</div><div style="font-size:12px;font-weight:700">' + tgH(s.moy) + "</div></div>"; }).join("") + "</div>" : "";
+    const chiffre = function (lib, v, b, coulV) { return '<div><div class="note">' + lib + '</div><div style="font-size:28px;font-weight:800;color:' + (coulV || "var(--dark)") + '">' + v + "</div>" + b + "</div>"; };
+    const delai = '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("courbe") + '<div class="spechead">Délai moyen de prise en charge des mails</div></div>' +
+      '<p class="note" style="margin:4px 0 0">De la réception du mail dans la boîte RH à son classement et à son orientation. Quand la réponse est automatique, elle part dans le même passage.</p>' +
+      (DL ? '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:10px;align-items:end">' +
+        chiffre("Avant l'assistant", avant === null ? "—" : tgH(avant), '<div style="margin-top:4px">' + champ("delaiAvant", "h") + " h " + hyp + "</div>", "#8a8399") +
+        chiffre("Aujourd'hui", tgH(DL.moy), '<div style="margin-top:4px">' + mes + ' <span class="note">médiane ' + tgH(DL.med) + ", " + DL.n + " mails</span></div>") +
+        chiffre("Évolution", evo === null ? "—" : (evo <= 0 ? "− " : "+ ") + Math.abs(Math.round(100 * evo)) + " %", '<div style="margin-top:4px">' + badge("b-slate", "calculé") + "</div>", evo !== null && evo <= 0 ? "#156b3c" : "var(--dark)") +
+        "</div>" + '<div style="margin-top:14px">' + barres + '<p class="note" style="margin:4px 0 0">Délai moyen par semaine de réception (6 dernières semaines au plus), en heures calendaires : la nuit et le dimanche comptent.</p></div>'
+        : '<p class="note">Pas encore de mail avec une date de réception et de classement dans la base.</p>') +
+      '<p class="note" style="margin:6px 0 0">Délai de réponse au collaborateur pour un brouillon envoyé par le HRBP : ' + badge("b-slate", "non mesuré") + " (l'heure d'envoi n'est pas enregistrée).</p></div>";
+
+    // D'où vient le temps gagné
+    const ligne = function (t, s, vol, k, ph, h, b) { return "<tr><td><b>" + esc(t) + '</b><div class="note">' + esc(s) + '</div></td><td class="c">' + vol + '</td><td class="c">' + champ(k, ph) + ' min</td><td class="c"><b>' + tgH(h) + "</b></td><td>" + b + "</td></tr>"; };
+    const detail = '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("etiquette") + '<div class="spechead">D\'où vient le temps gagné</div></div>' +
+      '<div class="tw" style="margin-top:8px"><table><thead><tr><th>Tâche allégée</th><th class="c">Volume / mois</th><th class="c">Minutes gagnées par unité</th><th class="c">Temps / mois</th><th>Source</th></tr></thead><tbody>' +
+      ligne("Tri de la boîte RH", "Lire, qualifier et ranger chaque mail", R.mailsMois === null ? "—" : tdbFr(R.mailsMois, 0) + " mails", "minMail", "à saisir", hMail, mes + " × " + hyp) +
+      ligne("Lecture des comptes rendus", "Repérer les irritants dans les réunions", tdbFr(R.crMois, 0) + " CR", "minCR", "à saisir", hCR, mes + " × " + hyp) +
+      ligne("Sollicitations évitées", "Baisse des signaux après une réponse validée", tdbFr(R.evites, 1) + " signal(s)", "minutes", "à saisir", hSig, mes + " × " + hyp) +
+      "</tbody></table></div>" +
+      '<p class="note">Base ETP : ' + champ("etp", "1607") + " h / an (durée légale annuelle à 35 h). Les minutes restent dans cette page et disparaissent à la fermeture. Le temps rendu ne supprime pas le travail du HRBP : il reste la validation et la décision. Le gain de qualité n'est pas valorisé.</p></div>";
+
+    // Euros : écran existant, replié
+    const ouvert = !!state.vsRoiEuros;
+    const euros = '<details class="card" style="margin-top:16px"' + (ouvert ? " open" : "") + ' ontoggle="if(state.vsRoiEuros!==this.open){state.vsRoiEuros=this.open;render()}">' +
+      '<summary style="cursor:pointer;font-weight:700;color:var(--dark)">Traduction en euros (facultatif, pour le contrôle de gestion)</summary>' +
+      (ouvert ? '<div style="margin-top:10px">' + viewPilotageRoi() + "</div>" : "") + "</details>";
+
+    return '<p class="note" style="margin:0 0 12px">' + badge("b-emerald", "● En direct") + " Lecture seule pour la base. Chaque valeur indique sa source.</p>" +
+      '<div class="row c-2-3"><div>' + heros + "</div><div>" + minis + "</div></div>" + delai + detail + euros;
+  }
+
   let panneau = null, dernierFocus = null;
   function elementsPanneau() {
     let voile = document.getElementById("vs-voile"), pan = document.getElementById("vs-panneau");
@@ -755,7 +855,7 @@
     const E = document.getElementById("vs-panneau") ? elementsPanneau() : null;
     if (!panneau || !actif() || state.ficheCode) { if (panneau) fermer(); return; }
     const P = E || elementsPanneau();
-    const vue = { tendances: window.viewTendances, b_pilotage: window.viewTableauBordHrbp, b_agents: window.viewRevueAgents, d_repart: vueRepartition, dir_roi: window.viewPilotageRoi, dir_equipe: window.viewVedOnglet }[panneau];
+    const vue = { tendances: window.viewTendances, b_pilotage: window.viewTableauBordHrbp, b_agents: window.viewRevueAgents, d_repart: vueRepartition, dir_roi: vsTempsGagne, dir_equipe: window.viewVedOnglet }[panneau];
     if (typeof vue !== "function") return;
     const ongletReel = state.tab, defil = P.corps.scrollTop;
     state.tab = panneau;            // les écrans lisent l'onglet courant (export, fiche, filtres)
