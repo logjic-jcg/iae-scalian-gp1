@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v73 (semaines du calendrier) · v72 (Pascal : « Pilotage et temps gagné » en panneau) · v68.4 (Bento : vidéo de présentation) · v68.3 (mention « Brouillon à relire avant import » masquée) · v68.2 (« Autre » hors des listes : mêmes totaux partout) · v68.1 (« Voir la spécification » → Décider) · v68 (Décider en 4 étapes, fiche en familles, accords singulier/pluriel) · v67.15 (Repérer : pictos des 3 indicateurs, réponse retenue sous « Validé ») · v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v74 (Décider focalisé depuis Repérer / fiche) · v73 (semaines du calendrier) · v72 (Pascal : « Pilotage et temps gagné » en panneau) · v68.4 (Bento : vidéo de présentation) · v68.3 (mention « Brouillon à relire avant import » masquée) · v68.2 (« Autre » hors des listes : mêmes totaux partout) · v68.1 (« Voir la spécification » → Décider) · v68 (Décider en 4 étapes, fiche en familles, accords singulier/pluriel) · v67.15 (Repérer : pictos des 3 indicateurs, réponse retenue sous « Validé ») · v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -356,11 +356,16 @@
     const liste = retenus.concat(tous.filter(function (l) { return l.code === V.sel && retenus.indexOf(l) < 0; }));
     const nDec = tous.filter(function (l) { return l.d; }).length;
     const nEss = portee.filter(essentiel).length, masques = portee.length - nEss;
+    // v74 : arrivée depuis Repérer ou la fiche (« Décider → », « Voir → ») : liste focalisée sur l'irritant choisi.
+    const foc = V.focus && tous.find(function (x) { return x.code === V.focus; });
+    if (V.focus && !foc) V.focus = "";
     const filtre = '<div class="vs-seg vs-filtre" role="group" aria-label="Irritants affichés" style="margin-bottom:8px">' +
       '<button aria-pressed="' + !V.tousIrr + '" onclick="vsTousIrr(false)" title="À examiner, sans décision à 3 signaux ou plus, validés">Essentiel (' + nEss + ")</button>" +
       '<button aria-pressed="' + !!V.tousIrr + '" onclick="vsTousIrr(true)" title="Tous les irritants signalés ou décidés">Tous les irritants (' + portee.length + ")</button></div>" +
       (!V.tousIrr && masques ? '<p class="note" style="margin:0 0 8px">' + nb(masques, "irritant masqué", "irritants masqués") + " : sans décision à moins de 3 signaux" + (V.tout ? ", à surveiller ou écartés" : "") + ".</p>" : "");
-    const gauche = filtre + '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:8px"><input type="checkbox" ' + (V.tout ? "checked" : "") + ' onchange="vsTout(this.checked)"> Voir aussi ' + (nDec >= 2 ? "les " + nDec + " irritants déjà décidés" : nDec === 1 ? "l'irritant déjà décidé" : "les irritants déjà décidés") + "</label>" +
+    const gauche = foc ? '<div class="vs-focus" style="border:1px solid #d9cdea;background:#f6f1fc;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:13px">Filtré sur : <b>' + esc(foc.label) + '</b><br><button type="button" onclick="vsFocusOff()" style="background:none;border:0;padding:4px 0 0;font:inherit;font-size:13px;color:#4b2882;text-decoration:underline;cursor:pointer">Voir tous les irritants (' + liste.length + ")</button></div>" +
+      '<div class="vs-list"><button class="vs-it" aria-current="true" onclick="vsSel(\'' + foc.code + '\')"><span><span class="t">' + esc(foc.label) + "</span>" + etiquette(foc) + "</span><b>" + foc.p.total + "</b></button></div>"
+      : filtre + '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:8px"><input type="checkbox" ' + (V.tout ? "checked" : "") + ' onchange="vsTout(this.checked)"> Voir aussi ' + (nDec >= 2 ? "les " + nDec + " irritants déjà décidés" : nDec === 1 ? "l'irritant déjà décidé" : "les irritants déjà décidés") + "</label>" +
       '<div class="vs-list">' + (liste.map(function (l) {
         return '<button class="vs-it" aria-current="' + (l.code === V.sel) + '" onclick="vsSel(\'' + l.code + '\')"><span><span class="t">' + esc(l.label) + "</span>" + etiquette(l) + "</span><b>" + l.p.total + "</b></button>";
       }).join("") || '<p class="note">' + (V.tousIrr || !portee.length ? "Aucun irritant n\'attend de décision." : "Aucun irritant essentiel : voir « Tous les irritants ».") + "</p>") + "</div>";
@@ -562,7 +567,9 @@
       }, 50);
     };
   }
-  window.vsAllerDecider = function (code) { state.vs.sel = code; state.msgPilot = ""; setTab("s_decider"); };
+  window.vsAllerDecider = function (code) { state.vs.sel = code; state.msgPilot = ""; focusArrivee = code; setTab("s_decider"); };
+  window.vsFocusOff = function () { state.vs.focus = ""; render(); };
+  let focusArrivee = "";
   window.vsSel = function (code) { state.vs.sel = code; state.msgPilot = ""; render(); };
   window.vsTout = function (v) { state.vs.tout = !!v; render(); };
   window.vsRep = function (c, r) { state.vs.rep[c] = r; render(); };
@@ -926,7 +933,9 @@
   const setTabOrigine = setTab;
   setTab = function (t) {
     if (panneau) fermer();
-    if (actif() && t === "b_orienter" && state.prefillPilot && state.prefillPilot.code) { state.vs.sel = state.prefillPilot.code; t = "s_decider"; }
+    if (actif() && t === "b_orienter" && state.prefillPilot && state.prefillPilot.code) { state.vs.sel = state.prefillPilot.code; focusArrivee = state.prefillPilot.code; t = "s_decider"; }
+    // v74 : focalisé seulement quand on arrive depuis un bouton « Décider / Voir » ; le menu Décider montre tout.
+    if (t === "s_decider" && state.vs) { state.vs.focus = focusArrivee; focusArrivee = ""; }
     return setTabOrigine(t);
   };
 
