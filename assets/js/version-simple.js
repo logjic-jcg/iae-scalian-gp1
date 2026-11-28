@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v74 (Décider focalisé depuis Repérer / fiche) · v73 (semaines du calendrier) · v72 (Pascal : « Pilotage et temps gagné » en panneau) · v68.4 (Bento : vidéo de présentation) · v68.3 (mention « Brouillon à relire avant import » masquée) · v68.2 (« Autre » hors des listes : mêmes totaux partout) · v68.1 (« Voir la spécification » → Décider) · v68 (Décider en 4 étapes, fiche en familles, accords singulier/pluriel) · v67.15 (Repérer : pictos des 3 indicateurs, réponse retenue sous « Validé ») · v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v75 (Décider : aides (i) ciblées) · v74 (Décider focalisé depuis Repérer / fiche) · v73 (semaines du calendrier) · v72 (Pascal : « Pilotage et temps gagné » en panneau) · v68.4 (Bento : vidéo de présentation) · v68.3 (mention « Brouillon à relire avant import » masquée) · v68.2 (« Autre » hors des listes : mêmes totaux partout) · v68.1 (« Voir la spécification » → Décider) · v68 (Décider en 4 étapes, fiche en familles, accords singulier/pluriel) · v67.15 (Repérer : pictos des 3 indicateurs, réponse retenue sous « Validé ») · v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -146,6 +146,12 @@
     ".vs-opts label{display:block;font-size:13px;font-weight:600;margin-top:8px}",
     ".vs-opts input{display:block;width:100%;margin-top:4px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit}",
     ".vs-stack > * + *{margin-top:16px}",
+    ".vs-etape:has(.vs-i-bulle){overflow:visible}",
+    ".vs-i-w{position:relative;display:inline-block;vertical-align:middle;margin-left:6px}",
+    ".vs-i{width:20px;height:20px;border-radius:50%;border:1px solid #b9a8d6;background:#fff;color:#4b2882;font:italic 700 12px/18px Georgia,serif;padding:0;cursor:pointer}",
+    ".vs-i[aria-expanded=true]{background:#4b2882;color:#fff;border-color:#4b2882}",
+    ".vs-i-bulle{position:absolute;left:-8px;top:28px;z-index:30;width:300px;max-width:78vw;background:#2a1450;color:#fff;font-size:13px;line-height:1.45;font-weight:400!important;font-style:normal;text-transform:none;letter-spacing:0;padding:10px 12px;border-radius:8px;box-shadow:0 6px 18px rgba(26,16,48,.25);white-space:normal;text-align:left}",
+    ".vs-i-bulle:before{content:'';position:absolute;top:-6px;left:14px;border:6px solid transparent;border-top:0;border-bottom-color:#2a1450}",
     ".vs-liens{display:grid;gap:8px;margin-top:12px}",
     ".vs-lien{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px;font:inherit;font-weight:600;color:var(--accent);cursor:pointer;text-align:left}",
     ".vs-lien small{font-weight:400;color:var(--muted)}",
@@ -340,6 +346,16 @@
   function lien(tab, texte, cible) { return '<button class="vs-lien" onclick="' + (PANNEAUX[tab] ? "vsPanneau(\'" + tab + "\')" : "setTab(\'" + tab + "\')") + '"><span>' + esc(texte) + "</span><small>" + esc(cible) + " →</small></button>"; }
 
   // ---------------------------------------------------------------- Décider
+  // v75 : bulles d'aide (i) ciblées de l'écran Décider (clic pour ouvrir / fermer, Échap ou clic ailleurs).
+  const AIDES_DEC = {"filtre": "« Essentiel » : irritants à examiner (3 signaux ou plus sur les 2 dernières semaines) sans décision, plus ceux déjà validés. « Tous les irritants » : tout irritant signalé ou décidé.", "objection": "Facultatif : vous pouvez décider sans demander d'objection.", "reponses": "Choisissez la réponse la plus simple qui suffit : Simplifier (sans IA) avant Automatiser (règle fixe), avant Assister (agent IA, un humain valide).", "statut": "Valider met la réponse en place à partir de la semaine choisie dans « Plus d'options » ; Suivre comparera les signaux avant et après cette semaine. À surveiller : pas encore de réponse. Écarter : pas un vrai irritant.", "relecture": "Par défaut, un humain relit chaque message avant envoi. « Non » laisse l'agent envoyer seul : c'est un écart au garde-fou, suivi dans la revue des agents."};
+  function aideI(id) {
+    const o = state.vsAide === id;
+    return '<span class="vs-i-w"><button type="button" class="vs-i" aria-expanded="' + o + '" aria-label="Aide" title="Aide" onclick="vsAide(event,\'' + id + '\')">i</button>' +
+      (o ? '<span class="vs-i-bulle" role="tooltip">' + esc(AIDES_DEC[id]) + "</span>" : "") + "</span>";
+  }
+  window.vsAide = function (e, id) { if (e) e.stopPropagation(); state.vsAide = state.vsAide === id ? "" : id; render(); };
+  document.addEventListener("click", function (e) { if (state.vsAide && !(e.target.closest && e.target.closest(".vs-i-w"))) { state.vsAide = ""; render(); } });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && state.vsAide) { state.vsAide = ""; render(); } });
   function vsDecider() {
     if (state.ficheCode) return viewFicheIrritant();
     const R = lignes();
@@ -359,9 +375,9 @@
     // v74 : arrivée depuis Repérer ou la fiche (« Décider → », « Voir → ») : liste focalisée sur l'irritant choisi.
     const foc = V.focus && tous.find(function (x) { return x.code === V.focus; });
     if (V.focus && !foc) V.focus = "";
-    const filtre = '<div class="vs-seg vs-filtre" role="group" aria-label="Irritants affichés" style="margin-bottom:8px">' +
+    const filtre = '<div style="display:flex;align-items:center;margin-bottom:8px"><div class="vs-seg vs-filtre" role="group" aria-label="Irritants affichés">' +
       '<button aria-pressed="' + !V.tousIrr + '" onclick="vsTousIrr(false)" title="À examiner, sans décision à 3 signaux ou plus, validés">Essentiel (' + nEss + ")</button>" +
-      '<button aria-pressed="' + !!V.tousIrr + '" onclick="vsTousIrr(true)" title="Tous les irritants signalés ou décidés">Tous les irritants (' + portee.length + ")</button></div>" +
+      '<button aria-pressed="' + !!V.tousIrr + '" onclick="vsTousIrr(true)" title="Tous les irritants signalés ou décidés">Tous les irritants (' + portee.length + ")</button></div>" + aideI("filtre") + "</div>" +
       (!V.tousIrr && masques ? '<p class="note" style="margin:0 0 8px">' + nb(masques, "irritant masqué", "irritants masqués") + " : sans décision à moins de 3 signaux" + (V.tout ? ", à surveiller ou écartés" : "") + ".</p>" : "");
     const gauche = foc ? '<div class="vs-focus" style="border:1px solid #d9cdea;background:#f6f1fc;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:13px">Filtré sur : <b>' + esc(foc.label) + '</b><br><button type="button" onclick="vsFocusOff()" style="background:none;border:0;padding:4px 0 0;font:inherit;font-size:13px;color:#4b2882;text-decoration:underline;cursor:pointer">Voir tous les irritants (' + liste.length + ")</button></div>" +
       '<div class="vs-list"><button class="vs-it" aria-current="true" onclick="vsSel(\'' + foc.code + '\')"><span><span class="t">' + esc(foc.label) + "</span>" + etiquette(foc) + "</span><b>" + foc.p.total + "</b></button></div>"
@@ -396,7 +412,7 @@
       .replace(/<div class="spechead"[^>]*>Contradicteur avant décision[\s\S]*?<\/span><\/div>/, "") : "";
     const decision = '<div class="vs-choices">' + choix + "</div>" +
         (pre ? '<p class="note">' + badge("b-violet", "IA") + " " + esc(pre.note || "Pré-rempli d'après la suggestion acceptée dans la Revue mensuelle : relisez, puis enregistrez vous-même.") + "</p>" : "") +
-        '<div class="vs-row">' + seg + '<button class="btn ok" onclick="vsEnregistrer(\'' + c + '\')">Enregistrer la décision</button></div>' +
+        '<div class="vs-row">' + seg + aideI("statut") + '<button class="btn ok" onclick="vsEnregistrer(\'' + c + '\')">Enregistrer la décision</button></div>' +
         '<input type="hidden" id="dp-statut" value="' + esc(stat) + '"><input type="hidden" id="dp-reponse" value="' + esc(rep) + '">' +
         '<details class="vs-opts"' + (ouverts["opts"] ? " open" : "") + ' ontoggle="vsOpts(this.open)"><summary>Plus d\'options : semaine d\'effet (' + esc(semLib(sem)) + "), commentaire</summary>" +
           '<label>Semaine à partir de laquelle la réponse s\'applique' + semSelect("dp-sem", (l.p.semMax || 0) + 1, sem, "vsSaisie('sem','" + c + "',this.value)") + "</label>" +
@@ -406,8 +422,8 @@
     const oeuvre = valide ? reponseMail(c, d, conf) : '<p class="note" style="margin:0">S\'ouvre quand la décision est « Valider » : réponse au mail et spécification.</p>';
     const droite = '<div class="vs-stack">' +
       etape(1, "loupe", "Le constat", d ? "" : etiquette(l), constat) +
-      etape(2, "bouclier", "L'objection de l'IA <small>avant de décider</small>", cAvd ? badge(cAvd[0], cAvd[1]) : '<span class="note" style="margin:0">Pas encore demandée</span>', objection) +
-      etape(3, "drapeau", "La décision", d ? badge(libStatut(d.statut).cls, libStatut(d.statut).label) + (d.statut === "VALIDE" ? ' <span class="vs-et-rep">' + esc(libReponse(d.reponse)) + " · dès " + esc(semLib(d.semaine_effet)) + "</span>" : "") : badge("b-sky", "À prendre"), decision, ' id="decision-hrbp"') +
+      etape(2, "bouclier", "L'objection de l'IA <small>avant de décider</small>" + aideI("objection"), cAvd ? badge(cAvd[0], cAvd[1]) : '<span class="note" style="margin:0">Pas encore demandée</span>', objection) +
+      etape(3, "drapeau", "La décision" + aideI("reponses"), d ? badge(libStatut(d.statut).cls, libStatut(d.statut).label) + (d.statut === "VALIDE" ? ' <span class="vs-et-rep">' + esc(libReponse(d.reponse)) + " · dès " + esc(semLib(d.semaine_effet)) + "</span>" : "") : badge("b-sky", "À prendre"), decision, ' id="decision-hrbp"') +
       etape(4, "document", "La mise en œuvre", valide && typeof etatSpec === "function" ? badge(etatSpec(c)[0], etatSpec(c)[1]) : '<span class="note" style="margin:0">Après validation</span>', oeuvre, valide ? ' id="vs-oeuvre"' : ' id="vs-oeuvre" style="opacity:.75"') +
       "</div>";
     return "<h2>Que fait-on ?</h2>" + '<p class="vs-lead">Une décision par irritant : la réponse la plus simple qui suffit.</p>' +
@@ -448,7 +464,7 @@
     } else {
       const rel = fiv ? fiaRelecture(fiv) : "OUI";
       corps = '<p style="font-size:14px;margin:6px 0 0">L\'IA rédige une réponse à chaque mail de ce type (confiance haute).</p>' +
-        '<div class="vs-row" style="margin-top:8px"><b style="font-size:14px">Relecture humaine</b>' +
+        '<div class="vs-row" style="margin-top:8px"><b style="font-size:14px">Relecture humaine' + aideI("relecture") + "</b>" +
         (fiv ? '<div class="vs-seg" role="group" aria-label="Relecture humaine">' +
             '<button aria-pressed="' + (rel !== "NON") + '" onclick="vsRelecture(\'' + c + '\',\'OUI\')">Oui : brouillon à relire</button>' +
             '<button aria-pressed="' + (rel === "NON") + '" onclick="vsRelecture(\'' + c + '\',\'NON\')">Non : envoi direct</button></div>'
