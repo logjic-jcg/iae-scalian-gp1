@@ -57,7 +57,22 @@ function fiaRepAutoModele() { if (state.fia.brouillon) { state.fia.brouillon.REP
 // 1 à 3 liens de pages Notion (documents de référence RH). Le scénario Make de classement lit ces pages
 // et l'IA rédige la réponse uniquement à partir d'elles, en citant leur titre ; sinon elle dit qu'elle
 // n'a pas trouvé et renvoie vers un RH. Vide : l'IA répond comme avant (orientation générale).
-const FIA_SOURCES_LIB = "Sources Notion de la réponse";
+// v71 : libellé « Sources » + 3 boutons (Ajouter du contenu / Charger des fichiers / Joindre des fichiers cloud).
+// Seul le lien collé (page de l'intranet RH) est réellement utilisé par le scénario Make ; « Charger » et
+// « Joindre » sont SIMULÉS (rien n'est envoyé ni enregistré). Champ stocké inchangé : SOURCES_NOTION.
+const FIA_SOURCES_LIB = "Sources";
+const FIA_SRC_ICO = {
+  lien: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5l-8.6 8.6a5 5 0 0 1-7.1-7.1l8.6-8.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l8-8"/></svg>',
+  charger: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h14M12 21V8M7 13l5-5 5 5"/></svg>',
+  cloud: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .6-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 7 18z"/></svg>'
+};
+function fiaSrcBouton(ico, lib, js) {
+  return '<button type="button" onclick="' + js + '" style="display:flex;align-items:center;gap:10px;background:none;border:0;padding:4px 2px;font:inherit;font-size:14px;color:#1a1030;cursor:pointer">' + FIA_SRC_ICO[ico] + esc(lib) + "</button>";
+}
+function fiaSrcLien() { const t = document.getElementById("fia-src-ta"); if (t) t.focus(); }
+function fiaSrcCharger() { const f = document.getElementById("fia-src-file"); if (f) f.click(); }
+function fiaSrcFichiers(el) { el.value = ""; }   // factice : rien n'est envoyé ni enregistré
+function fiaSrcCloud() { }                        // factice
 const FIA_SOURCES_MAX = 600;
 function fiaSourcesLiens(t) { return String(t || "").match(/https?:\/\/[^\s<>"']+/g) || []; }
 function fiaSourcesOk(t) { return /[0-9a-f]{32}/.test(String(t || "")); }
@@ -66,7 +81,7 @@ function fiaSourcesHtml(t) {
   if (!t) return '<span class="note">Aucune : l\'IA répond sans document de référence (orientation générale).</span>';
   const liens = fiaSourcesLiens(t);
   const html = liens.length ? liens.map(function (u) { return '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(u.replace(/^https?:\/\/(www\.)?/, "").slice(0, 70)) + "</a>"; }).join("<br>") : esc(t);
-  return html + (fiaSourcesOk(t) ? "" : '<br><small class="note">' + badge("b-rose", "Attention") + " Aucun lien de page Notion reconnu : l'IA répondra sans document.</small>");
+  return html + (fiaSourcesOk(t) ? "" : '<br><small class="note">' + badge("b-rose", "Attention") + " Aucun document reconnu : l'IA répondra sans document.</small>");
 }
 
 state.fia = state.fia || { code: "", envoi: "", msg: "", depuis: 0, edit: "", brouillon: null };
@@ -179,7 +194,7 @@ function fiaValider(code) {
   if (d.reponse === "ASSISTER") data.RELECTURE = b.RELECTURE === "NON" ? "NON" : "OUI";
   if (d.reponse === "ASSISTER") {
     const sn = String(b.SOURCES_NOTION || "").trim().slice(0, FIA_SOURCES_MAX);
-    if (sn && !fiaSourcesOk(sn)) { state.fia.msg = "« " + FIA_SOURCES_LIB + " » : aucun lien de page Notion reconnu. Dans Notion, « Copier le lien » de la page, puis collez-le ici (ou videz la rubrique)."; render(); return; }
+    if (sn && !fiaSourcesOk(sn)) { state.fia.msg = "« " + FIA_SOURCES_LIB + " » : aucun lien de document reconnu. Avec « Lier du contenu », collez le lien d'une page de l'intranet RH (ou videz la rubrique)."; render(); return; }
     if (sn) data.SOURCES_NOTION = sn;
   }
   if (d.reponse === "AUTOMATISER") {
@@ -246,8 +261,10 @@ function fiaBloc(code) {
       '<option value="NON"' + (b.RELECTURE === "NON" ? " selected" : "") + ">Non : l'agent envoie sans relecture</option></select>" +
       (b.RELECTURE === "NON" ? '<small class="note">' + badge("b-rose", "Attention") + " Écart au garde-fou « aucun message envoyé sans un humain ». Pensez à ajuster le niveau d'autonomie, les risques et les critères d'acceptation ci-dessus.</small>" : "") + "</label>" +
       '<div class="fia-l"><span class="avd-k">' + FIA_SOURCES_LIB + "</span><div>" +
-      '<textarea rows="3" maxlength="' + FIA_SOURCES_MAX + '" placeholder="https://www.notion.so/…" oninput="fiaSaisie(\'SOURCES_NOTION\', this)">' + esc(b.SOURCES_NOTION || "") + "</textarea>" +
-      '<small class="note">Collez 1 à 3 liens de pages Notion (dans Notion : « Copier le lien »), un par ligne. L\'IA rédige la réponse uniquement à partir de ces pages et cite leur titre ; si la réponse n\'y est pas, elle le dit et renvoie vers un RH. Vide : réponse générale, sans document.</small></div></div>' : "") +
+      '<textarea id="fia-src-ta" rows="3" maxlength="' + FIA_SOURCES_MAX + '" placeholder="Liens des documents de référence, un par ligne" oninput="fiaSaisie(\'SOURCES_NOTION\', this)">' + esc(b.SOURCES_NOTION || "") + "</textarea>" +
+      '<div style="margin:4px 0 2px">' + '<div style="display:flex;align-items:center;gap:10px">' + fiaSrcBouton("lien", "Lier du contenu", "fiaSrcLien()") + '<button type="button" class="btn slim" style="background:#fff;color:#4b2882;border:1px solid #d9cdea;font-size:12px;padding:3px 10px" onclick="fiaSrcLien()">Parcourir…</button></div>' +
+      '</div>' +
+      '</div></div>' : "") +
       (decisionDe(code).reponse === "AUTOMATISER" ?
       '<div class="fia-l"><span class="avd-k">' + FIA_REPAUTO_LIB + "</span><div>" +
       '<textarea rows="8" maxlength="' + FIA_REPAUTO_MAX + '" oninput="fiaSaisie(\'REPONSE_AUTO\', this);var p=document.getElementById(\'fia-ap-' + code + '\');if(p)p.innerHTML=fiaRepAutoHtml(this.value)">' + esc(b.REPONSE_AUTO || "") + "</textarea>" +
