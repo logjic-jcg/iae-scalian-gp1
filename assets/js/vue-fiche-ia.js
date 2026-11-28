@@ -256,10 +256,10 @@ function fiaBloc(code) {
       return '<label class="fia-l"><span class="avd-k">' + esc(x[1]) + "</span>" +
         '<textarea rows="' + (x[0] === "WORKFLOW" ? 5 : 3) + '" maxlength="' + FIA_MAX + '" oninput="fiaSaisie(\'' + x[0] + '\', this)">' + esc(b[x[0]] || "") + "</textarea></label>";
     }).join("") + (decisionDe(code).reponse === "ASSISTER" ?
-      '<label class="fia-l"><span class="avd-k">' + FIA_RELECTURE_LIB + "</span>" +
-      '<select onchange="state.fia.brouillon.RELECTURE=this.value;render()"><option value="OUI"' + (b.RELECTURE !== "NON" ? " selected" : "") + '>Oui : un humain relit avant tout envoi</option>' +
+      '<label class="fia-l"><span class="avd-k">' + FIA_RELECTURE_LIB + "</span><div>" +
+      '<select style="width:100%" onchange="state.fia.brouillon.RELECTURE=this.value;render()"><option value="OUI"' + (b.RELECTURE !== "NON" ? " selected" : "") + '>Oui : un humain relit avant tout envoi</option>' +
       '<option value="NON"' + (b.RELECTURE === "NON" ? " selected" : "") + ">Non : l'agent envoie sans relecture</option></select>" +
-      (b.RELECTURE === "NON" ? '<small class="note">' + badge("b-rose", "Attention") + " Écart au garde-fou « aucun message envoyé sans un humain ». Pensez à ajuster le niveau d'autonomie, les risques et les critères d'acceptation ci-dessus.</small>" : "") + "</label>" +
+      (b.RELECTURE === "NON" ? '<small class="note" style="display:block;margin-top:4px">' + badge("b-rose", "Attention") + " Écart au garde-fou « aucun message envoyé sans un humain ». Pensez à ajuster le niveau d'autonomie, les risques et les critères d'acceptation ci-dessus.</small>" : "") + "</div></label>" +
       '<div class="fia-l"><span class="avd-k">' + FIA_SOURCES_LIB + "</span><div>" +
       '<textarea id="fia-src-ta" rows="3" maxlength="' + FIA_SOURCES_MAX + '" placeholder="Liens des documents de référence, un par ligne" oninput="fiaSaisie(\'SOURCES_NOTION\', this)">' + esc(b.SOURCES_NOTION || "") + "</textarea>" +
       '<div style="margin:4px 0 2px">' + '<div style="display:flex;align-items:center;gap:10px">' + fiaSrcBouton("lien", "Lier du contenu", "fiaSrcLien()") + '<button type="button" class="btn slim" style="background:#fff;color:#4b2882;border:1px solid #d9cdea;font-size:12px;padding:3px 10px" onclick="fiaSrcLien()">Parcourir…</button></div>' +
