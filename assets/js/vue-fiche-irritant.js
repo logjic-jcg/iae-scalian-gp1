@@ -85,13 +85,13 @@ function ficheGraphe(p, se) {
     const cx = L + pas * i + pas / 2, v = p.parSem[s] || 0, vide = s > p.semMax;
     const col = se && s >= se ? "#8b6fb8" : "#4b2882";
     if (!vide) {
-      h += v ? '<rect x="' + (cx - bw / 2) + '" y="' + Y(v) + '" width="' + bw + '" height="' + (H - B - Y(v)) + '" rx="4" fill="' + col + '"><title>Semaine ' + s + " : " + v + " signal(s)</title></rect>"
+      h += v ? '<rect x="' + (cx - bw / 2) + '" y="' + Y(v) + '" width="' + bw + '" height="' + (H - B - Y(v)) + '" rx="4" fill="' + col + '"><title>' + semPlage(s) + " : " + v + " signal(s)</title></rect>"
              : '<rect x="' + (cx - bw / 2) + '" y="' + (H - B - 2) + '" width="' + bw + '" height="2" fill="#bfb3d2"/>';
       h += '<text x="' + cx + '" y="' + (Y(v) - 6) + '" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1030">' + v + "</text>";
     } else {
       h += '<text x="' + cx + '" y="' + (H - B - 6) + '" text-anchor="middle" font-size="11" fill="#8f87a3">pas encore observée</text>';
     }
-    h += '<text x="' + cx + '" y="' + (H - B + 20) + '" text-anchor="middle" font-size="12" fill="#5f5873">S' + s + (s === se ? " · effet" : "") + "</text>";
+    h += '<text x="' + cx + '" y="' + (H - B + 20) + '" text-anchor="middle" font-size="12" fill="#5f5873">' + semLib(s) + (s === se ? " · effet" : "") + "</text>" + '<text x="' + cx + '" y="' + (H - B + 34) + '" text-anchor="middle" font-size="10" fill="#8f87a3">' + semJJMM(semLundi(s)) + "</text>";
   });
   return h + "</svg>";
 }
@@ -149,7 +149,7 @@ function viewFicheIrritant() {
   // Décision
   const kv = function (k, v, fin) { return v ? "<dt>" + esc(k) + "</dt><dd" + (fin ? ' class="fin"' : "") + ">" + esc(v) + "</dd>" : ""; };
   const decision = '<div class="card"><div class="fi-h">Décision et réponse</div>' +
-    (d ? '<dl class="fi-kv">' + kv("Statut", st.label) + kv("Réponse retenue", libReponse(d.reponse)) + kv("Effet à partir de", se ? "Semaine " + se : "") +
+    (d ? '<dl class="fi-kv">' + kv("Statut", st.label) + kv("Réponse retenue", libReponse(d.reponse)) + kv("Effet à partir de", se ? semPlage(se) : "") +
       kv("Commentaire", d.commentaire || "", true) + kv("Besoin", conf.besoin || conf.action || "", true) + kv("Sorties", conf.sorties || "", true) + kv("Indicateur", conf.indicateur || "", true) + "</dl>" +
       (e ? '<p class="note">Revue mensuelle : ' + badge(tdbRecommandation(d, e)[0], tdbRecommandation(d, e)[1]) + " " + esc(tdbRecommandation(d, e)[2]) + "</p>" : "")
        : '<p style="font-size:14px;margin:0">Aucune décision enregistrée.</p><p class="note">Proposition de l\'assistant : ' + esc(libReponse(conf.reco)) + (conf.action ? " : " + esc(conf.action) : "") + "</p>") + "</div>";
@@ -185,17 +185,17 @@ function viewFicheIrritant() {
   // Historique reconstitué
   const ev = [];
   const semsSig = Object.keys(p.parSem).map(Number).filter(function (s) { return p.parSem[s]; }).sort(function (a, b) { return a - b; });
-  if (semsSig.length) ev.push(["", "Premiers signaux", "Semaine " + semsSig[0] + " · " + p.parSem[semsSig[0]] + " signal(s) " + sourceDe(code)]);
+  if (semsSig.length) ev.push(["", "Premiers signaux", "Semaine " + semCal(semsSig[0]) + " (lun. " + semJJMM(semLundi(semsSig[0])) + ") · " + p.parSem[semsSig[0]] + " signal(s) " + sourceDe(code)]);
   if (p.reels && p.reels.length) {
     const r = p.reels.slice().sort(function (a, b) { return a - b; });
     ev.push(["", "Signaux réels", r.length + " mail(s) reçu(s) entre le " + r[0].toLocaleDateString("fr-FR") + " et le " + r[r.length - 1].toLocaleDateString("fr-FR")]);
   }
-  if (tdbAExaminer(p)) ev.push(["", "À examiner", "3 signaux ou plus sur les 2 dernières semaines observées (S" + (p.semMax - 1) + " et S" + p.semMax + ")"]);
+  if (tdbAExaminer(p)) ev.push(["", "À examiner", "3 signaux ou plus sur les 2 dernières semaines observées (" + semLib(p.semMax - 1) + " et " + semLib(p.semMax) + ")"]);
   if (d) ev.push(["hum", "Décision du HRBP : " + st.label + ", " + libReponse(d.reponse),
-    (d.maj && d.maj.toDate ? "Enregistrée le " + d.maj.toDate().toLocaleString("fr-FR") + " · " : "") + (se ? "effet à partir de la semaine " + se : "sans semaine d'effet")]);
+    (d.maj && d.maj.toDate ? "Enregistrée le " + d.maj.toDate().toLocaleString("fr-FR") + " · " : "") + (se ? "effet à partir de la " + semLong(se) : "sans semaine d'effet")]);
   if (e && e.verdict !== "ATTENTE") ev.push(["", "Mesure après la décision : " + TDB_VERDICT[e.verdict][1].toLowerCase(),
     "Moyenne " + tdbFr(e.mAv, 1) + " par semaine avant, " + tdbFr(e.mAp, 1) + " après (" + e.nbAp + " semaine(s) observée(s) après)"]);
-  else if (e) ev.push(["", "Mesure en attente", "Aucune semaine observée après la semaine " + se]);
+  else if (e) ev.push(["", "Mesure en attente", "Aucune semaine observée après la " + semLong(se)]);
   sugg.slice().reverse().forEach(function (x) {
     const suite = x.statut === "ACCEPTEE" ? "acceptée par le HRBP" : x.statut === "REJETEE" ? "rejetée par le HRBP" + (x.motif ? " (" + x.motif + ")" : "") : "en attente du HRBP";
     ev.push(["ia", "Revue IA : " + (x.s.genre === "CONTRADICTION" ? "remise en cause" : "action") + " " + suite,

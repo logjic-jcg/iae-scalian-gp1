@@ -207,7 +207,7 @@ function ntyCarte(doc, p, i) {
     '<div class="spech3" style="margin-top:2px">' + esc(p.titre) + "</div></div>" +
     '<div class="nty-n"><b>' + p.mails.length + "</b><span>mail" + (p.mails.length > 1 ? "s" : "") + " « Autre »</span></div></div>" +
     '<p class="nty-meta">' + (p.processus ? badge("b-sky", p.processus) + " " : "") + badge(confB[p.confiance], "Confiance " + p.confiance.toLowerCase()) +
-    (p.semaines.length ? ' <span class="note" style="margin:0">semaine' + (p.semaines.length > 1 ? "s " : " ") + p.semaines.map(function (s) { return "S" + s; }).join(" · ") + "</span>" : "") + "</p>" +
+    (p.semaines.length ? ' <span class="note" style="margin:0">semaine' + (p.semaines.length > 1 ? "s " : " ") + p.semaines.map(function (s) { return semLib(s); }).join(" · ") + "</span>" : "") + "</p>" +
     (p.proche ? '<p class="nty-alerte">' + badge("b-amber", "À vérifier") + " Proche d'un type existant : « " + esc(libelleType(p.proche)) + " ». Peut-être faut-il plutôt compléter sa définition (Fusionner).</p>" : "") +
     (existe && st === "PROPOSEE" ? '<p class="nty-alerte">' + badge("b-amber", "Déjà créé") + " Un type porte déjà le code " + esc(codeAuto) + ".</p>" : "") +
     (trop ? '<p class="nty-alerte">' + badge("b-slate", "Trop peu de mails") + " Moins de 2 mails « Autre » retrouvés pour cette proposition : un cas isolé ne fait pas un type.</p>" : "") +

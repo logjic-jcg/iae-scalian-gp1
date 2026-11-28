@@ -54,19 +54,19 @@ function expResume(c) {
     const p = sig.ok ? sig.parCode[code] : null, d = decisionDe(code), conf = confDe(code);
     L.push("Irritant : " + libelleType(code) + (typeof processusDe === "function" && processusDe(code) ? " (processus : " + processusDe(code) + ")" : ""));
     if (p) {
-      const sem = Object.keys(p.parSem).map(Number).sort(function (a, b) { return a - b; }).map(function (s) { return "S" + s + " : " + p.parSem[s]; }).join(", ");
+      const sem = Object.keys(p.parSem).map(Number).sort(function (a, b) { return a - b; }).map(function (s) { return semLib(s) + " : " + p.parSem[s]; }).join(", ");
       L.push("Signaux : " + p.total + " au total" + (sem ? " (" + sem + ")" : "") + (aExaminer(p) ? ", à examiner" : ""));
       if (d && d.semaine_effet && typeof tdbEffet === "function") {
         const e = tdbEffet(p, Number(d.semaine_effet));
         L.push("Effet : " + TDB_VERDICT[e.verdict][1].toLowerCase() + (e.mAv !== null && e.mAp !== null ? " (moyenne avant " + tdbFr(e.mAv, 1) + ", après " + tdbFr(e.mAp, 1) + " par semaine)" : ""));
       }
     }
-    L.push(d ? "Décision : " + libStatut(d.statut).label + ", " + libReponse(d.reponse) + ", effet à partir de la semaine " + d.semaine_effet
+    L.push(d ? "Décision : " + libStatut(d.statut).label + ", " + libReponse(d.reponse) + ", effet à partir de la " + semLong(d.semaine_effet)
              : "Décision : aucune. Proposition de l'assistant : " + libReponse(conf.reco));
   } else if (c.cle === "b_spec") {
     const valides = typesPilotage().map(function (t) { return t.code; }).filter(function (x) { const d = decisionDe(x); return d && d.statut === "VALIDE"; });
     L.push(valides.length + " irritant(s) validé(s), avec la réponse retenue :");
-    valides.forEach(function (x) { const d = decisionDe(x); L.push("- " + libelleType(x) + " : " + libReponse(d.reponse) + " (effet dès S" + d.semaine_effet + ")"); });
+    valides.forEach(function (x) { const d = decisionDe(x); L.push("- " + libelleType(x) + " : " + libReponse(d.reponse) + " (effet dès " + semLib(d.semaine_effet) + ")"); });
   } else {
     const S = tdbSections(c.titre);
     if (typeof S === "string") { L.push("Données de la base indisponibles au moment du partage."); return L; }

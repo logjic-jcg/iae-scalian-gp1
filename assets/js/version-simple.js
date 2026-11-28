@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// v72 (Pascal : « Pilotage et temps gagné » en panneau) · v68.4 (Bento : vidéo de présentation) · v68.3 (mention « Brouillon à relire avant import » masquée) · v68.2 (« Autre » hors des listes : mêmes totaux partout) · v68.1 (« Voir la spécification » → Décider) · v68 (Décider en 4 étapes, fiche en familles, accords singulier/pluriel) · v67.15 (Repérer : pictos des 3 indicateurs, réponse retenue sous « Validé ») · v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
+// v73 (semaines du calendrier) · v72 (Pascal : « Pilotage et temps gagné » en panneau) · v68.4 (Bento : vidéo de présentation) · v68.3 (mention « Brouillon à relire avant import » masquée) · v68.2 (« Autre » hors des listes : mêmes totaux partout) · v68.1 (« Voir la spécification » → Décider) · v68 (Décider en 4 étapes, fiche en familles, accords singulier/pluriel) · v67.15 (Repérer : pictos des 3 indicateurs, réponse retenue sous « Validé ») · v67.14 (Pascal : PDF / mail au titre, 3 liens en panneau latéral) · v67.13 (header « RH · Assistant irritants » en version simple) · v67.12 (Repérer : Actualiser à gauche des icônes d'export) · v67.11 (Bento + boucle de l'assistant ; onglet Réglages seulement depuis le Bento) · v67.10 (Bento : Liens + Affichage ; fiche sans « Voir la spécification » ; « Améliorer dans la durée ») · v67.9.1 (correctif : Décider bloqué par un état mémorisé ancien) · v67.9 (contradicteur replié, Suivre → Revue des agents IA en panneau) · v67.8 (Décider : filtre Essentiel/Tous, allègements, bouton skill aligné) · v67.7 (panneau latéral Tendances / Tableau de bord) · v67.6 (Repérer : colonne Confiance, colonnes resserrées) · v67.5 (Repérer : filtre Essentiel/Tous, PDF et mail ; interrupteur seulement dans le Bento) · v67.4 (Bento allégé, simple par défaut) · v67.3 (relecture Oui/Non) · v67.2 (réponse au mail dans Décider) · v67.1 : interrupteur « Version simple / Version complète » (Julien et Direction)
 // ---------------------------------------------------------------------------
 // Version complète = le site exactement comme avant (choix par défaut).
 // Version simple = un « sous-site » reprenant la maquette « ACIA simplifié » :
@@ -192,9 +192,9 @@
     const h = 24, bw = 11, g = 3;
     const barres = sem.map(function (s, k) {
       const v = p.parSem[s] || 0, bh = v ? Math.max(3, Math.round(v / max * (h - 2))) : 2;
-      return '<rect x="' + (k * (bw + g)) + '" y="' + (h - bh) + '" width="' + bw + '" height="' + bh + '" rx="2" fill="' + (k >= sem.length - 2 ? "#4b2882" : "#bfb3d2") + '"><title>S' + s + " : " + v + "</title></rect>";
+      return '<rect x="' + (k * (bw + g)) + '" y="' + (h - bh) + '" width="' + bw + '" height="' + bh + '" rx="2" fill="' + (k >= sem.length - 2 ? "#4b2882" : "#bfb3d2") + '"><title>' + semLib(s) + " : " + v + "</title></rect>";
     }).join("");
-    return '<svg width="' + (sem.length * (bw + g)) + '" height="' + h + '" role="img" aria-label="Signaux des semaines S' + sem[0] + " à S" + semMax + '">' + barres + "</svg>";
+    return '<svg width="' + (sem.length * (bw + g)) + '" height="' + h + '" role="img" aria-label="Signaux des semaines ' + semLib(sem[0]) + " à " + semLib(semMax) + '">' + barres + "</svg>";
   }
   // v67.15 : picto (mêmes icônes que la Vue d'ensemble de Pascal) devant la valeur.
   function tuile(v, l, s, ic) { return '<div class="vs-tile"><div class="vs-tile-h">' + (ic && typeof tendIcone === "function" ? tendIcone(ic) : "") + "<b>" + esc(v) + "</b></div><span>" + esc(l) + "</span><small>" + esc(s) + "</small></div>"; }
@@ -393,8 +393,8 @@
         (pre ? '<p class="note">' + badge("b-violet", "IA") + " " + esc(pre.note || "Pré-rempli d'après la suggestion acceptée dans la Revue mensuelle : relisez, puis enregistrez vous-même.") + "</p>" : "") +
         '<div class="vs-row">' + seg + '<button class="btn ok" onclick="vsEnregistrer(\'' + c + '\')">Enregistrer la décision</button></div>' +
         '<input type="hidden" id="dp-statut" value="' + esc(stat) + '"><input type="hidden" id="dp-reponse" value="' + esc(rep) + '">' +
-        '<details class="vs-opts"' + (ouverts["opts"] ? " open" : "") + ' ontoggle="vsOpts(this.open)"><summary>Plus d\'options : semaine d\'effet (S' + esc(sem) + "), commentaire</summary>" +
-          '<label>Semaine à partir de laquelle la réponse s\'applique<input id="dp-sem" type="number" min="' + ((l.p.semMax || 0) + 1) + '" max="53" value="' + esc(sem) + '" oninput="vsSaisie(\'sem\',\'' + c + '\',this.value)"></label>' +
+        '<details class="vs-opts"' + (ouverts["opts"] ? " open" : "") + ' ontoggle="vsOpts(this.open)"><summary>Plus d\'options : semaine d\'effet (' + esc(semLib(sem)) + "), commentaire</summary>" +
+          '<label>Semaine à partir de laquelle la réponse s\'applique' + semSelect("dp-sem", (l.p.semMax || 0) + 1, sem, "vsSaisie('sem','" + c + "',this.value)") + "</label>" +
           '<label>Commentaire (280 caractères maximum, sans nom de personne)<input id="dp-comm" maxlength="280" value="' + esc(comm) + '" oninput="vsSaisie(\'comm\',\'' + c + '\',this.value)"></label></details>' +
         (state.msgPilot ? '<p class="note">' + esc(state.msgPilot) + "</p>" : "");
     const valide = d && d.statut === "VALIDE";
@@ -402,7 +402,7 @@
     const droite = '<div class="vs-stack">' +
       etape(1, "loupe", "Le constat", d ? "" : etiquette(l), constat) +
       etape(2, "bouclier", "L'objection de l'IA <small>avant de décider</small>", cAvd ? badge(cAvd[0], cAvd[1]) : '<span class="note" style="margin:0">Pas encore demandée</span>', objection) +
-      etape(3, "drapeau", "La décision", d ? badge(libStatut(d.statut).cls, libStatut(d.statut).label) + (d.statut === "VALIDE" ? ' <span class="vs-et-rep">' + esc(libReponse(d.reponse)) + " · dès S" + esc(d.semaine_effet) + "</span>" : "") : badge("b-sky", "À prendre"), decision, ' id="decision-hrbp"') +
+      etape(3, "drapeau", "La décision", d ? badge(libStatut(d.statut).cls, libStatut(d.statut).label) + (d.statut === "VALIDE" ? ' <span class="vs-et-rep">' + esc(libReponse(d.reponse)) + " · dès " + esc(semLib(d.semaine_effet)) + "</span>" : "") : badge("b-sky", "À prendre"), decision, ' id="decision-hrbp"') +
       etape(4, "document", "La mise en œuvre", valide && typeof etatSpec === "function" ? badge(etatSpec(c)[0], etatSpec(c)[1]) : '<span class="note" style="margin:0">Après validation</span>', oeuvre, valide ? ' id="vs-oeuvre"' : ' id="vs-oeuvre" style="opacity:.75"') +
       "</div>";
     return "<h2>Que fait-on ?</h2>" + '<p class="vs-lead">Une décision par irritant : la réponse la plus simple qui suffit.</p>' +
@@ -808,7 +808,7 @@
     const maxS = DL ? Math.max.apply(null, DL.sem.map(function (s) { return s.moy; }).concat([avant || 0, 0.01])) : 1;
     const barres = DL ? '<div style="display:flex;gap:6px;align-items:flex-end">' + DL.sem.map(function (s) {
       return '<div style="flex:1;text-align:center;min-width:34px"><div style="height:110px;display:flex;align-items:flex-end;justify-content:center"><div title="' + s.n + ' mail(s)" style="width:60%;height:' + Math.max(2, Math.round(110 * s.moy / maxS)) + 'px;background:#4b2882;border-radius:4px 4px 0 0"></div></div>' +
-        '<div class="note">' + s.lundi.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }) + '</div><div style="font-size:12px;font-weight:700">' + tgH(s.moy) + "</div></div>"; }).join("") + "</div>" : "";
+        '<div class="note" title="semaine du ' + s.lundi.toLocaleDateString("fr-FR") + '">S' + semIsoNum(s.lundi) + '</div><div style="font-size:12px;font-weight:700">' + tgH(s.moy) + "</div></div>"; }).join("") + "</div>" : "";
     const chiffre = function (lib, v, b, coulV) { return '<div><div class="note">' + lib + '</div><div style="font-size:28px;font-weight:800;color:' + (coulV || "var(--dark)") + '">' + v + "</div>" + b + "</div>"; };
     const delai = '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("courbe") + '<div class="spechead">Délai moyen de prise en charge des mails</div></div>' +
       '<p class="note" style="margin:4px 0 0">De la réception du mail dans la boîte RH à son classement et à son orientation. Quand la réponse est automatique, elle part dans le même passage.</p>' +

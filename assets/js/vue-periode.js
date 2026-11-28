@@ -39,6 +39,22 @@ function perJourCR(cr) {
   const n = Number(cr.jour_reunion);
   return n > 0 ? perAjoute(PER_J1, n - 1) : null;
 }
+// v73 : libellés des semaines du calendrier. Les semaines du scénario (1, 2, 3… à partir de PER_J1)
+// restent les mêmes en base (semaine_effet) et dans les calculs ; seul l'affichage change.
+function semIsoNum(d) { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const j = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - j); const a = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - a) / 864e5 + 1) / 7); }
+function semOk(s) { return Number(s) >= 1 && Number(s) <= 400; }
+function semLundi(s) { return perAjoute(PER_J1, (Number(s) - 1) * 7); }
+function semCal(s) { return semOk(s) ? semIsoNum(semLundi(s)) : s; }
+function semJJMM(d) { return String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0"); }
+function semLib(s) { return "S" + semCal(s); }
+function semLong(s) { return semOk(s) ? "semaine " + semCal(s) + " (lun. " + semJJMM(semLundi(s)) + ")" : "semaine " + s; }
+function semPlage(s) { if (!semOk(s)) return "Semaine " + s; const l = semLundi(s); return "Semaine " + semCal(s) + " · du lun. " + semJJMM(l) + " au dim. " + semJJMM(perAjoute(l, 6)); }
+// Liste déroulante des semaines (valeur = numéro du scénario, libellé = semaine du calendrier).
+function semSelect(id, min, val, js) {
+  const v = Number(val) || min, L = []; for (let s = min; s < min + 12; s++) L.push(s);
+  if (semOk(v) && L.indexOf(v) === -1) L.unshift(v);
+  return '<select id="' + id + '" onchange="' + js + '">' + L.map(function (s) { return '<option value="' + s + '"' + (s === v ? " selected" : "") + ">" + esc(semPlage(s)) + "</option>"; }).join("") + "</select>";
+}
 function perNumSemaine(d) { return Math.floor((perLundi(d) - PER_J1) / (7 * PER_JOUR_MS)) + 1; }
 
 // Bornes de la période choisie (du lundi au dimanche pour les préréglages).
@@ -68,7 +84,7 @@ function perColonnes(b, grain) {
   } else if (grain === "semaine") {
     for (let d = perLundi(b.du); d <= b.au; d = perAjoute(d, 7)) {
       const fin = perAjoute(d, 6);
-      out.push({ cle: perIso(d), label: "S" + perNumSemaine(d), sous: (d.getMonth() === fin.getMonth() ? d.getDate() : perCourt(d)) + "–" + perCourt(fin) });
+      out.push({ cle: perIso(d), label: "S" + semIsoNum(d), sous: (d.getMonth() === fin.getMonth() ? d.getDate() : perCourt(d)) + "–" + perCourt(fin) });
     }
   } else {
     for (let d = new Date(b.du.getFullYear(), b.du.getMonth(), 1); d <= b.au; d = new Date(d.getFullYear(), d.getMonth() + 1, 1))
@@ -118,8 +134,8 @@ function perBarre(docs, signauxParJour) {
   const maxS = Math.max(1, Math.max.apply(null, sem.map(function (d) { return parSem[perIso(d)] || 0; })));
   const frise = sem.map(function (d) {
     const v = parSem[perIso(d)] || 0, dedans = perAjoute(d, 6) >= b.du && d <= b.au;
-    return '<button class="per-col' + (dedans ? " in" : "") + '" title="S' + perNumSemaine(d) + " · " + perCourt(d) + "–" + perCourt(perAjoute(d, 6)) + " : " + v + ' signal(s). Clic : zoomer sur cette semaine" onclick="perSemaine(\'' + perIso(d) + '\')">' +
-      '<span class="per-b" style="height:' + Math.max(3, Math.round(v / maxS * 38)) + 'px"></span><span class="per-l">S' + perNumSemaine(d) + "</span></button>";
+    return '<button class="per-col' + (dedans ? " in" : "") + '" title="S' + semIsoNum(d) + " · " + perCourt(d) + "–" + perCourt(perAjoute(d, 6)) + " : " + v + ' signal(s). Clic : zoomer sur cette semaine" onclick="perSemaine(\'' + perIso(d) + '\')">' +
+      '<span class="per-b" style="height:' + Math.max(3, Math.round(v / maxS * 38)) + 'px"></span><span class="per-l">S' + semIsoNum(d) + "</span></button>";
   }).join("");
 
   return '<div class="card per-carte">' +

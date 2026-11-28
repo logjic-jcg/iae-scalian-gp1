@@ -178,7 +178,7 @@ function raCarte(code, sig) {
   const saisi = !!R;
   // Mesures de la base
   const mes = [];
-  if (M.effet) mes.push(["Signaux de l'irritant", "avant S" + d.semaine_effet + " : " + tdbFr(M.effet.mAv, 1) + " par semaine · après : " + tdbFr(M.effet.mAp, 1), badge(TDB_VERDICT[M.effet.verdict][0], TDB_VERDICT[M.effet.verdict][1])]);
+  if (M.effet) mes.push(["Signaux de l'irritant", "avant " + semLib(d.semaine_effet) + " : " + tdbFr(M.effet.mAv, 1) + " par semaine · après : " + tdbFr(M.effet.mAp, 1), badge(TDB_VERDICT[M.effet.verdict][0], TDB_VERDICT[M.effet.verdict][1])]);
   if (RA_INTEGRATION.indexOf(code) >= 0) {
     mes.push(["Fiches d'arrivée écrites par l'agent", M.fiches ? M.fiches.mois + " en " + raMoisLib(mois) + " (" + M.fiches.total + " au total)" : "Collection indisponible", ""]);
     if (M.fiches && M.fiches.mois) mes.push(["Annonces incomplètes détectées", M.fiches.incompletes + " sur " + M.fiches.mois + " ce mois", ""]);
@@ -212,7 +212,7 @@ function raCarte(code, sig) {
   const histHtml = hist.length > 1 || (hist.length === 1 && hist[0].mois !== mois)
     ? '<p class="note" style="margin-top:10px"><b>Historique :</b> ' + hist.map(function (r) { const x = RA_DECISIONS.find(function (y) { return y.id === r.decision; }); return esc(raMoisLib(r.mois)) + " · " + (x ? x.label : "à décider"); }).join(" ; ") + "</p>" : "";
   return '<div class="card ra-carte" id="ra-' + code + '" style="margin-top:16px">' +
-    '<div class="kpi-h">' + (typeof specIcone === "function" ? specIcone("ASSISTER") : "") + '<div class="spechead">Agent en service depuis la semaine ' + esc(d.semaine_effet) + "</div></div>" +
+    '<div class="kpi-h">' + (typeof specIcone === "function" ? specIcone("ASSISTER") : "") + '<div class="spechead">Agent en service depuis la ' + esc(semLong(d.semaine_effet)) + "</div></div>" +
     '<div class="spech3">' + esc(libelleType(code)) + "</div>" +
     (typeof allerSpec === "function" ? '<a href="#" class="pick-fiche" onclick="allerSpec(\'' + code + '\');return false">Voir la spécification →</a>' : "") +
     (state.raSim[code]

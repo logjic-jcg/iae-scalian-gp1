@@ -232,7 +232,7 @@ function tdbSections(titre, filtrerProcessus) {
   const semMax = Math.max.apply(null, lignes.map(function (l) { return l.p.semMax || 0; }).concat([1]));
   const sems = []; for (let s = 1; s <= semMax; s++) sems.push(s);
   const maxCase = Math.max.apply(null, lignes.map(function (l) { return Math.max.apply(null, sems.map(function (s) { return l.p.parSem[s] || 0; })); }).concat([1]));
-  const chaleur = '<div class="tw"><table class="tdb-heat"><thead><tr><th>Irritant</th>' + sems.map(function (s) { return '<th class="c">S' + s + "</th>"; }).join("") +
+  const chaleur = '<div class="tw"><table class="tdb-heat"><thead><tr><th>Irritant</th>' + sems.map(function (s) { return '<th class="c">' + semLib(s) + '<div class="tdb-sub" style="font-weight:400">' + semJJMM(semLundi(s)) + "</div></th>"; }).join("") +
     '<th class="c">Total</th></tr></thead><tbody>' +
     lignes.map(function (l) {
       const horsSource = function (s) { return s > l.p.semMax; };
@@ -240,7 +240,7 @@ function tdbSections(titre, filtrerProcessus) {
         sems.map(function (s) {
           const v = l.p.parSem[s] || 0;
           if (horsSource(s)) return '<td class="c tdb-na" title="Semaine pas encore observée pour cette source">·</td>';
-          return '<td class="c"><span class="tdb-cell" style="background:' + tdbCouleur(v, maxCase) + ";color:" + tdbEncre(v, maxCase) + '" title="' + esc(l.label) + " · semaine " + s + " : " + v + ' signal(s)">' + (v || "") + "</span></td>";
+          return '<td class="c"><span class="tdb-cell" style="background:' + tdbCouleur(v, maxCase) + ";color:" + tdbEncre(v, maxCase) + '" title="' + esc(l.label) + " · " + semLong(s) + " : " + v + ' signal(s)">' + (v || "") + "</span></td>";
         }).join("") + '<td class="c"><b>' + l.p.total + "</b></td></tr>";
     }).join("") + "</tbody></table></div>" +
     '<p class="note">Un signal = un mail classé dans ce type (principal ou secondaire), ou une action de réunion reportée ou sans responsable. Plus la case est foncée, plus il y a de signaux. « · » = semaine pas encore observée pour cette source.</p>';
@@ -271,9 +271,9 @@ function tdbSections(titre, filtrerProcessus) {
       const e = l.effet, se = Number(l.d.semaine_effet) || 0, v = TDB_VERDICT[e.verdict], r = tdbRecommandation(l.d, e);
       const spark = '<span class="tdb-spark">' + e.semaines.map(function (s) {
         const val = l.p.parSem[s] || 0, h = s > l.p.semMax ? 0 : Math.max(3, Math.round(26 * val / Math.max(1, maxCase)));
-        return '<span class="' + (s >= se ? "ap" : "av") + (s > l.p.semMax ? " vide" : "") + '" style="height:' + h + 'px" title="S' + s + " : " + (s > l.p.semMax ? "pas encore observée" : val + " signal(s)") + '"></span>';
+        return '<span class="' + (s >= se ? "ap" : "av") + (s > l.p.semMax ? " vide" : "") + '" style="height:' + h + 'px" title="' + semLib(s) + " : " + (s > l.p.semMax ? "pas encore observée" : val + " signal(s)") + '"></span>';
       }).join("") + "</span>";
-      return "<tr><td><b>" + lienFiche(l.code, esc(l.label), D.mode === "statique") + "</b>" + (l.d.statut === "A_SURVEILLER" ? " " + badge("b-amber", "À surveiller") : "") + "</td><td>" + esc(libReponse(l.d.reponse)) + '</td><td class="c">S' + se + "</td><td>" + spark +
+      return "<tr><td><b>" + lienFiche(l.code, esc(l.label), D.mode === "statique") + "</b>" + (l.d.statut === "A_SURVEILLER" ? " " + badge("b-amber", "À surveiller") : "") + "</td><td>" + esc(libReponse(l.d.reponse)) + '</td><td class="c">' + semLib(se) + "</td><td>" + spark +
         '</td><td class="c">' + tdbFr(e.mAv, 1) + '</td><td class="c">' + tdbFr(e.mAp, 1) + "</td><td>" + badge(v[0], v[1]) + "</td><td>" + badge(r[0], r[1]) + '<div class="tdb-sub" style="margin-top:4px">' + esc(r[2]) + "</div></td></tr>";
     }).join("") + "</tbody></table></div>" +
     '<p class="note">Moyenne de signaux par semaine avant et après la semaine d\'effet (barres foncées = après). Règles de la revue : en baisse → conserver ; stable → adapter ; en hausse sur plusieurs semaines → réorienter ; trop peu de recul → attendre. L\'assistant propose, le HRBP décide.</p>';

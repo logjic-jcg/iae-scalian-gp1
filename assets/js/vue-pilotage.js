@@ -230,7 +230,7 @@ function enregistrerDecision(code) {
   // (sinon le suivi « avant / après » mesurerait une baisse qui précède la décision).
   const sig = aciaSignaux(), avant = decisionDe(code), semMax = sig.parCode[code] ? sig.parCode[code].semMax : sig.semMax;
   if (data.semaine_effet <= semMax && !(avant && avant.semaine_effet === data.semaine_effet)) {
-    state.msgPilot = "La semaine d'effet doit être postérieure à la dernière semaine observée (S" + semMax + ") : pas de décision rétroactive."; render(); return;
+    state.msgPilot = "La semaine d'effet doit être postérieure à la dernière semaine observée (" + semLib(semMax) + ") : pas de décision rétroactive."; render(); return;
   }
   if (typeof window.aciaEcrireDecision !== "function") { state.msgPilot = "Écriture impossible : connexion à la base absente."; render(); return; }
   state.msgPilot = "Enregistrement…"; render();

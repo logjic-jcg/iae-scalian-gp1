@@ -43,7 +43,7 @@ function suivBarres(p, se) {
   let h = '<span class="suiv-spark" title="Signaux par semaine">';
   for (let s = 1; s <= fin; s++) {
     const v = p.parSem[s] || 0;
-    h += '<i class="' + (se && s >= se ? "ap" : "") + '" style="height:' + Math.max(2, Math.round(18 * v / max)) + 'px" title="S' + s + " : " + v + '"></i>';
+    h += '<i class="' + (se && s >= se ? "ap" : "") + '" style="height:' + Math.max(2, Math.round(18 * v / max)) + 'px" title="' + semLib(s) + " : " + v + '"></i>';
   }
   return h + "</span>";
 }
@@ -54,7 +54,7 @@ function suivCarte(c, sig, codes) {
   const proc = typeof processusDe === "function" ? processusDe(c) : "";
   const attente = typeof ficheSuggestions === "function" ? ficheSuggestions(c, codes).filter(function (x) { return x.statut === "PROPOSEE"; }).length : 0;
   const lignes = [];
-  if (d) lignes.push(esc(libReponse(d.reponse)) + (se ? " · effet dès S" + se : ""));
+  if (d) lignes.push(esc(libReponse(d.reponse)) + (se ? " · effet dès " + semLib(se) : ""));
   else lignes.push("Proposition : " + esc(libReponse(confDe(c).reco)));
   const badges = [];
   if (!d && aExaminer(p)) badges.push(badge("b-rose", "À examiner"));
@@ -81,7 +81,7 @@ function suivAide() {
     li("Efficace", "décision « Validé » ; en moyenne par semaine, les signaux après la semaine d\'effet baissent de 20 % ou plus.") +
     li("Écartés", "le HRBP a choisi « Écarté » (liste repliée sous le tableau).") + "</ul>" +
     '<p class="note" style="margin:0 0 6px"><b>Pour qu\'un irritant arrive dans « À revoir » ou « Efficace » :</b> cliquez sur sa carte, puis « Décider » ; choisissez « Validé », une réponse, et une semaine d\'effet qui laisse des semaines avant et après (ni la première, ni après la dernière semaine de signaux).</p>' +
-    '<p class="note" style="margin:0">Les semaines sont celles du scénario (S1 = semaine du 19/10/2026), comme dans le formulaire de décision : la période choisie dans « Tendances » ne s\'applique pas ici. La mesure compte des signaux, elle ne prouve pas à elle seule que la réponse en est la cause.</p></details>';
+    '<p class="note" style="margin:0">Les semaines sont celles du calendrier (jour 1 du scénario = lundi 19/10/2026, semaine 43), comme dans le formulaire de décision : la période choisie dans « Tendances » ne s\'applique pas ici. La mesure compte des signaux, elle ne prouve pas à elle seule que la réponse en est la cause.</p></details>';
 }
 
 function viewSuiviTableau() {

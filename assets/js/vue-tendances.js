@@ -122,7 +122,7 @@ const CODES_HORS_IRRITANT = ["AUCUN", "ECARTE"];
 
 function semaineDe(doc) {
   const m = /^J(\d+)$/.exec(String(doc.jour_fictif || "").trim());
-  if (m) { const s = Math.ceil(Number(m[1]) / 7); return { cle: "f" + s, label: "Semaine " + s + " (fictive)", ordre: s }; }
+  if (m) { const s = Math.ceil(Number(m[1]) / 7); return { cle: "f" + s, label: semPlage(s), ordre: s }; }
   const d = doc.recu && doc.recu.toDate ? doc.recu.toDate() : null;
   if (!d) return { cle: "x", label: "Sans date", ordre: 999 };
   const lundi = new Date(d); lundi.setHours(0, 0, 0, 0); lundi.setDate(lundi.getDate() - ((lundi.getDay() + 6) % 7));
@@ -240,7 +240,7 @@ function viewTendances() {
     (nbInconnus ? '<p class="note">' + nbInconnus + " code(s) renvoyé(s) par l'IA non reconnu(s), non comptés.</p>" : "") + "</div>" +
     '<div class="card" style="margin-top:16px"><div class="kpi-h">' + tendIcone("courbe") + '<div class="spechead">Évolution par ' + grain + "</div></div>" +
     '<div class="tw" style="margin-top:8px"><table><thead>' + tete + "</thead><tbody>" + corps + "</tbody></table></div>" +
-    '<p class="note">Dates de démonstration : le jour fictif J1 du scénario correspond au lundi ' + esc(PER_J1.toLocaleDateString("fr-FR")) + ' (S1 = semaine 1 du scénario). Un mail sans jour fictif est daté de sa réception. La colonne « Total » couvre toute la période : si le tableau est plus large que l\'écran, faites-le défiler vers la droite.</p></div>' +
+    '<p class="note">Dates de démonstration : le jour fictif J1 du scénario correspond au lundi ' + esc(PER_J1.toLocaleDateString("fr-FR")) + ' (semaine 43 du calendrier). Un mail sans jour fictif est daté de sa réception. La colonne « Total » couvre toute la période : si le tableau est plus large que l\'écran, faites-le défiler vers la droite.</p></div>' +
     '<p class="note">Ce que cet écran ne montre pas, volontairement : aucun mail, aucun expéditeur, aucun objet, aucun nom. La base ne les stocke pas. Classement automatique toutes les heures (lun-sam, 8h-20h) par Claude Haiku via Make ; la confiance est une auto-évaluation de l\'IA, pas une probabilité mesurée.</p>';
 }
 
